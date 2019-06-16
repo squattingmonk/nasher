@@ -124,9 +124,11 @@ proc parseConfig*(fileName: string, cfg: var Config) =
           of "author": cfg.authors.add(e.value)
           of "url": cfg.url = e.value
           of "flat":
-            case e.value.normalize()
-            of "true": cfg.flat = true
-            else: discard
+            try:
+              cfg.flat = e.value.parseBool()
+            except ValueError:
+              let shortName = fileName.extractFilename()
+              error(fmt"Unknown value '{e.value}' for key '{e.key}' in {shortName}")
           else: discard
         of "build":
           case key
