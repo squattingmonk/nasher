@@ -10,19 +10,19 @@ proc showHelp(kind: CommandKind) =
 proc isNasherProject(): bool =
   existsFile(pkgCfgFile)
 
-proc nasherInit(initDir: string) =
+proc nasherInit(dir: string) =
   if not existsFile(userCfgFile):
     # TODO: allow user to input desired values before writing
     writeCfgFile(userCfgFile, userCfgText)
 
-  let nasherFile = initDir / "nasher.cfg"
+  let nasherFile = dir / "nasher.cfg"
   if not existsFile(nasherFile):
-    notice(fmt"Initializing into {initDir}...")
+    notice(fmt"Initializing into {dir}...")
     # TODO: allow user to input desired values before writing
     writeCfgFile(nasherFile, pkgCfgText)
     notice("Successfully initialized project")
   else:
-    error(fmt"{initDir} has already been initialized as a nasher project")
+    error(fmt"{dir} is already a nasher project")
     quit(QuitFailure)
 
 proc nasherList() =
@@ -134,7 +134,7 @@ when isMainModule:
     of cmdList:
       nasherList()
     of cmdInit:
-      nasherInit(args.cmd.initDir)
+      nasherInit(args.cmd.dir)
     of cmdCompile:
       nasherCompile(args.cmd.build)
     of cmdBuild:

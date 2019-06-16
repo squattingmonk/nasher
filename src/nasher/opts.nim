@@ -17,11 +17,9 @@ type
     case kind*: CommandKind
     of cmdNil, cmdList, cmdClean, cmdClobber:
       nil
-    of cmdInit:
-      initDir*: string
     of cmdCompile, cmdBuild:
       build*: string
-    of cmdUnpack, cmdInstall:
+    of cmdInit, cmdUnpack, cmdInstall:
       file*: string
       dir*: string
 
@@ -32,16 +30,16 @@ proc initOptions(): Options =
 proc initCommand(options: var Options) =
   case options.cmd.kind
   of cmdInit:
-    options.cmd.initDir = getCurrentDir()
+    options.cmd.dir = getCurrentDir()
+    options.cmd.file = ""
+  of cmdUnpack:
+    options.cmd.dir = srcDir
+    options.cmd.file = ""
+  of cmdInstall:
+    options.cmd.dir = nwnInstallDir
+    options.cmd.file = ""
   of cmdCompile, cmdBuild:
     options.cmd.build = ""
-  of cmdUnpack, cmdInstall:
-    options.cmd.file = ""
-    options.cmd.dir =
-      if options.cmd.kind == cmdInstall:
-        nwnInstallDir
-      else:
-        srcDir
   else:
     discard
 
@@ -66,7 +64,7 @@ proc parseArgument(key: string, result: var Options) =
   of cmdNil:
     assert(false)
   of cmdInit:
-    result.cmd.initDir = key
+    result.cmd.dir = key
   of cmdCompile, cmdBuild:
     result.cmd.build = key
   of cmdUnpack, cmdInstall:
