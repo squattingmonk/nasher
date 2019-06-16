@@ -54,12 +54,16 @@ type
     sources*: seq[string]
 
 proc writeCfgFile*(fileName, text: string) =
+  let
+    absPath = if fileName.isAbsolute(): fileName else: getCurrentDir() / fileName
+    relPath = absPath.relativePath(getCurrentDir())
+
   try:
-    notice(fmt"Creating configuration file at {fileName}")
+    notice(fmt"Creating configuration file at {relPath}")
     createDir(fileName.splitFile().dir)
     writeFile(fileName, text)
   except IOError:
-    fatal(fmt"Could not create config file at {fileName}")
+    fatal(fmt"Could not create config file at {relPath}")
     quit(QuitFailure)
 
 proc initConfig(): Config =
