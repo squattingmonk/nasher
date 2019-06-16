@@ -106,6 +106,8 @@ You can also pass the `--clean` and `--clobber` flags to the `build` and
 - `--clobber` will remove the associated directory and its built products 
   *after* building.
 
+For example:
+
     # Cleanly build demo
     $ nasher build demo --clean
 
