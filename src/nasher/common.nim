@@ -17,8 +17,8 @@ proc getPkgRoot*: string =
 let
   nwnInstallDir* = getHomeDir() / "Documents" / "Neverwinter Nights"
   userCfgFile* = getConfigDir() / "nasher" / "nasher.cfg"
-  pkgCfgFile* = getPkgRoot() / ".nasher" / "nasher.cfg"
-  buildDir* = getPkgRoot() / ".nasher" / "build"
+  pkgCfgFile* = getPkgRoot() / "nasher.cfg"
+  buildDir* = getPkgRoot() / ".nasher"
   srcDir* = getPkgRoot() / "src"
 
 const help* = """

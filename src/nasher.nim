@@ -15,7 +15,7 @@ proc nasherInit(initDir: string) =
     # TODO: allow user to input desired values before writing
     writeCfgFile(userCfgFile, userCfgText)
 
-  let nasherFile = initDir / ".nasher" / "nasher.cfg"
+  let nasherFile = initDir / "nasher.cfg"
   if not existsFile(nasherFile):
     notice(fmt"Initializing into {initDir}...")
     # TODO: allow user to input desired values before writing
