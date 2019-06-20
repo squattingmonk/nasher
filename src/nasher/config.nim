@@ -79,7 +79,7 @@ proc addBuild(cfg: var Config, build: Build) =
   if build.name.len() > 0:
     cfg.builds[build.name.normalize()] = build
 
-proc parseConfig*(fileName: string, cfg: var Config) =
+proc parseConfig*(cfg: var Config, fileName: string) =
   var f = newFileStream(fileName)
   if not isNil(f):
     info(fmt"Reading config file {fileName}")
@@ -178,6 +178,6 @@ proc dumpConfig(cfg: Config) =
 
 proc loadConfig*(): Config =
   result = initConfig()
-  parseConfig(userCfgFile, result)
-  parseConfig(pkgCfgFile, result)
-  dumpConfig(result)
+  result.parseConfig(getUserCfgFile())
+  result.parseConfig(getPkgCfgFile())
+  result.dumpConfig()

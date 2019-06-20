@@ -3,27 +3,65 @@ import os, osproc, strutils, logging
 import nasher/common
 import nasher/config
 import nasher/opts
+import nasher/erf
+import nasher/gff
 
 proc showHelp(kind: CommandKind) =
   echo help
 
 proc isNasherProject(): bool =
-  existsFile(pkgCfgFile)
+  existsFile(getPkgCfgFile())
 
-proc nasherInit(dir: string) =
+proc nasherUnpack(dir, file: string, cfg: var Config) =
+  if not existsFile(file):
+    fatal(fmt"Cannot unpack file {file}: file does not exist")
+    quit(QuitFailure)
+
+  let cacheDir = file.getCacheDir()
+
+  try:
+    createDir(cacheDir)
+  except OSError:
+    let msg = osErrorMsg(osLastError())
+    fatal(fmt"Could not create build directory {cacheDir}: {msg}")
+    quit(QuitFailure)
+
+  try:
+    extractErf(file, cacheDir)
+  except IOError:
+    fatal(fmt"Could not extract {file}")
+    quit(QuitFailure)
+
+  for ext in GffExtensions:
+    createDir(dir / ext)
+    for file in walkFiles(cacheDir / "*".addFileExt(ext)):
+      gffConvert(file, dir / ext)
+
+  createDir(dir / "nss")
+  for file in walkFiles(cacheDir / "*".addFileExt("nss")):
+    copyFileWithPermissions(file, dir / "nss" / file.extractFilename())
+
+proc nasherInit(dir, file: string) =
+  let userCfgFile = getUserCfgFile()
   if not existsFile(userCfgFile):
     # TODO: allow user to input desired values before writing
     writeCfgFile(userCfgFile, userCfgText)
 
-  let nasherFile = dir / "nasher.cfg"
-  if not existsFile(nasherFile):
+  let pkgCfgFile = dir / "nasher.cfg"
+  if not existsFile(pkgCfgFile):
     notice(fmt"Initializing into {dir}...")
     # TODO: allow user to input desired values before writing
-    writeCfgFile(nasherFile, pkgCfgText)
+    writeCfgFile(pkgCfgFile, pkgCfgText)
     notice("Successfully initialized project")
   else:
     error(fmt"{dir} is already a nasher project")
     quit(QuitFailure)
+
+  if file.len() > 0:
+    setCurrentDir(dir)
+    var cfg = loadConfig()
+    let filePath = file.relativePath(dir)
+    nasherUnpack(getSrcDir(), filePath, cfg)
 
 proc nasherList() =
   echo "Listing builds..."
@@ -33,9 +71,6 @@ proc nasherCompile(build: string) =
 
 proc nasherBuild(build: string) =
   echo fmt"Building {build}..."
-
-proc nasherUnpack(file, dir: string) =
-  echo fmt"Unpacking {file} into {dir}..."
 
 proc nasherInstall(file, dir: string) =
   echo fmt"Installing {file} into {dir}..."
@@ -134,15 +169,15 @@ when isMainModule:
     of cmdList:
       nasherList()
     of cmdInit:
-      nasherInit(args.cmd.dir)
+      nasherInit(args.cmd.dir, args.cmd.file)
     of cmdCompile:
       nasherCompile(args.cmd.build)
     of cmdBuild:
       nasherBuild(args.cmd.build)
     of cmdUnpack:
-      nasherUnpack(args.cmd.file, args.cmd.dir)
+      nasherUnpack(args.cmd.dir, args.cmd.file, cfg)
     of cmdInstall:
-      nasherInstall(args.cmd.file, args.cmd.dir)
+      nasherInstall(args.cmd.dir, args.cmd.file)
     of cmdNil:
       echo nasherVersion
 

@@ -11,4 +11,5 @@ bin           = @["nasher"]
 # Dependencies
 
 requires "nim >= 0.19.0"
+requires "neverwinter >= 1.2.4"
 # requires "glob >= 0.9.0"

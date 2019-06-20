@@ -11,15 +11,26 @@ proc getPkgRoot*: string =
   result = getCurrentDir()
 
   for dir in parentDirs(result):
-    if existsDir(dir / ".nasher"):
+    if existsFile(dir / "nasher.cfg"):
       return dir
+
+proc getUserCfgFile*: string =
+  getConfigDir() / "nasher" / "nasher.cfg"
+
+proc getPkgCfgFile*: string =
+  getPkgRoot() / "nasher.cfg"
+
+proc getSrcDir*: string =
+  getPkgRoot() / "src"
+
+proc getCacheDir*(file: string): string =
+  getPkgRoot() / ".nasher" / "cache" / file.extractFilename()
+
+proc getBuildDir*(build: string): string =
+  getPkgRoot() / ".nasher" / "build" / build
 
 let
   nwnInstallDir* = getHomeDir() / "Documents" / "Neverwinter Nights"
-  userCfgFile* = getConfigDir() / "nasher" / "nasher.cfg"
-  pkgCfgFile* = getPkgRoot() / "nasher.cfg"
-  buildDir* = getPkgRoot() / ".nasher"
-  srcDir* = getPkgRoot() / "src"
 
 const help* = """
 nasher: a utility for version-controlling Neverwinter Nights development

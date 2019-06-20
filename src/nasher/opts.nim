@@ -33,7 +33,7 @@ proc initCommand(options: var Options) =
     options.cmd.dir = getCurrentDir()
     options.cmd.file = ""
   of cmdUnpack:
-    options.cmd.dir = srcDir
+    options.cmd.dir = "src"
     options.cmd.file = ""
   of cmdInstall:
     options.cmd.dir = nwnInstallDir
@@ -64,7 +64,10 @@ proc parseArgument(key: string, result: var Options) =
   of cmdNil:
     assert(false)
   of cmdInit:
-    result.cmd.dir = key
+    if result.cmd.dir != getCurrentDir() or key == getCurrentDir():
+      result.cmd.file = key
+    else:
+      result.cmd.dir = key
   of cmdCompile, cmdBuild:
     result.cmd.build = key
   of cmdUnpack, cmdInstall:
