@@ -1,5 +1,5 @@
 import os, streams
-import neverwinter/erf # Requires neverwinter/resman to be exported
+import neverwinter/erf, neverwinter/resman
 
 proc extractErf*(fileName, destDir: string) =
   ## Extracts a .mod, .erf, or .hak file into destDir.
