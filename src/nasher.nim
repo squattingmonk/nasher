@@ -14,7 +14,7 @@ proc unpack(opts: Options) =
   let
     dir = opts.cmd.dir
     file = opts.cmd.file
-    cacheDir = file.getCacheDir()
+    cacheDir = file.getCacheDir
 
   if not existsFile(file):
     fatal(fmt"Cannot unpack file {file}: file does not exist")
@@ -45,7 +45,6 @@ proc unpack(opts: Options) =
 proc init(opts: var Options) =
   let
     dir = opts.cmd.dir
-    file = opts.cmd.file
     userCfgFile = getUserCfgFile()
     pkgCfgFile = dir / "nasher.cfg"
 
@@ -62,8 +61,12 @@ proc init(opts: var Options) =
   writeCfgFile(pkgCfgFile, pkgCfgText)
   notice("Successfully initialized project")
 
-  if file.len() > 0:
+  if opts.cmd.file.len() > 0:
+    let file = opts.cmd.file.absolutePath
     setCurrentDir(dir)
+    opts.cmd = initCommand(ckUnpack)
+    opts.cmd.file = file
+    opts.configs[1] = getPkgCfgFile()
     opts.cfg = loadConfig(opts.configs)
     unpack(opts)
 

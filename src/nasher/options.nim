@@ -30,19 +30,20 @@ proc initOptions(): Options =
   result.configs = @[getUserCfgFile(), getPkgCfgFile()]
   result.verbosity = lvlNotice
 
-proc initCommand(options: var Options) =
-  case options.cmd.kind
+proc initCommand*(kind: CommandKind): Command =
+  result = Command(kind: kind)
+  case kind
   of ckInit:
-    options.cmd.dir = getCurrentDir()
-    options.cmd.file = ""
+    result.dir = getCurrentDir()
+    result.file = ""
   of ckUnpack:
-    options.cmd.dir = getSrcDir()
-    options.cmd.file = ""
+    result.dir = getSrcDir()
+    result.file = ""
   of ckInstall:
-    options.cmd.dir = nwnInstallDir
-    options.cmd.file = ""
+    result.dir = nwnInstallDir
+    result.file = ""
   of ckCompile, ckPack:
-    options.cmd.target = ""
+    result.target = ""
   else:
     discard
 
@@ -56,9 +57,8 @@ proc parseCommandKind(cmd: string): CommandKind =
   of "install": ckInstall
   else: ckNil
 
-proc parseCommand(key: string, result: var Options) =
-    result.cmd = Command(kind: parseCommandKind(key))
-    initCommand(result)
+proc parseCommand(key: string): Command =
+  initCommand(parseCommandKind(key))
 
 proc parseArgument(key: string, result: var Options) =
   case result.cmd.kind
@@ -107,7 +107,7 @@ proc parseCmdLine*(): Options =
     case kind
     of cmdArgument:
       if result.cmd.kind == ckNil:
-        parseCommand(key, result)
+        result.cmd = parseCommand(key)
       else:
         parseArgument(key, result)
     of cmdLongOption, cmdShortOption:
