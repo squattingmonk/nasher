@@ -1,59 +1,60 @@
-import logging, parseopt, strutils
+import logging, os, parseopt, strutils
 
-import common
+import common, config
+export common, config
 
 type
   Options* = object
     cmd*: Command
+    cfg*: Config
+    configs*: seq[string]
     verbosity*: Level
     showVersion*: bool
     showHelp*: bool
 
   CommandKind* = enum
-    cmdNil, cmdInit, cmdCompile, cmdList, cmdBuild,
-    cmdUnpack, cmdInstall, cmdClean, cmdClobber
+    ckNil, ckInit, ckCompile, ckList, ckPack, ckUnpack, ckInstall 
 
   Command* = object
     case kind*: CommandKind
-    of cmdNil, cmdList, cmdClean, cmdClobber:
+    of ckNil, ckList:
       nil
-    of cmdCompile, cmdBuild:
-      build*: string
-    of cmdInit, cmdUnpack, cmdInstall:
+    of ckCompile, ckPack:
+      target*: string
+    of ckInit, ckUnpack, ckInstall:
       file*: string
       dir*: string
 
 proc initOptions(): Options =
-  result.cmd = Command(kind: cmdNil)
+  result.cmd = Command(kind: ckNil)
+  result.configs = @[getUserCfgFile(), getPkgCfgFile()]
   result.verbosity = lvlNotice
 
 proc initCommand(options: var Options) =
   case options.cmd.kind
-  of cmdInit:
+  of ckInit:
     options.cmd.dir = getCurrentDir()
     options.cmd.file = ""
-  of cmdUnpack:
-    options.cmd.dir = "src"
+  of ckUnpack:
+    options.cmd.dir = getSrcDir()
     options.cmd.file = ""
-  of cmdInstall:
+  of ckInstall:
     options.cmd.dir = nwnInstallDir
     options.cmd.file = ""
-  of cmdCompile, cmdBuild:
-    options.cmd.build = ""
+  of ckCompile, ckPack:
+    options.cmd.target = ""
   else:
     discard
 
 proc parseCommandKind(cmd: string): CommandKind =
   case cmd.normalize()
-  of "init": cmdInit
-  of "list": cmdList
-  of "compile": cmdCompile
-  of "build": cmdBuild
-  of "unpack": cmdUnpack
-  of "install": cmdInstall
-  of "clean": cmdClean
-  of "clobber": cmdClobber
-  else: cmdNil
+  of "init": ckInit
+  of "list": ckList
+  of "compile": ckCompile
+  of "pack": ckPack
+  of "unpack": ckUnpack
+  of "install": ckInstall
+  else: ckNil
 
 proc parseCommand(key: string, result: var Options) =
     result.cmd = Command(kind: parseCommandKind(key))
@@ -61,16 +62,16 @@ proc parseCommand(key: string, result: var Options) =
 
 proc parseArgument(key: string, result: var Options) =
   case result.cmd.kind
-  of cmdNil:
+  of ckNil:
     assert(false)
-  of cmdInit:
+  of ckInit:
     if result.cmd.dir != getCurrentDir() or key == getCurrentDir():
       result.cmd.file = key
     else:
       result.cmd.dir = key
-  of cmdCompile, cmdBuild:
-    result.cmd.build = key
-  of cmdUnpack, cmdInstall:
+  of ckCompile, ckPack:
+    result.cmd.target = key
+  of ckUnpack, ckInstall:
     if result.cmd.file != "":
       result.cmd.dir = key
     else:
@@ -80,24 +81,32 @@ proc parseArgument(key: string, result: var Options) =
 
 proc parseFlag(flag, value: string, result: var Options) =
   case flag
+  of "c", "config":
+    result.configs.add(value)
   of "h", "help":
     result.showHelp = true
   of "v", "version":
     result.showVersion = true
-  of "verbose":
+  of "debug":
     result.verbosity = lvlDebug
+  of "verbose":
+    result.verbosity = lvlInfo
   of "quiet":
     result.verbosity = lvlError
   else:
     raise newException(NasherError, "Unknown option --" & flag)
 
+const
+  longOpts = @["help", "version", "verbose", "debug", "quiet"]
+  shortOpts = {'h', 'v'}
+
 proc parseCmdLine*(): Options =
   result = initOptions()
 
-  for kind, key, value in getopt():
+  for kind, key, value in getopt(shortNoVal = shortOpts, longNoVal = longOpts):
     case kind
     of cmdArgument:
-      if result.cmd.kind == cmdNil:
+      if result.cmd.kind == ckNil:
         parseCommand(key, result)
       else:
         parseArgument(key, result)
@@ -107,9 +116,9 @@ proc parseCmdLine*(): Options =
       assert(false)
 
   # If no commands were entered, show the help message
-  if result.cmd.kind == cmdNil and not result.showVersion:
+  if result.cmd.kind == ckNil and not result.showVersion:
     result.showHelp = true
 
-  # The build and install commands must specify a file to operate on
-  if result.cmd.kind in {cmdUnpack, cmdInstall} and result.cmd.file.len == 0:
+  # The unpack and install commands must specify a file to operate on
+  if result.cmd.kind in {ckUnpack, ckInstall} and result.cmd.file.len == 0:
     result.showHelp = true

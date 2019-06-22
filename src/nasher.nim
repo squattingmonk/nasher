@@ -1,8 +1,6 @@
-import os, osproc, strutils, logging
+import os, osproc, strformat, strutils, logging, tables
 
-import nasher/common
-import nasher/config
-import nasher/opts
+import nasher/options
 import nasher/erf
 import nasher/gff
 
@@ -12,18 +10,21 @@ proc showHelp(kind: CommandKind) =
 proc isNasherProject(): bool =
   existsFile(getPkgCfgFile())
 
-proc nasherUnpack(dir, file: string, cfg: var Config) =
+proc unpack(opts: Options) =
+  let
+    dir = opts.cmd.dir
+    file = opts.cmd.file
+    cacheDir = file.getCacheDir()
+
   if not existsFile(file):
     fatal(fmt"Cannot unpack file {file}: file does not exist")
     quit(QuitFailure)
-
-  let cacheDir = file.getCacheDir()
 
   try:
     createDir(cacheDir)
   except OSError:
     let msg = osErrorMsg(osLastError())
-    fatal(fmt"Could not create build directory {cacheDir}: {msg}")
+    fatal(fmt"Could not create directory {cacheDir}: {msg}")
     quit(QuitFailure)
 
   try:
@@ -41,149 +42,75 @@ proc nasherUnpack(dir, file: string, cfg: var Config) =
   for file in walkFiles(cacheDir / "*".addFileExt("nss")):
     copyFileWithPermissions(file, dir / "nss" / file.extractFilename())
 
-proc nasherInit(dir, file: string) =
-  let userCfgFile = getUserCfgFile()
+proc init(opts: var Options) =
+  let
+    dir = opts.cmd.dir
+    file = opts.cmd.file
+    userCfgFile = getUserCfgFile()
+    pkgCfgFile = dir / "nasher.cfg"
+
   if not existsFile(userCfgFile):
     # TODO: allow user to input desired values before writing
     writeCfgFile(userCfgFile, userCfgText)
 
-  let pkgCfgFile = dir / "nasher.cfg"
-  if not existsFile(pkgCfgFile):
-    notice(fmt"Initializing into {dir}...")
-    # TODO: allow user to input desired values before writing
-    writeCfgFile(pkgCfgFile, pkgCfgText)
-    notice("Successfully initialized project")
-  else:
-    error(fmt"{dir} is already a nasher project")
+  if existsFile(pkgCfgFile):
+    fatal(fmt"{dir} is already a nasher project")
     quit(QuitFailure)
+
+  notice(fmt"Initializing into {dir}...")
+  # TODO: allow user to input desired values before writing
+  writeCfgFile(pkgCfgFile, pkgCfgText)
+  notice("Successfully initialized project")
 
   if file.len() > 0:
     setCurrentDir(dir)
-    var cfg = loadConfig()
-    let filePath = file.relativePath(dir)
-    nasherUnpack(getSrcDir(), filePath, cfg)
+    opts.cfg = loadConfig(opts.configs)
+    unpack(opts)
 
-proc nasherList() =
-  echo "Listing builds..."
+proc list(opts: Options) =
+  for target in opts.cfg.targets.values:
+    echo target.name
+    if opts.verbosity <= lvlInfo:
+      echo "  Description: ", target.description
+      echo "  File: ", target.file
+      for source in target.sources:
+        echo "  Source: ", source
 
-proc nasherCompile(build: string) =
-  echo fmt"Compiling build {build}..."
+proc compile(opts: Options) =
+  echo fmt"Compiling target {opts.cmd.target}..."
 
-proc nasherBuild(build: string) =
-  echo fmt"Building {build}..."
+proc pack(opts: Options) =
+  echo fmt"Packing {opts.cmd.target}..."
 
-proc nasherInstall(file, dir: string) =
-  echo fmt"Installing {file} into {dir}..."
+proc install(opts: Options) =
+  echo fmt"Installing {opts.cmd.file} into {opts.cmd.dir}..."
 
-proc nasherClean() =
-  echo "Cleaning..."
-
-proc nasherClobber() =
-  echo "Clobbering..."
-
-
-# proc nasherCompile() =
-#   if not existsDir(buildDir):
-#     try:
-#       say "Compiling scripts..."
-#       say "  * Creating build directory at " & buildDir
-#       createDir(buildDir)
-#     except:
-#       quit "Error: could not create build directory"
-
-#   let
-#     config = loadConfig(config_file)
-#     compiler = config.getOption("compiler", "binary")
-#     flags = config.getOption("compiler", "flags")
-
-#   # TODO: handle files from build section
-#   let files = @(args["<file>"])
-#   var outfile: string
-
-#   for file in files:
-#     for file in glob.walkGlob(file):
-#       outfile = "-r " & buildDir / splitFile(file).name & ".ncs"
-#       echo "{compiler} {flags} {outfile} {file}".fmt
-
-# proc nasherBuild(build: string = "build") =
-#   let config = loadConfig(config_file)
-#   let filename = config.getOption(build, "file")
-#   let filetype = splitFile(filename).ext.substr(1)
-#   case filetype
-#     of "erf", "hak", "mod":
-#       say "Building " & filename
-#     else:
-#       quit "Error: cannot build {filename}: invalid file type".fmt
-
-#   try:
-#     say "  * Creating build directory at " & buildDir
-#     createDir(buildDir)
-#   except:
-#     quit "Error: could not create build directory"
-
-#   setCurrentDir(root_dir)
-#   say "  * Converting to gff..."
-#   for file in walkGlob(config.getSectionValue(build, "gff")):
-#     discard execCmd("nwn-gff -i " & file & " -o " & build_dir / splitFile(file).name)
-
-#   say "  * Compiling scripts..."
-#   for file in walkGlob(config.getSectionValue(build, "nss")):
-#     copyFileWithPermissions(file, build_dir / file.extractFilename())
-
-#   nasherCompile()
-
-#   say " * Packing file..."
-#   let cmd = @["nwn-erf", if existsFile(filename): "-a" else: "-c",
-#               "--" & filetype, "-f " & filename, build_dir / "*"]
-#   discard execCmd(cmd.join(" "))
 
 
 
 
 when isMainModule:
-  let args = parseCmdLine()
+  var opts = parseCmdLine()
 
-  setLogFilter(args.verbosity)
+  setLogFilter(opts.verbosity)
   addHandler(newConsoleLogger(fmtStr = "[$levelname]: "))
-  debug(args)
+  debug(opts)
 
-  if args.cmd.kind notin {cmdNil, cmdInit}:
+  if opts.cmd.kind notin {ckNil, ckInit}:
     if not isNasherProject():
       fatal("This is not a nasher project. Please run nasher init.")
       quit(QuitFailure)
+    else:
+      opts.cfg = loadConfig(opts.configs)
 
-  var cfg: Config
-  if args.cmd.kind in {cmdList, cmdCompile, cmdBuild}:
-    cfg = loadConfig()
-
-  
-  if args.showHelp:
-    showHelp(args.cmd.kind)
+  if opts.showHelp:
+    showHelp(opts.cmd.kind)
   else:
-    case args.cmd.kind
-    of cmdClean:
-      nasherClean()
-    of cmdClobber:
-      nasherClean()
-      nasherClobber()
-    of cmdList:
-      nasherList()
-    of cmdInit:
-      nasherInit(args.cmd.dir, args.cmd.file)
-    of cmdCompile:
-      nasherCompile(args.cmd.build)
-    of cmdBuild:
-      nasherBuild(args.cmd.build)
-    of cmdUnpack:
-      nasherUnpack(args.cmd.dir, args.cmd.file, cfg)
-    of cmdInstall:
-      nasherInstall(args.cmd.dir, args.cmd.file)
-    of cmdNil:
-      echo nasherVersion
-
-  # if args["clean"]:
-  #   removeDir(build_dir)
-  # elif args["clobber"]:
-  #   removeDir(build_dir)
-  #   for file in walkGlob("*.{erf,hak,mod}", root = root_dir):
-  #     removeFile(file)
+    case opts.cmd.kind
+    of ckList: list(opts)
+    of ckInit: init(opts)
+    of ckCompile: compile(opts)
+    of ckPack: pack(opts)
+    of ckUnpack: unpack(opts)
+    of ckInstall: install(opts)
+    of ckNil: echo nasherVersion

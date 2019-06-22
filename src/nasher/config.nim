@@ -1,4 +1,4 @@
-import logging, os, osproc, parsecfg, streams, strutils, tables
+import logging, os, osproc, parsecfg, streams, strformat, strutils, tables
 
 import common
 
@@ -11,14 +11,6 @@ install = "~/Documents/Neverwinter Nights"
 [Compiler]
 binary = "nwnsc"
 flags = "-lowqey"
-
-[ErfUtil]
-binary = "nwn_erf"
-flags = ""
-
-[GffUtil]
-binary = "nwn_gff"
-flags = "-p"
 """
 
 const pkgCfgText* = """
@@ -28,10 +20,13 @@ description = "This is a demo package"
 version = "0.1.0"
 author = "Squatting Monk <squattingmonk@gmail.com>"
 url = "www.example.com"
-flat = false
 
-[Build]
-name = "demo"
+[sm-utils]
+description = "These are utilities"
+file = "sm_utils.erf"
+source = "../sm-utils/src/*"
+
+[Demo]
 description = "This is a demo module"
 file = "demo.mod"
 source = "src/*"
@@ -45,11 +40,11 @@ type
     user*: tuple[name, email: string]
     name*, description*, version*, url*: string
     flat*: bool
-    compiler*, erf*, gff*: tuple[binary: string, flags: seq[string]]
+    compiler*: tuple[binary: string, flags: seq[string]]
     authors*: seq[string]
-    builds*: Table[string, Build]
+    targets*: OrderedTable[string, Target]
 
-  Build = object
+  Target = object
     name*, file*, description*: string
     sources*: seq[string]
 
@@ -67,38 +62,44 @@ proc writeCfgFile*(fileName, text: string) =
     quit(QuitFailure)
 
 proc initConfig(): Config =
-  result.install = getHomeDir() / "Documents" / "Neverwinter Nights"
+  result.install = nwnInstallDir
   result.compiler = ("nwnsc", @["-lowqey"])
-  result.erf = ("nwn_erf", @[""])
-  result.gff = ("nwn_gff", @[""])
 
-proc initBuild(): Build =
-  result
+proc initTarget(name: string): Target =
+  case name.normalize
+  of "user", "compiler", "package":
+    discard
+  else:
+    result.name = name
 
-proc addBuild(cfg: var Config, build: Build) =
-  if build.name.len() > 0:
-    cfg.builds[build.name.normalize()] = build
+proc addTarget(cfg: var Config, target: Target) =
+  if target.name.len() > 0:
+    cfg.targets[target.name.normalize] = target
 
 proc parseConfig*(cfg: var Config, fileName: string) =
   var f = newFileStream(fileName)
   if not isNil(f):
-    info(fmt"Reading config file {fileName}")
+    debug(fmt"Reading config file {fileName}")
     var p: CfgParser
     var section, key: string
-    var build = initBuild()
+    var target: Target
     p.open(f, fileName)
     while true:
       var e = p.next()
       case e.kind
       of cfgEof: break
       of cfgSectionStart:
-        cfg.addBuild(build)
+        # Add any finished target to the list and prep a new one
+        cfg.addTarget(target)
+        target = initTarget(e.section)
+
         debug(fmt"Parsing section [{e.section}]")
-        section = e.section.normalize()
+        section = e.section.normalize
+
       of cfgKeyValuePair, cfgOption:
-        key = e.key.normalize()
+        key = e.key.normalize
         debug(fmt"Found key/value pair {key}: {e.value}")
-        case section
+        case section.normalize
         of "user":
           case key:
           of "name": cfg.user.name = e.value
@@ -110,16 +111,6 @@ proc parseConfig*(cfg: var Config, fileName: string) =
           of "binary": cfg.compiler.binary = e.value
           of "flags": cfg.compiler.flags.add(e.value)
           else: discard
-        of "erfutil":
-          case key
-          of "binary": cfg.erf.binary = e.value
-          of "flags": cfg.erf.flags.add(e.value)
-          else: discard
-        of "gffutil":
-          case key
-          of "binary": cfg.gff.binary = e.value
-          of "flags": cfg.gff.flags.add(e.value)
-          else: discard
         of "package":
           case key
           of "name": cfg.name = e.value
@@ -129,22 +120,20 @@ proc parseConfig*(cfg: var Config, fileName: string) =
           of "url": cfg.url = e.value
           of "flat":
             try:
-              cfg.flat = e.value.parseBool()
+              cfg.flat = parseBool(e.value)
             except ValueError:
-              let shortName = fileName.extractFilename()
+              let shortName = fileName.extractFilename
               error(fmt"Unknown value '{e.value}' for key '{e.key}' in {shortName}")
           else: discard
-        of "build":
-          case key
-          of "name": build.name = e.value
-          of "description": build.description = e.value
-          of "file": build.file = e.value
-          of "source": build.sources.add(e.value)
-          else: discard
         else:
-          info(fmt"Unkown section [{section}]")
+          case key
+          of "description": target.description = e.value
+          of "file": target.file = e.value
+          of "source": target.sources.add(e.value)
+          else: discard
       of cfgError:
         error(e.msg)
+    cfg.addTarget(target)
     p.close()
   else:
     fatal(fmt"Cannot open {fileName}")
@@ -166,18 +155,18 @@ proc dumpConfig(cfg: Config) =
   for author in cfg.authors:
     debug "author: ", author
 
-  for key, build in cfg.builds.pairs():
-    debug "builds[", key, "].name: ", build.name.escape()
-    debug "builds[", key, "].description: ", build.description.escape()
-    debug "builds[", key, "].file: ", build.file.escape()
-    for source in build.sources:
-      debug "builds[", key, "].source: ", source.escape()
+  for key, target in cfg.targets.pairs():
+    debug "targets[", key, "].name: ", target.name.escape()
+    debug "targets[", key, "].description: ", target.description.escape()
+    debug "targets[", key, "].file: ", target.file.escape()
+    for source in target.sources:
+      debug "targets[", key, "].source: ", source.escape()
 
   debug("End dump")
 
 
-proc loadConfig*(): Config =
+proc loadConfig*(configs: seq[string]): Config =
   result = initConfig()
-  result.parseConfig(getUserCfgFile())
-  result.parseConfig(getPkgCfgFile())
+  for config in configs:
+    result.parseConfig(config)
   result.dumpConfig()
