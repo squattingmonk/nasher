@@ -60,7 +60,7 @@ proc init(opts: var Options) =
 
   if opts.cmd.file.len() > 0:
     opts.cmd.dir = getSrcDir(dir)
-    opts.configs[1] = pkgCfgFile
+    opts.configs.add(getPkgCfgFile(dir))
     opts.cfg = loadConfig(opts.configs)
     unpack(opts)
 
