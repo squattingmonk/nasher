@@ -100,10 +100,10 @@ const
   longOpts = @["help", "version", "verbose", "debug", "quiet"]
   shortOpts = {'h', 'v'}
 
-proc parseCmdLine*(): Options =
+proc parseCmdLine*(params: seq[string] = @[]): Options =
   result = initOptions()
 
-  for kind, key, value in getopt(shortNoVal = shortOpts, longNoVal = longOpts):
+  for kind, key, value in getopt(params, shortNoVal = shortOpts, longNoVal = longOpts):
     case kind
     of cmdArgument:
       if result.cmd.kind == ckNil:
