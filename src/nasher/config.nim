@@ -49,16 +49,12 @@ type
     sources*: seq[string]
 
 proc writeCfgFile*(fileName, text: string) =
-  let
-    absPath = if fileName.isAbsolute(): fileName else: getCurrentDir() / fileName
-    relPath = absPath.relativePath(getCurrentDir())
-
   try:
-    notice(fmt"Creating configuration file at {relPath}")
+    notice(fmt"Creating configuration file at {fileName}")
     createDir(fileName.splitFile().dir)
     writeFile(fileName, text)
   except IOError:
-    fatal(fmt"Could not create config file at {relPath}")
+    fatal(fmt"Could not create config file at {fileName}")
     quit(QuitFailure)
 
 proc initConfig(): Config =
@@ -75,6 +71,40 @@ proc initTarget(name: string): Target =
 proc addTarget(cfg: var Config, target: Target) =
   if target.name.len() > 0:
     cfg.targets[target.name.normalize] = target
+
+proc parseUser(cfg: var Config, key, value: string) =
+  case key:
+  of "name": cfg.user.name = value
+  of "email": cfg.user.email = value
+  of "install": cfg.install = value
+  else:
+    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
+
+proc parseCompiler(cfg: var Config, key, value: string) =
+  case key
+  of "binary": cfg.compiler.binary = value
+  of "flags": cfg.compiler.flags.add(value)
+  else:
+    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
+
+proc parsePackage(cfg: var Config, key, value: string) =
+  case key
+  of "name": cfg.name = value
+  of "description": cfg.description = value
+  of "version": cfg.version = value
+  of "author": cfg.authors.add(value)
+  of "url": cfg.url = value
+  of "flat": cfg.flat = parseBool(value)
+  else:
+    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
+
+proc parseTarget(target: var Target, key, value: string) =
+  case key
+  of "description": target.description = value
+  of "file": target.file = value
+  of "source": target.sources.add(value)
+  else:
+    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
 
 proc parseConfig*(cfg: var Config, fileName: string) =
   var f = newFileStream(fileName)
@@ -95,44 +125,30 @@ proc parseConfig*(cfg: var Config, fileName: string) =
 
         debug(fmt"Parsing section [{e.section}]")
         section = e.section.normalize
-
       of cfgKeyValuePair, cfgOption:
         key = e.key.normalize
         debug(fmt"Found key/value pair {key}: {e.value}")
-        case section.normalize
-        of "user":
-          case key:
-          of "name": cfg.user.name = e.value
-          of "email": cfg.user.email = e.value
-          of "install": cfg.install = e.value
-          else: discard
-        of "compiler":
-          case key
-          of "binary": cfg.compiler.binary = e.value
-          of "flags": cfg.compiler.flags.add(e.value)
-          else: discard
-        of "package":
-          case key
-          of "name": cfg.name = e.value
-          of "description": cfg.description = e.value
-          of "version": cfg.version = e.value
-          of "author": cfg.authors.add(e.value)
-          of "url": cfg.url = e.value
-          of "flat":
-            try:
-              cfg.flat = parseBool(e.value)
-            except ValueError:
-              let shortName = fileName.extractFilename
-              error(fmt"Unknown value '{e.value}' for key '{e.key}' in {shortName}")
-          else: discard
-        else:
-          case key
-          of "description": target.description = e.value
-          of "file": target.file = e.value
-          of "source": target.sources.add(e.value)
-          else: discard
+        try:
+          case section
+          of "user":
+            parseUser(cfg, key, e.value)
+          of "compiler":
+            parseCompiler(cfg, key, e.value)
+          of "package":
+            parsePackage(cfg, key, e.value)
+          else:
+            parseTarget(target, key, e.value)
+        except NasherError:
+          let msg = getCurrentExceptionMsg()
+          error(fmt"Error parsing {fileName.extractFilename}: {msg}")
+        except ValueError:
+          fatal(fmt"Error parsing {fileName.extractFilename}:")
+          fatal(fmt"  Unknown value '{e.value}' for key '{e.key}' in [{section}]")
+          quit(QuitFailure)
       of cfgError:
         error(e.msg)
+
+    # Add any final target to the list
     cfg.addTarget(target)
     p.close()
   else:
