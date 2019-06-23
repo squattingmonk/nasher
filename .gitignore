@@ -1,1 +1,5 @@
 /nasher
+
+# Ignore tests
+/tests/test_*
+!/tests/test_*.nim

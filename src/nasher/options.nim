@@ -27,7 +27,6 @@ type
 
 proc initOptions(): Options =
   result.cmd = Command(kind: ckNil)
-  result.configs = @[getUserCfgFile(), getPkgCfgFile()]
   result.verbosity = lvlNotice
 
 proc initCommand*(kind: CommandKind): Command =
@@ -122,3 +121,15 @@ proc parseCmdLine*(params: seq[string] = @[]): Options =
   # The unpack and install commands must specify a file to operate on
   if result.cmd.kind in {ckUnpack, ckInstall} and result.cmd.file.len == 0:
     result.showHelp = true
+
+  # Load default configs if not overridden by the user
+  if result.configs.len == 0:
+    result.configs.add(getUserCfgFile())
+
+    case result.cmd.kind
+    of ckList, ckPack, ckCompile:
+      result.configs.add(getPkgCfgFile())
+    of ckUnpack, ckInstall:
+      result.configs.add(getPkgCfgFile(result.cmd.dir))
+    else:
+      discard
