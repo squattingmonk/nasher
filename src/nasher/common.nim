@@ -5,8 +5,9 @@ const nasherVersion* = "nasher 0.1.0"
 type
   NasherError* = object of Exception
 
-proc getPkgRoot*: string =
-  result = getCurrentDir()
+proc getPkgRoot*(baseDir: string): string =
+  ## Returns the first parent of baseDir that contains a nasher config
+  result = baseDir.absolutePath()
 
   for dir in parentDirs(result):
     if existsFile(dir / "nasher.cfg"):
@@ -15,17 +16,21 @@ proc getPkgRoot*: string =
 proc getUserCfgFile*: string =
   getConfigDir() / "nasher" / "nasher.cfg"
 
-proc getPkgCfgFile*: string =
-  getPkgRoot() / "nasher.cfg"
+proc getPkgCfgFile*(baseDir = getCurrentDir()): string =
+  getPkgRoot(baseDir) / "nasher.cfg"
 
-proc getSrcDir*: string =
-  getPkgRoot() / "src"
+proc getSrcDir*(baseDir = getCurrentDir()): string =
+  getPkgRoot(baseDir) / "src"
 
-proc getCacheDir*(file: string): string =
-  getPkgRoot() / ".nasher" / "cache" / file.extractFilename()
+proc getCacheDir*(file: string, baseDir = getCurrentDir()): string =
+  getPkgRoot(baseDir) / ".nasher" / "cache" / file.extractFilename()
 
-proc getBuildDir*(build: string): string =
-  getPkgRoot() / ".nasher" / "build" / build
+proc getBuildDir*(build: string, baseDir = getCurrentDir()): string =
+  getPkgRoot(baseDir) / ".nasher" / "build" / build
+
+proc isNasherProject*(dir = getCurrentDir()): bool =
+  existsFile(getPkgCfgFile(dir))
+
 
 let
   nwnInstallDir* = getHomeDir() / "Documents" / "Neverwinter Nights"

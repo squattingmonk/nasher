@@ -7,14 +7,11 @@ import nasher/gff
 proc showHelp(kind: CommandKind) =
   echo help
 
-proc isNasherProject(): bool =
-  existsFile(getPkgCfgFile())
-
 proc unpack(opts: Options) =
   let
     dir = opts.cmd.dir
     file = opts.cmd.file
-    cacheDir = file.getCacheDir
+    cacheDir = file.getCacheDir(dir)
 
   if not existsFile(file):
     fatal(fmt"Cannot unpack file {file}: file does not exist")
@@ -62,11 +59,8 @@ proc init(opts: var Options) =
   notice("Successfully initialized project")
 
   if opts.cmd.file.len() > 0:
-    let file = opts.cmd.file.absolutePath
-    setCurrentDir(dir)
-    opts.cmd = initCommand(ckUnpack)
-    opts.cmd.file = file
-    opts.configs[1] = getPkgCfgFile()
+    opts.cmd.dir = getSrcDir(dir)
+    opts.configs[1] = pkgCfgFile
     opts.cfg = loadConfig(opts.configs)
     unpack(opts)
 
