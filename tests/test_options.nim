@@ -29,27 +29,25 @@ suite "Command-line flags":
       parseCmdLine(@["-v"]).showVersion
       parseCmdLine(@["--version"]).showVersion
 
-  test "Load additional configs with -c , --config":
+  test "Load additional configs with --config":
     var
       configs = @[getUserCfgFile()]
-    
+
     check: # User config only
       parseCmdLine(@[""]).configs == configs
       parseCmdLine(@["init"]).configs == configs
-    
+
     configs.add(getPkgCfgFile("foo"))
     check: # User + package config
-      parseCmdLine(@["unpack", "bar.mod", "foo"]).configs == configs
-    
+      configs == parseCmdLine(@["unpack", "bar.mod", "foo"]).configs
+
     configs = @["a.cfg"]
     check: # Override default configs
-      parseCmdLine(@["-c: a.cfg"]).configs == configs
-      parseCmdLine(@["--config: a.cfg"]).configs == configs
+      configs == parseCmdLine(@["--config: a.cfg"]).configs
 
     configs.add("b.cfg")
     check: # Override default configs with multiple configs
-      parseCmdLine(@["-c: a.cfg", "-c = b.cfg"]).configs == configs
-      parseCmdLine(@["--config: a.cfg", "--config = b.cfg"]).configs == configs
+      configs == parseCmdLine(@["--config", "a.cfg", "--config", "b.cfg"]).configs
 
 
 

@@ -80,7 +80,7 @@ proc parseArgument(key: string, result: var Options) =
 
 proc parseFlag(flag, value: string, result: var Options) =
   case flag
-  of "c", "config":
+  of "config":
     result.configs.add(value)
   of "h", "help":
     result.showHelp = true
