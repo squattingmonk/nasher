@@ -70,19 +70,19 @@ proc addTarget(cfg: var Config, target: Target) =
     cfg.targets[target.name.normalize] = target
 
 proc parseUser(cfg: var Config, key, value: string) =
-  case key:
+  case key
   of "name": cfg.user.name = value
   of "email": cfg.user.email = value
   of "install": cfg.install = value
   else:
-    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
+    error(fmt"Unknown key/value pair '{key}={value}'")
 
 proc parseCompiler(cfg: var Config, key, value: string) =
   case key
   of "binary": cfg.compiler.binary = value
   of "flags": cfg.compiler.flags.add(value)
   else:
-    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
+    error(fmt"Unknown key/value pair '{key}={value}'")
 
 proc parsePackage(cfg: var Config, key, value: string) =
   case key
@@ -93,7 +93,7 @@ proc parsePackage(cfg: var Config, key, value: string) =
   of "url": cfg.url = value
   of "flat": cfg.flat = parseBool(value)
   else:
-    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
+    error(fmt"Unknown key/value pair '{key}={value}'")
 
 proc parseTarget(target: var Target, key, value: string) =
   case key
