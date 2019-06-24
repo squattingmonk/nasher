@@ -5,7 +5,18 @@ import nasher/erf
 import nasher/gff
 
 proc showHelp(kind: CommandKind) =
+  let help =
+    case kind
+    of ckInit: helpInit
+    of ckList: helpList
+    of ckCompile: helpCompile
+    of ckPack: helpPack
+    of ckUnpack: helpUnpack
+    of ckInstall: helpInstall
+    else: helpAll
+
   echo help
+  echo helpOptions
 
 proc unpack(opts: Options) =
   let

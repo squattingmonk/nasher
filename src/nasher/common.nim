@@ -47,35 +47,135 @@ proc isNasherProject*(dir = getCurrentDir()): bool =
 let
   nwnInstallDir* = getHomeDir() / "Documents" / "Neverwinter Nights"
 
-const
-  help* = """
-    nasher: a utility for version-controlling Neverwinter Nights development
+const helpAll* = """
+nasher: a build tool for Neverwinter Nights projects
 
-    Usage:
-      nasher init [<dir>]
-      nasher compile [<build>]
-      nasher build [<build>]
-      nasher unpack <file> [<dir>] 
-      nasher install <file> [<dir>]
-      nasher (list | clean | clobber)
+Usage:
+  nasher init [options] [<dir> [<file>]]
+  nasher list [options]
+  nasher compile [options] [<target>]
+  nasher pack [options] [<target>]
+  nasher unpack [options] <file> [<dir>]
+  nasher install [options] <file> [<dir>]
 
-    Commands:
-      init <dir>            Initializes a nasher repository in <dir>
-      list                  Lists the names and descriptions of all builds
-      clean                 Removes the build directory
-      clobber               Removes the build directory and all built products
-      compile <build>       Compiles all nss sources for <build>
-      build <build>         Converts, compiles, and packs <build>'s sources
-      unpack <file>         Unpacks <file> into the source tree
-      unpack <file> <dir>   Unpacks <file> into the source tree in <dir>
-      install <file> <dir>  Installs <file> at <dir> (defaults to the NWN install)
+Commands:
+  init           Initializes a nasher repository
+  list           Lists the names and descriptions of all build targets
+  compile        Compiles all nss sources for a build target
+  pack           Converts, compiles, and packs all sources for a build target
+  unpack         Unpacks a file into the source tree
+  install        Installs a file to a directory (defaults to the NWN install)
+"""
 
-    Global Options:
-      -h, --help            Display help for nasher or one of its commands
-      -v, --version         Display version information
+const helpOptions* ="""
+Global Options:
+  -h, --help     Display help for nasher or one of its commands
+  -v, --version  Display version information
+  --config FILE  Use FILE rather than default config files (can be repeated)
 
-    Logging:
-      --verbose             Turn on debug logging
-      --quiet               Turn off all logging except errors
-    """
+Logging:
+  --debug        Enable debug logging
+  --verbose      Enable additional messages about normal operation
+  --quiet        Disable all logging except fatal errors
+"""
 
+const helpInit* = """
+Usage:
+  nasher init [options] [<dir> [<file>]]
+
+Description:
+  Initializes a directory as a nasher project. If supplied, <dir> will be
+  created if needed and set as the project root; otherwise, the current
+  directory will be the project root.
+
+  If supplied, <file> will be unpacked into the project root's source tree.
+"""
+
+const helpList* = """
+Usage:
+  nasher list [options]
+
+Description:
+  Lists the names of all build targets. These names can be passed to the compile
+  or pack commands. If called with --verbose, also lists the descriptions,
+  source files, and the filename of the final target.
+"""
+
+const helpCompile* = """
+Usage:
+  nasher compile [options] [<target>]
+
+Description:
+  Compiles all nss sources for <target>. If <target> is not supplied, the first
+  target supplied by the config files will be compiled. The input and output
+  files are placed in $PKG_ROOT/.nasher/build/<target>.
+
+  Compilation of scripts is handled automatically by 'nasher pack', so you only
+  need to use this if you want to compile the scripts without converting gff
+  sources and packing the target file.
+
+Options:
+  --clean        Remove all files from the build directory before compiling
+"""
+
+const helpPack* = """
+Usage:
+  nasher pack [options] [<target>]
+
+Description:
+  Converts, compiles, and packs all sources for <target>. If <target> is not
+  supplied, the first target supplied by the config files will be packed. The
+  assembled files are placed in $PKG_ROOT/.nasher/build/<target>, but the packed
+  file is placed in $PKG_ROOT.
+
+  If the packed file would overwrite an existing file, you will be prompted to
+  overwrite the file. The newly packaged file will have a modification time
+  equal to the modification time of the newest source file. If the packed file
+  is newer than the existing file, the default is to overwrite the existing file.
+
+Options:
+  --clean        Remove all files from the build directory before packing
+  --yes, --no    Automatically answer yes/no to the overwrite prompt
+  --default      Automatically accept the default answer to the overwrite prompt
+"""
+
+const helpUnpack* = """
+Usage:
+  nasher unpack [options] <file> [<dir>]
+
+Description:
+  Unpacks <file> into the source tree (default: $PKG_ROOT/src), or <dir> if
+  supplied.
+
+  By default, the files are placed directly into the source folder. To customize
+  the location of a file in the source tree, you can add a [FileMap] section to
+  the package config. Each pattern in the filemap is tried until one matches the
+  file. When a match is found, it is placed into the appropriate folder.
+
+  If an unpacked source would overwrite an existing source, you will be prompted
+  to overwrite the file. The newly unpacked file will have a modification time
+  less than or equal to the modification time of the file being unpacked. If the
+  source file is newer than the existing file, the default is to overwrite the
+  existing file.
+
+Options:
+  --yes, --no    Automatically answer yes/no to the overwrite prompt
+  --default      Automatically accept the default answer to the overwrite prompt
+"""
+
+const helpInstall* = """
+Usage:
+  nasher install [options] <file> [<dir>]
+
+Description:
+  Installs <file> into the NWN installation directory, or <dir> if supplied. The
+  location of the NWN install can be set in the [User] section of the global
+  nasher configuration file (default '~/Documents/Neverwinter Nights').
+
+  If the file to be installed would overwrite an existing file, you will be
+  prompted to overwrite it. The default answer is to keep the newer file.
+
+Options:
+  --yes, --no    Automatically answer yes/no to the overwrite prompt
+  --default      Automatically accept the default answer to the overwrite prompt
+"""
