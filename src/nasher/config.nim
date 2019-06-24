@@ -49,13 +49,10 @@ type
     sources*: seq[string]
 
 proc writeCfgFile*(fileName, text: string) =
-  try:
+  tryOrQuit(fmt"Could not create config file at {fileName}"):
     notice(fmt"Creating configuration file at {fileName}")
     createDir(fileName.splitFile().dir)
     writeFile(fileName, text)
-  except IOError:
-    fatal(fmt"Could not create config file at {fileName}")
-    quit(QuitFailure)
 
 proc initConfig(): Config =
   result.install = nwnInstallDir
@@ -104,56 +101,45 @@ proc parseTarget(target: var Target, key, value: string) =
   of "file": target.file = value
   of "source": target.sources.add(value)
   else:
-    raise newException(NasherError, fmt"Unknown key/value pair '{key}={value}'")
+    error(fmt"Unknown key/value pair '{key}={value}'")
 
 proc parseConfig*(cfg: var Config, fileName: string) =
   var f = newFileStream(fileName)
-  if not isNil(f):
-    debug(fmt"Reading config file {fileName}")
-    var p: CfgParser
-    var section, key: string
-    var target: Target
-    p.open(f, fileName)
-    while true:
-      var e = p.next()
-      case e.kind
-      of cfgEof: break
-      of cfgSectionStart:
-        # Add any finished target to the list and prep a new one
-        cfg.addTarget(target)
-        target = initTarget(e.section)
+  if isNil(f):
+    quit(fmt"Cannot open config file: {fileName}", QuitFailure)
 
-        debug(fmt"Parsing section [{e.section}]")
-        section = e.section.normalize
-      of cfgKeyValuePair, cfgOption:
-        key = e.key.normalize
-        debug(fmt"Found key/value pair {key}: {e.value}")
-        try:
-          case section
-          of "user":
-            parseUser(cfg, key, e.value)
-          of "compiler":
-            parseCompiler(cfg, key, e.value)
-          of "package":
-            parsePackage(cfg, key, e.value)
-          else:
-            parseTarget(target, key, e.value)
-        except NasherError:
-          let msg = getCurrentExceptionMsg()
-          error(fmt"Error parsing {fileName.extractFilename}: {msg}")
-        except ValueError:
-          fatal(fmt"Error parsing {fileName.extractFilename}:")
-          fatal(fmt"  Unknown value '{e.value}' for key '{e.key}' in [{section}]")
-          quit(QuitFailure)
-      of cfgError:
-        error(e.msg)
+  debug(fmt"Reading config file {fileName}")
+  var p: CfgParser
+  var section, key: string
+  var target: Target
+  p.open(f, fileName)
+  while true:
+    var e = p.next()
+    case e.kind
+    of cfgEof: break
+    of cfgSectionStart:
+      cfg.addTarget(target)
+      target = initTarget(e.section)
+      debug(fmt"Parsing section [{e.section}]")
+      section = e.section.normalize
 
-    # Add any final target to the list
-    cfg.addTarget(target)
-    p.close()
-  else:
-    fatal(fmt"Cannot open {fileName}")
-    quit(QuitFailure)
+    of cfgKeyValuePair, cfgOption:
+      key = e.key.normalize
+      debug(fmt"Found key/value pair {key}: {e.value}")
+      tryOrQuit(fmt"Error parsing {fileName}: {getCurrentExceptionMsg()}"):
+        case section
+        of "user":
+          parseUser(cfg, key, e.value)
+        of "compiler":
+          parseCompiler(cfg, key, e.value)
+        of "package":
+          parsePackage(cfg, key, e.value)
+        else:
+          parseTarget(target, key, e.value)
+    of cfgError:
+      error(e.msg)
+  cfg.addTarget(target)
+  p.close()
 
 proc dumpConfig(cfg: Config) =
   if getLogFilter() != lvlDebug:

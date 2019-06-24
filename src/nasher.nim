@@ -17,18 +17,11 @@ proc unpack(opts: Options) =
     fatal(fmt"Cannot unpack file {file}: file does not exist")
     quit(QuitFailure)
 
-  try:
+  tryOrQuit(fmt"Could not create directory {cacheDir}"):
     createDir(cacheDir)
-  except OSError:
-    let msg = osErrorMsg(osLastError())
-    fatal(fmt"Could not create directory {cacheDir}: {msg}")
-    quit(QuitFailure)
 
-  try:
+  tryOrQuit(fmt"Could not extract {file}"):
     extractErf(file, cacheDir)
-  except IOError:
-    fatal(fmt"Could not extract {file}")
-    quit(QuitFailure)
 
   for ext in GffExtensions:
     createDir(dir / ext)

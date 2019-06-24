@@ -5,6 +5,18 @@ const nasherVersion* = "nasher 0.1.0"
 type
   NasherError* = object of Exception
 
+template tryOrQuit*(msg: string, statements: untyped) =
+  try:
+    statements
+  except:
+    quit(msg, QuitFailure)
+
+template tryOrQuit*(statements: untyped) =
+  try:
+    statements
+  except:
+    quit(getCurrentExceptionMsg(), QuitFailure)
+
 proc getPkgRoot*(baseDir: string): string =
   ## Returns the first parent of baseDir that contains a nasher config
   result = baseDir.absolutePath()
