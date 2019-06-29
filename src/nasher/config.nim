@@ -21,12 +21,14 @@ version = "0.1.0"
 author = "Squatting Monk <squattingmonk@gmail.com>"
 url = "www.example.com"
 
-[sm-utils]
+[Target]
+name = "sm-utils"
 description = "These are utilities"
 file = "sm_utils.erf"
 source = "../sm-utils/src/*"
 
-[Demo]
+[Target]
+name = "Demo"
 description = "This is a demo module"
 file = "demo.mod"
 source = "src/*"
@@ -58,16 +60,12 @@ proc initConfig(): Config =
   result.install = nwnInstallDir
   result.compiler = ("nwnsc", @["-lowqey"])
 
-proc initTarget(name: string): Target =
-  case name.normalize
-  of "user", "compiler", "package":
-    discard
-  else:
-    result.name = name
+proc initTarget(): Target =
+  result.name = ""
 
 proc addTarget(cfg: var Config, target: Target) =
   if target.name.len() > 0:
-    cfg.targets[target.name.normalize] = target
+    cfg.targets[target.name] = target
 
 proc parseUser(cfg: var Config, key, value: string) =
   case key
@@ -97,6 +95,7 @@ proc parsePackage(cfg: var Config, key, value: string) =
 
 proc parseTarget(target: var Target, key, value: string) =
   case key
+  of "name": target.name = value.normalize
   of "description": target.description = value
   of "file": target.file = value
   of "source": target.sources.add(value)
@@ -119,9 +118,10 @@ proc parseConfig*(cfg: var Config, fileName: string) =
     of cfgEof: break
     of cfgSectionStart:
       cfg.addTarget(target)
-      target = initTarget(e.section)
+
       debug(fmt"Parsing section [{e.section}]")
       section = e.section.normalize
+      target = initTarget()
 
     of cfgKeyValuePair, cfgOption:
       key = e.key.normalize
@@ -134,8 +134,10 @@ proc parseConfig*(cfg: var Config, fileName: string) =
           parseCompiler(cfg, key, e.value)
         of "package":
           parsePackage(cfg, key, e.value)
-        else:
+        of "target":
           parseTarget(target, key, e.value)
+        else:
+          discard
     of cfgError:
       error(e.msg)
   cfg.addTarget(target)
