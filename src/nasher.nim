@@ -191,7 +191,7 @@ proc install(opts: Options) =
     if not overwrite:
       quit("Aborting...")
 
-    echo "Installing..."
+  copyFile(opts.cmd.file, dir / file)
 
 
 
