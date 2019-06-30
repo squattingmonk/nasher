@@ -69,19 +69,88 @@ proc init(opts: var Options) =
     unpack(opts)
 
 proc list(opts: Options) =
-  for target in opts.cfg.targets.values:
-    echo target.name
-    if opts.verbosity <= lvlInfo:
-      echo "  Description: ", target.description
-      echo "  File: ", target.file
-      for source in target.sources:
-        echo "  Source: ", source
+  tryOrQuit("No targets found. Please check your nasher.cfg."):
+    for target in opts.cfg.targets.values:
+      echo target.name
+      if opts.verbosity <= lvlInfo:
+        echo "  Description: ", target.description
+        echo "  File: ", target.file
+        for source in target.sources:
+          echo "  Source: ", source
 
-proc compile(opts: Options) =
-  echo fmt"Compiling target {opts.cmd.target}..."
+proc getTarget(opts: Options): Target =
+  ## Returns the target specified by the user, or the first target found in the
+  ## parsed config files if the user did not specify a target.
+  try:
+    if opts.cmd.target.len > 0:
+      result = opts.cfg.targets[opts.cmd.target]
+    else:
+      for target in opts.cfg.targets.values:
+        return target
+  except IndexError:
+    quit("No targets found. Please check your nasher.cfg file.")
+  except KeyError:
+    quit(fmt"Unknown target: {opts.cmd.target}")
+
+proc copySourceFiles(target: Target, dir: string) =
+  ## Copies all source files for target to dir
+  for source in target.sources:
+    for file in source.walkFiles:
+      debug(fmt"Got file: {file}")
+      copyFile(file, dir / file.extractFilename)
+
+proc compile(dir, compiler, flags: string) =
+  setCurrentDir(dir)
+  var fileList: seq[string]
+
+  for file in walkFiles("*.nss"):
+    fileList.add(file)
+
+  if fileList.len > 0:
+    let
+      files = fileList.join(" ")
+      cmd = fmt"{compiler} {flags} {files}"
+    info(cmd)
+    discard execCmd(cmd)
+  else:
+    info("Nothing to compile")
+
+proc convert(dir: string) =
+  setCurrentDir(dir)
+  for file in walkFiles("*.*.json"):
+    info("Converting ", file)
+    file.gffConvert
+    file.removeFile
 
 proc pack(opts: Options) =
-  echo fmt"Packing {opts.cmd.target}..."
+  let
+    target = getTarget(opts)
+    buildDir = getBuildDir(target.name)
+
+  removeDir(buildDir)
+  createDir(buildDir)
+  copySourceFiles(target, buildDir)
+
+  if opts.cmd.kind in {ckPack, ckCompile}:
+    notice(fmt"Compiling scripts for target: {target.name}")
+    compile(buildDir, opts.cfg.compiler.binary, opts.cfg.compiler.flags.join(" "))
+
+  if opts.cmd.kind == ckPack:
+    notice(fmt"Converting sources for target: {target.name}")
+    convert(buildDir)
+
+    notice(fmt"Packing files for target: {target.name}")
+    let outfile = getPkgRoot(getCurrentDir()) / target.file
+    var files: seq[string]
+
+    for file in walkFiles(buildDir / "*"):
+      files.add(file)
+
+    createErf(outfile, files)
+    if existsFile(outfile):
+      notice(fmt"Successfully packed file: {outfile}")
+    else:
+      fatal("Something went wrong!")
 
 proc install(opts: Options) =
   echo fmt"Installing {opts.cmd.file} into {opts.cmd.dir}..."
@@ -110,8 +179,7 @@ when isMainModule:
     case opts.cmd.kind
     of ckList: list(opts)
     of ckInit: init(opts)
-    of ckCompile: compile(opts)
-    of ckPack: pack(opts)
     of ckUnpack: unpack(opts)
     of ckInstall: install(opts)
+    of ckCompile, ckPack: pack(opts)
     of ckNil: echo nasherVersion

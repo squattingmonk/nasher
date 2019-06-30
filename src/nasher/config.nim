@@ -46,7 +46,7 @@ type
     authors*: seq[string]
     targets*: OrderedTable[string, Target]
 
-  Target = object
+  Target* = object
     name*, file*, description*: string
     sources*: seq[string]
 
@@ -58,7 +58,7 @@ proc writeCfgFile*(fileName, text: string) =
 
 proc initConfig(): Config =
   result.install = nwnInstallDir
-  result.compiler = ("nwnsc", @["-lowqey"])
+  result.compiler.binary = "nwnsc"
 
 proc initTarget(): Target =
   result.name = ""
@@ -150,6 +150,8 @@ proc dumpConfig(cfg: Config) =
   debug("Dumping config...")
   debug "user.name: ", cfg.user.name.escape()
   debug "user.email: ", cfg.user.name.escape()
+  debug "compiler.binary: ", cfg.compiler.binary
+  debug "compiler.flags: ", $cfg.compiler.flags
   debug "install: ", cfg.install.escape()
   debug "name: ", cfg.name.escape()
   debug "description: ", cfg.description.escape()

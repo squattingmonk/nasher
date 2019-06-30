@@ -69,7 +69,7 @@ proc parseArgument(key: string, result: var Options) =
     else:
       result.cmd.dir = key
   of ckCompile, ckPack:
-    result.cmd.target = key
+    result.cmd.target = key.normalize
   of ckUnpack, ckInstall:
     if result.cmd.file != "":
       result.cmd.dir = key

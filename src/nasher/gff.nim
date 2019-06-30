@@ -29,7 +29,7 @@ proc postProcessJson(j: JsonNode) =
   elif j.kind == JArray:
     for e in j.elems: postProcessJson(e)
 
-proc gffConvert*(inFile, destDir: string) =
+proc gffConvert*(inFile, destDir = getCurrentDir()) =
   ## Converts inFile from GFF to JSON or vice versa, renaming the file
   ## according to the pattern: module.ifo <-> module.ifo.json.
   let inFormat = inFile.getFormat()
