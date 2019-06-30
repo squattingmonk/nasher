@@ -9,8 +9,12 @@ type
     cfg*: Config
     configs*: seq[string]
     verbosity*: Level
+    forceAnswer*: Answer
     showVersion*: bool
     showHelp*: bool
+
+  Answer* = enum
+    None, No, Yes, Default
 
   CommandKind* = enum
     ckNil, ckInit, ckCompile, ckList, ckPack, ckUnpack, ckInstall 
@@ -82,6 +86,12 @@ proc parseFlag(flag, value: string, result: var Options) =
   case flag
   of "config":
     result.configs.add(value)
+  of "yes":
+    result.forceAnswer = Yes
+  of "no":
+    result.forceAnswer = No
+  of "default":
+    result.forceAnswer = Default
   of "h", "help":
     result.showHelp = true
   of "v", "version":

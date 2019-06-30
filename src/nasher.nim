@@ -1,4 +1,4 @@
-import os, osproc, strformat, strutils, logging, tables
+import os, osproc, rdstdin, strformat, strutils, logging, tables
 
 import nasher/options
 import nasher/erf
@@ -153,7 +153,46 @@ proc pack(opts: Options) =
       fatal("Something went wrong!")
 
 proc install(opts: Options) =
-  echo fmt"Installing {opts.cmd.file} into {opts.cmd.dir}..."
+  if not opts.cmd.file.existsFile:
+    quit(fmt"Cannot install {opts.cmd.file}: file does not exist.")
+
+  let
+    file = opts.cmd.file.extractFilename
+    ext = file.splitFile.ext.strip(chars = {'.'})
+    dir =
+      case ext
+      of "erf", "hak":
+        opts.cmd.dir / ext
+      of "mod":
+        opts.cmd.dir / "modules"
+      else:
+        opts.cmd.dir
+
+  if not existsDir(dir):
+    quit(fmt"Cannot install {opts.cmd.file}: {dir} does not exist.")
+
+  echo fmt"Installing {opts.cmd.file} into {dir}..."
+
+  if existsFile(dir / file):
+    let prompt = fmt"{file} already exists. Overwrite? (y/N): "
+    var overwrite = false
+    case opts.forceAnswer
+    of No, Default:
+      echo(prompt, "-> forced no")
+    of Yes:
+      echo(prompt, "-> forced yes")
+      overwrite = true
+    else:
+      try:
+        overwrite = readLineFromStdin(prompt).parseBool
+      except ValueError:
+        discard
+
+    if not overwrite:
+      quit("Aborting...")
+
+    echo "Installing..."
+
 
 
 
