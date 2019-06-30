@@ -1,5 +1,7 @@
 import os, osproc, rdstdin, strformat, strutils, logging, tables
 
+import glob
+
 import nasher/options
 import nasher/erf
 import nasher/gff
@@ -95,7 +97,7 @@ proc getTarget(opts: Options): Target =
 proc copySourceFiles(target: Target, dir: string) =
   ## Copies all source files for target to dir
   for source in target.sources:
-    for file in source.walkFiles:
+    for file in glob.walkGlob(source):
       debug(fmt"Got file: {file}")
       copyFile(file, dir / file.extractFilename)
 
