@@ -62,16 +62,16 @@ Usage:
   nasher list [options]
   nasher compile [options] [<target>]
   nasher pack [options] [<target>]
+  nasher install [options] [<target>]
   nasher unpack [options] <file> [<dir>]
-  nasher install [options] <file> [<dir>]
 
 Commands:
   init           Initializes a nasher repository
   list           Lists the names and descriptions of all build targets
   compile        Compiles all nss sources for a build target
   pack           Converts, compiles, and packs all sources for a build target
+  install        As pack, but installs the target file to the NWN install path
   unpack         Unpacks a file into the source tree
-  install        Installs a file to a directory (defaults to the NWN install)
 """
 
 const helpOptions* ="""
@@ -146,6 +146,27 @@ Options:
   --default      Automatically accept the default answer to the overwrite prompt
 """
 
+const helpInstall* = """
+Usage:
+  nasher install [options] [<target>]
+
+Description:
+  Converts, compiles, and packs all sources for <target>, then installs the
+  packed file into the NWN installation directory. If <target> is not supplied,
+  the first target found in the config files will be packed and installed.
+
+  The location of the NWN install can be set in the [User] section of the global
+  nasher configuration file (default '~/Documents/Neverwinter Nights').
+
+  If the file to be installed would overwrite an existing file, you will be
+  prompted to overwrite it. The default answer is to keep the newer file.
+
+Options:
+  --clean        Remove all files from the build directory before packing
+  --yes, --no    Automatically answer yes/no to the overwrite prompt
+  --default      Automatically accept the default answer to the overwrite prompt
+"""
+
 const helpUnpack* = """
 Usage:
   nasher unpack [options] <file> [<dir>]
@@ -164,23 +185,6 @@ Description:
   less than or equal to the modification time of the file being unpacked. If the
   source file is newer than the existing file, the default is to overwrite the
   existing file.
-
-Options:
-  --yes, --no    Automatically answer yes/no to the overwrite prompt
-  --default      Automatically accept the default answer to the overwrite prompt
-"""
-
-const helpInstall* = """
-Usage:
-  nasher install [options] <file> [<dir>]
-
-Description:
-  Installs <file> into the NWN installation directory, or <dir> if supplied. The
-  location of the NWN install can be set in the [User] section of the global
-  nasher configuration file (default '~/Documents/Neverwinter Nights').
-
-  If the file to be installed would overwrite an existing file, you will be
-  prompted to overwrite it. The default answer is to keep the newer file.
 
 Options:
   --yes, --no    Automatically answer yes/no to the overwrite prompt
