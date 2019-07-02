@@ -23,9 +23,9 @@ type
     case kind*: CommandKind
     of ckNil, ckList:
       nil
-    of ckCompile, ckPack:
+    of ckCompile, ckPack, ckInstall:
       target*: string
-    of ckInit, ckUnpack, ckInstall:
+    of ckInit, ckUnpack:
       file*: string
       dir*: string
 
@@ -42,10 +42,7 @@ proc initCommand*(kind: CommandKind): Command =
   of ckUnpack:
     result.dir = getSrcDir()
     result.file = ""
-  of ckInstall:
-    result.dir = nwnInstallDir
-    result.file = ""
-  of ckCompile, ckPack:
+  of ckCompile, ckPack, ckInstall:
     result.target = ""
   else:
     discard
@@ -72,9 +69,9 @@ proc parseArgument(key: string, result: var Options) =
       result.cmd.file = key
     else:
       result.cmd.dir = key
-  of ckCompile, ckPack:
+  of ckCompile, ckPack, ckInstall:
     result.cmd.target = key.normalize
-  of ckUnpack, ckInstall:
+  of ckUnpack:
     if result.cmd.file != "":
       result.cmd.dir = key
     else:
@@ -128,8 +125,8 @@ proc parseCmdLine*(params: seq[string] = @[]): Options =
   if result.cmd.kind == ckNil and not result.showVersion:
     result.showHelp = true
 
-  # The unpack and install commands must specify a file to operate on
-  if result.cmd.kind in {ckUnpack, ckInstall} and result.cmd.file.len == 0:
+  # The unpack command must specify a file to operate on
+  if result.cmd.kind == ckUnpack and result.cmd.file.len == 0:
     result.showHelp = true
 
   # Load default configs if not overridden by the user
@@ -137,9 +134,9 @@ proc parseCmdLine*(params: seq[string] = @[]): Options =
     result.configs.add(getUserCfgFile())
 
     case result.cmd.kind
-    of ckList, ckPack, ckCompile:
+    of ckList, ckPack, ckCompile, ckInstall:
       result.configs.add(getPkgCfgFile())
-    of ckUnpack, ckInstall:
+    of ckUnpack:
       result.configs.add(getPkgCfgFile(result.cmd.dir))
     else:
       discard

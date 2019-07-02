@@ -121,60 +121,30 @@ proc convert(dir: string) =
   withDir(dir):
     for file in walkFiles("*.*.json"):
       info("Converting ", file)
-
       file.gffConvert
       file.removeFile
 
-proc pack(opts: Options) =
-  let
-    target = getTarget(opts)
-    buildDir = getBuildDir(target.name)
-
-  removeDir(buildDir)
-  createDir(buildDir)
-  copySourceFiles(target, buildDir)
-
-  if opts.cmd.kind in {ckPack, ckCompile}:
-    notice(fmt"Compiling scripts for target: {target.name}")
-    compile(buildDir, opts.cfg.compiler.binary, opts.cfg.compiler.flags.join(" "))
-
-  if opts.cmd.kind == ckPack:
-    notice(fmt"Converting sources for target: {target.name}")
-    convert(buildDir)
-
-    notice(fmt"Packing files for target: {target.name}")
-    let sourceFiles = toSeq(walkFiles(buildDir / "*"))
-    createErf(getPkgRoot() / target.file, sourceFiles)
-    if existsFile(target.file):
-      notice(fmt"Successfully packed file: {target.file}")
-    else:
-      fatal("Something went wrong!")
-
-proc install(opts: Options) =
-  if not opts.cmd.file.existsFile:
-    quit(fmt"Cannot install {opts.cmd.file}: file does not exist.")
+proc install (file, dir: string, force: Answer) =
+  if not existsFile(file):
+    quit(fmt"Cannot install {file}: file does not exist")
 
   let
-    file = opts.cmd.file.extractFilename
-    ext = file.splitFile.ext.strip(chars = {'.'})
-    dir =
-      case ext
-      of "erf", "hak":
-        opts.cmd.dir / ext
-      of "mod":
-        opts.cmd.dir / "modules"
-      else:
-        opts.cmd.dir
+    fileName = file.extractFilename
+    installDir = expandTilde(
+      case fileName.splitFile.ext.strip(chars = {'.'})
+      of "erf": dir / "erf"
+      of "hak": dir / "hak"
+      of "mod": dir / "modules"
+      else: dir
+    )
 
-  if not existsDir(dir):
-    quit(fmt"Cannot install {opts.cmd.file}: {dir} does not exist.")
+  if not existsDir(installDir):
+    quit(fmt"Cannot install to {installDir}: directory does not exist")
 
-  echo fmt"Installing {opts.cmd.file} into {dir}..."
-
-  if existsFile(dir / file):
-    let prompt = fmt"{file} already exists. Overwrite? (y/N): "
+  if existsFile(installDir / fileName):
+    let prompt = fmt"{fileName} already exists. Overwrite? (y/N): "
     var overwrite = false
-    case opts.forceAnswer
+    case force
     of No, Default:
       echo(prompt, "-> forced no")
     of Yes:
@@ -187,14 +157,41 @@ proc install(opts: Options) =
         discard
 
     if not overwrite:
-      quit("Aborting...")
+      quit(QuitSuccess)
 
-  copyFile(opts.cmd.file, dir / file)
+  copyFile(file, installDir / fileName)
 
+proc pack(opts: Options) =
+  let
+    target = getTarget(opts)
+    buildDir = getBuildDir(target.name)
 
+  removeDir(buildDir)
+  createDir(buildDir)
+  copySourceFiles(target, buildDir)
 
+  if opts.cmd.kind in {ckInstall, ckPack, ckCompile}:
+    info(fmt"Compiling scripts for target: {target.name}")
+    compile(buildDir, opts.cfg.compiler.binary, opts.cfg.compiler.flags.join(" "))
 
+  if opts.cmd.kind in {ckInstall, ckPack}:
+    info(fmt"Converting sources for target: {target.name}")
+    convert(buildDir)
 
+    info(fmt"Packing files for target: {target.name}")
+    let
+      # sourceFiles = toSeq(walkFiles(buildDir / "*"))
+      sourceFiles = @[buildDir / "*"]
+      error = createErf(getPkgRoot() / target.file, sourceFiles)
+
+    if error == 0:
+      info(fmt"Successfully packed file: {target.file}")
+    else:
+      quit("Something went wrong!")
+
+  if opts.cmd.kind == ckInstall:
+    info(fmt"Installing {target.file} to {opts.cfg.install}")
+    install(target.file, opts.cfg.install, opts.forceAnswer)
 
 when isMainModule:
   var opts = parseCmdLine()
@@ -217,6 +214,5 @@ when isMainModule:
     of ckList: list(opts)
     of ckInit: init(opts)
     of ckUnpack: unpack(opts)
-    of ckInstall: install(opts)
-    of ckCompile, ckPack: pack(opts)
+    of ckCompile, ckPack, ckInstall: pack(opts)
     of ckNil: echo nasherVersion
