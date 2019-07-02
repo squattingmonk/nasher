@@ -1,4 +1,4 @@
-import os, osproc, rdstdin, strformat, strutils, logging, tables
+import os, osproc, rdstdin, sequtils, strformat, strutils, logging, tables
 
 import glob
 
@@ -23,7 +23,7 @@ proc showHelp(kind: CommandKind) =
 proc unpack(opts: Options) =
   let
     dir = opts.cmd.dir
-    file = opts.cmd.file
+    file = opts.cmd.file.expandFilename
     cacheDir = file.getCacheDir(dir)
 
   if not existsFile(file):
@@ -33,7 +33,7 @@ proc unpack(opts: Options) =
   tryOrQuit(fmt"Could not create directory {cacheDir}"):
     createDir(cacheDir)
 
-  tryOrQuit(fmt"Could not extract {file}"):
+  withDir(cacheDir):
     extractErf(file, cacheDir)
 
   for ext in GffExtensions:
@@ -102,27 +102,28 @@ proc copySourceFiles(target: Target, dir: string) =
       copyFile(file, dir / file.extractFilename)
 
 proc compile(dir, compiler, flags: string) =
-  setCurrentDir(dir)
-  var fileList: seq[string]
+  withDir(dir):
+    var fileList: seq[string]
 
-  for file in walkFiles("*.nss"):
-    fileList.add(file)
+    for file in walkFiles("*.nss"):
+      fileList.add(file)
 
-  if fileList.len > 0:
-    let
-      files = fileList.join(" ")
-      cmd = fmt"{compiler} {flags} {files}"
-    info(cmd)
-    discard execCmd(cmd)
-  else:
-    info("Nothing to compile")
+    if fileList.len > 0:
+      let
+        files = fileList.join(" ")
+        cmd = fmt"{compiler} {flags} {files}"
+      info(cmd)
+      discard execCmd(cmd)
+    else:
+      info("Nothing to compile")
 
 proc convert(dir: string) =
-  setCurrentDir(dir)
-  for file in walkFiles("*.*.json"):
-    info("Converting ", file)
-    file.gffConvert
-    file.removeFile
+  withDir(dir):
+    for file in walkFiles("*.*.json"):
+      info("Converting ", file)
+
+      file.gffConvert
+      file.removeFile
 
 proc pack(opts: Options) =
   let
@@ -142,15 +143,10 @@ proc pack(opts: Options) =
     convert(buildDir)
 
     notice(fmt"Packing files for target: {target.name}")
-    let outfile = getPkgRoot(getCurrentDir()) / target.file
-    var files: seq[string]
-
-    for file in walkFiles(buildDir / "*"):
-      files.add(file)
-
-    createErf(outfile, files)
-    if existsFile(outfile):
-      notice(fmt"Successfully packed file: {outfile}")
+    let sourceFiles = toSeq(walkFiles(buildDir / "*"))
+    createErf(getPkgRoot() / target.file, sourceFiles)
+    if existsFile(target.file):
+      notice(fmt"Successfully packed file: {target.file}")
     else:
       fatal("Something went wrong!")
 

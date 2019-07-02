@@ -17,7 +17,7 @@ template tryOrQuit*(statements: untyped) =
   except:
     quit(getCurrentExceptionMsg(), QuitFailure)
 
-proc getPkgRoot*(baseDir: string): string =
+proc getPkgRoot*(baseDir = getCurrentDir()): string =
   ## Returns the first parent of baseDir that contains a nasher config
   result = baseDir.absolutePath()
 
@@ -43,6 +43,13 @@ proc getBuildDir*(build: string, baseDir = getCurrentDir()): string =
 proc isNasherProject*(dir = getCurrentDir()): bool =
   existsFile(getPkgCfgFile(dir))
 
+template withDir*(dir: string, body: untyped): untyped =
+  let curDir = getCurrentDir()
+  try:
+    setCurrentDir(dir)
+    body
+  finally:
+    setCurrentDir(curDir)
 
 let
   nwnInstallDir* = getHomeDir() / "Documents" / "Neverwinter Nights"

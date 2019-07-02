@@ -15,5 +15,4 @@ proc extractErf*(fileName, destDir: string) =
 proc createErf*(fileName: string, files: seq[string]) =
   ## Creates a .mod, .erf, or .hak file named fileName from the given files.
   ## TODO: create the file here instead of calling out to nwn_erf
-  let fileType = fileName.splitFile.ext.strip(chars = {'.'})
-  discard execCmd("nwn_erf -c -e " & fileType & " -f " & fileName & " " & files.join(" "))
+  discard execCmd("nwn_erf -c -f " & fileName & " " & files.join(" "))
