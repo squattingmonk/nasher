@@ -12,7 +12,7 @@ proc extractErf*(fileName, destDir: string) =
 
   close(f)
 
-proc createErf*(fileName: string, files: seq[string]) =
+proc createErf*(fileName: string, files: seq[string]): int =
   ## Creates a .mod, .erf, or .hak file named fileName from the given files.
   ## TODO: create the file here instead of calling out to nwn_erf
-  discard execCmd("nwn_erf --quiet -c -f " & fileName & " " & files.join(" "))
+  execCmd("nwn_erf --quiet -c -f " & fileName & " " & files.join(" "))
