@@ -103,15 +103,13 @@ proc copySourceFiles(target: Target, dir: string) =
 
 proc compile(dir, compiler, flags: string) =
   withDir(dir):
-    var fileList: seq[string]
-
+    var isScripts = false
     for file in walkFiles("*.nss"):
-      fileList.add(file)
+      isScripts = true
+      break
 
-    if fileList.len > 0:
-      let
-        files = fileList.join(" ")
-        cmd = fmt"{compiler} {flags} {files}"
+    if isScripts:
+      let cmd = fmt"{compiler} {flags} *.nss"
       info(cmd)
       discard execCmd(cmd)
     else:
