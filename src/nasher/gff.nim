@@ -55,6 +55,7 @@ proc gffConvert*(inFile, destDir = getCurrentDir()) =
     let outStream = openFileStream(outFile, fmWrite)
     state = inStream.parseJson(inFile).gffRootFromJson()
     outStream.write(state)
+    outStream.close()
 
   if getLogFilter() == lvlDebug:
     echo inFile.extractFilename(), " -> ", outFile.extractFilename()
