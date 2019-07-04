@@ -120,9 +120,6 @@ Description:
   Compilation of scripts is handled automatically by 'nasher pack', so you only
   need to use this if you want to compile the scripts without converting gff
   sources and packing the target file.
-
-Options:
-  --clean        Remove all files from the build directory before compiling
 """
 
 const helpPack* = """
@@ -141,7 +138,6 @@ Description:
   is newer than the existing file, the default is to overwrite the existing file.
 
 Options:
-  --clean        Remove all files from the build directory before packing
   --yes, --no    Automatically answer yes/no to the overwrite prompt
   --default      Automatically accept the default answer to the overwrite prompt
 """
@@ -162,7 +158,6 @@ Description:
   prompted to overwrite it. The default answer is to keep the newer file.
 
 Options:
-  --clean        Remove all files from the build directory before packing
   --yes, --no    Automatically answer yes/no to the overwrite prompt
   --default      Automatically accept the default answer to the overwrite prompt
 """
