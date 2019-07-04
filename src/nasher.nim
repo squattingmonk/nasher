@@ -1,4 +1,4 @@
-import os, osproc, rdstdin, sequtils, strformat, strutils, logging, tables
+import os, osproc, rdstdin, sequtils, strformat, strutils, tables
 
 import glob
 
@@ -27,7 +27,7 @@ proc unpack(opts: Options) =
     cacheDir = file.getCacheDir(dir)
 
   if not existsFile(file):
-    fatal(fmt"Cannot unpack file {file}: file does not exist")
+    error(fmt"Cannot unpack file {file}: file does not exist")
     quit(QuitFailure)
 
   tryOrQuit(fmt"Could not create directory {cacheDir}"):
@@ -56,13 +56,13 @@ proc init(opts: var Options) =
     writeCfgFile(globalCfgFile, globalCfgText)
 
   if existsFile(pkgCfgFile):
-    fatal(fmt"{dir} is already a nasher project")
+    error(fmt"{dir} is already a nasher project")
     quit(QuitFailure)
 
-  notice(fmt"Initializing into {dir}...")
+  display(fmt"Initializing into {dir}...")
   # TODO: allow user to input desired values before writing
   writeCfgFile(pkgCfgFile, pkgCfgText)
-  notice("Successfully initialized project")
+  display("Successfully initialized project")
 
   if opts.cmd.file.len() > 0:
     opts.cmd.dir = getSrcDir(dir)
@@ -72,13 +72,18 @@ proc init(opts: var Options) =
 
 proc list(opts: Options) =
   tryOrQuit("No targets found. Please check your nasher.cfg."):
-    for target in opts.cfg.targets.values:
-      echo target.name
-      if opts.verbosity <= lvlInfo:
-        echo "  Description: ", target.description
-        echo "  File: ", target.file
-        for source in target.sources:
-          echo "  Source: ", source
+    if isLogging(Low):
+      var hasRun = false
+      for target in opts.cfg.targets.values:
+        if hasRun:
+          stdout.write("\n")
+        display("Target:", target.name)
+        display("Description:", target.description)
+        display("File:", target.file)
+        display("Sources:", target.sources.mapIt(it.escape).join("\n"))
+        hasRun = true
+    else:
+      echo toSeq(opts.cfg.targets.keys).join("\n")
 
 proc getTarget(opts: Options): Target =
   ## Returns the target specified by the user, or the first target found in the
@@ -111,7 +116,6 @@ proc compile(dir, compiler, flags: string) =
 
     if isScripts:
       let cmd = fmt"{compiler} {flags} *.nss"
-      info(cmd)
       discard execCmd(cmd)
     else:
       info("Nothing to compile")
@@ -119,7 +123,7 @@ proc compile(dir, compiler, flags: string) =
 proc convert(dir: string) =
   withDir(dir):
     for file in walkFiles("*.*.json"):
-      info("Converting ", file)
+      display("Converting:", file, priority = Low)
       file.gffConvert
       file.removeFile
 
@@ -195,13 +199,9 @@ proc pack(opts: Options) =
 when isMainModule:
   var opts = parseCmdLine()
 
-  setLogFilter(opts.verbosity)
-  addHandler(newConsoleLogger(fmtStr = "[$levelname]: "))
-  debug(opts)
-
   if opts.cmd.kind notin {ckNil, ckInit}:
     if not isNasherProject():
-      fatal("This is not a nasher project. Please run nasher init.")
+      error("This is not a nasher project. Please run nasher init.")
       quit(QuitFailure)
     else:
       opts.cfg = loadConfig(opts.configs)

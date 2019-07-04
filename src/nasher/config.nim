@@ -1,6 +1,8 @@
-import logging, os, osproc, parsecfg, streams, strformat, strutils, tables
+import os, osproc, parsecfg, sequtils, streams, strformat, strutils, tables
 
 import common
+export common
+
 
 const globalCfgText* = """
 [User]
@@ -52,7 +54,7 @@ type
 
 proc writeCfgFile*(fileName, text: string) =
   tryOrQuit(fmt"Could not create config file at {fileName}"):
-    notice(fmt"Creating configuration file at {fileName}")
+    display(fmt"Creating configuration file at {fileName}")
     createDir(fileName.splitFile().dir)
     writeFile(fileName, text)
 
@@ -105,12 +107,14 @@ proc parseTarget(target: var Target, key, value: string) =
 proc parseConfig*(cfg: var Config, fileName: string) =
   var f = newFileStream(fileName)
   if isNil(f):
-    quit(fmt"Cannot open config file: {fileName}", QuitFailure)
+    error(fmt"Cannot open config file: {fileName}")
+    quit(QuitFailure)
 
-  debug(fmt"Reading config file {fileName}")
+  debug("File:", fileName)
   var p: CfgParser
   var section, key: string
   var target: Target
+  var hasRun = false
   p.open(f, fileName)
   while true:
     var e = p.next()
@@ -119,13 +123,17 @@ proc parseConfig*(cfg: var Config, fileName: string) =
     of cfgSectionStart:
       cfg.addTarget(target)
 
-      debug(fmt"Parsing section [{e.section}]")
+      if isLogging(Debug):
+        doAfter(hasRun):
+          stdout.write("\n")
+        debug("Section:", fmt"[{e.section}]")
+
       section = e.section.normalize
       target = initTarget()
 
     of cfgKeyValuePair, cfgOption:
       key = e.key.normalize
-      debug(fmt"Found key/value pair {key}: {e.value}")
+      debug("Option:", fmt"{key}: {e.value}")
       tryOrQuit(fmt"Error parsing {fileName}: {getCurrentExceptionMsg()}"):
         case section
         of "user":
@@ -144,35 +152,42 @@ proc parseConfig*(cfg: var Config, fileName: string) =
   p.close()
 
 proc dumpConfig(cfg: Config) =
-  if getLogFilter() != lvlDebug:
+  if not isLogging(Debug):
     return
 
-  debug("Dumping config...")
-  debug "user.name: ", cfg.user.name.escape()
-  debug "user.email: ", cfg.user.name.escape()
-  debug "compiler.binary: ", cfg.compiler.binary
-  debug "compiler.flags: ", $cfg.compiler.flags
-  debug "install: ", cfg.install.escape()
-  debug "name: ", cfg.name.escape()
-  debug "description: ", cfg.description.escape()
-  debug "version: ", cfg.version.escape()
-  debug "url: ", cfg.url.escape()
-  debug "flat: ", cfg.flat
-  for author in cfg.authors:
-    debug "author: ", author
+  sandwich:
+    debug("Begin:", "configuration dump")
 
-  for key, target in cfg.targets.pairs():
-    debug "targets[", key, "].name: ", target.name.escape()
-    debug "targets[", key, "].description: ", target.description.escape()
-    debug "targets[", key, "].file: ", target.file.escape()
-    for source in target.sources:
-      debug "targets[", key, "].source: ", source.escape()
+  debug("User:", cfg.user.name)
+  debug("Email:", cfg.user.email)
+  debug("Compiler:", cfg.compiler.binary.escape)
+  debug("Flags:", cfg.compiler.flags.join("\n"))
+  debug("NWN Install:", cfg.install.escape)
+  debug("Package:", cfg.name)
+  debug("Description:", cfg.description)
+  debug("Version:", cfg.version)
+  debug("URL:", cfg.url.escape)
+  debug("Authors:", cfg.authors.join("\n"))
 
-  debug("End dump")
+  var hasRun = false
+  for target in cfg.targets.values:
+    doAfter(hasRun):
+      stdout.write("\n")
+
+    debug("Target:", target.name)
+    debug("Description:", target.description)
+    debug("File:", target.file)
+    debug("Sources:", target.sources.mapIt(it.escape).join("\n"))
+
+  sandwich:
+    debug("End:", "configuration dump")
 
 
 proc loadConfig*(configs: seq[string]): Config =
   result = initConfig()
+  var hasRun = false
   for config in configs:
+    doAfterDebug(hasRun):
+      stdout.write("\n")
     result.parseConfig(config)
   result.dumpConfig()

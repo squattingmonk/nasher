@@ -1,14 +1,13 @@
-import logging, os, parseopt, strutils
+import os, parseopt, sequtils, strutils
 
-import common, config
-export common, config
+import config
+export config
 
 type
   Options* = object
     cmd*: Command
     cfg*: Config
     configs*: seq[string]
-    verbosity*: Level
     forceAnswer*: Answer
     showVersion*: bool
     showHelp*: bool
@@ -33,7 +32,6 @@ proc initOptions(): Options =
   result.cmd = Command(kind: ckNil)
   result.configs = @[getGlobalCfgFile()]
   result.forceAnswer = None
-  result.verbosity = lvlNotice
 
 proc initCommand*(kind: CommandKind): Command =
   result = Command(kind: kind)
@@ -96,13 +94,33 @@ proc parseFlag(flag, value: string, result: var Options) =
   of "v", "version":
     result.showVersion = true
   of "debug":
-    result.verbosity = lvlDebug
+    setLogLevel(Debug)
   of "verbose":
-    result.verbosity = lvlInfo
+    setLogLevel(Low)
   of "quiet":
-    result.verbosity = lvlError
+    setLogLevel(High)
   else:
     raise newException(NasherError, "Unknown option --" & flag)
+
+proc dumpOptions(opts: Options) =
+  if not isLogging(Debug):
+    return
+
+  debug("Args:", commandLineParams().mapIt(it.escape).join("\n"))
+  debug("Command:", $opts.cmd.kind)
+  case opts.cmd.kind
+  of ckCompile, ckPack, ckInstall:
+    debug("Target:", opts.cmd.target)
+  of ckInit, ckUnpack:
+    debug("File:", opts.cmd.file)
+    debug("Directory:", opts.cmd.dir)
+  else: discard
+
+  debug("Configs:", opts.configs.mapIt(it.escape).join("\n"))
+  debug("Force:", $opts.forceAnswer)
+  debug("Help:", $opts.showHelp)
+  debug("Version:", $opts.showVersion)
+  stdout.write("\n")
 
 const
   shortOpts = {'h', 'v'}
@@ -141,3 +159,5 @@ proc parseCmdLine*(params: seq[string] = @[]): Options =
       result.configs.add(getPkgCfgFile(result.cmd.dir))
     else:
       discard
+
+  result.dumpOptions

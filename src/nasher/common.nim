@@ -1,5 +1,8 @@
 import os, strformat
 
+import cli
+export cli
+
 const nasherVersion* = "nasher 0.1.0"
 
 type
@@ -9,13 +12,33 @@ template tryOrQuit*(msg: string, statements: untyped) =
   try:
     statements
   except:
-    quit(msg, QuitFailure)
+    error(msg)
+    quit()
 
 template tryOrQuit*(statements: untyped) =
   try:
     statements
   except:
-    quit(getCurrentExceptionMsg(), QuitFailure)
+    error(getCurrentExceptionMsg())
+    quit()
+
+template sandwich*(statements: untyped) =
+  stdout.write("\n")
+  statements
+  stdout.write("\n")
+
+template doAfter*(val: var bool, statements: untyped) =
+  if val:
+    statements
+  else:
+    val = true
+
+template doAfterDebug*(val: var bool, statements: untyped) =
+  if isLogging(Debug):
+    if val:
+      statements
+    else:
+      val = true
 
 proc getPkgRoot*(baseDir = getCurrentDir()): string =
   ## Returns the first parent of baseDir that contains a nasher config
