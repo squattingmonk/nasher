@@ -31,6 +31,7 @@ type
 
 proc initOptions(): Options =
   result.cmd = Command(kind: ckNil)
+  result.configs = @[getUserCfgFile()]
   result.verbosity = lvlNotice
 
 proc initCommand*(kind: CommandKind): Command =
@@ -82,7 +83,7 @@ proc parseArgument(key: string, result: var Options) =
 proc parseFlag(flag, value: string, result: var Options) =
   case flag
   of "config":
-    result.configs.add(value)
+    result.configs.add(value.expandFilename)
   of "yes":
     result.forceAnswer = Yes
   of "no":
@@ -130,9 +131,7 @@ proc parseCmdLine*(params: seq[string] = @[]): Options =
     result.showHelp = true
 
   # Load default configs if not overridden by the user
-  if result.configs.len == 0:
-    result.configs.add(getUserCfgFile())
-
+  if result.configs.len == 1:
     case result.cmd.kind
     of ckList, ckPack, ckCompile, ckInstall:
       result.configs.add(getPkgCfgFile())
