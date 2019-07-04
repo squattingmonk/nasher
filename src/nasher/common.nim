@@ -81,7 +81,7 @@ const helpOptions* ="""
 Global Options:
   -h, --help     Display help for nasher or one of its commands
   -v, --version  Display version information
-  --config FILE  Use FILE rather than default config files (can be repeated)
+  --config FILE  Use FILE rather than the package config file (can be repeated)
 
 Logging:
   --debug        Enable debug logging
