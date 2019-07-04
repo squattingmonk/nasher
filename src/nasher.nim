@@ -101,11 +101,10 @@ proc getTarget(opts: Options): Target =
 
 proc copySourceFiles(target: Target, dir: string) =
   ## Copies all source files for target to dir
-  withDir(dir):
-    for source in target.sources:
-      for file in glob.walkGlob(source):
-        debug(fmt"Got file: {file}")
-        copyFile(file, file.extractFilename)
+  for source in target.sources:
+    for file in glob.walkGlob(source):
+      debug(fmt"Got file: {file}")
+      copyFile(file, dir / file.extractFilename)
 
 proc compile(dir, compiler, flags: string) =
   withDir(dir):
