@@ -25,7 +25,7 @@ proc getPkgRoot*(baseDir = getCurrentDir()): string =
     if existsFile(dir / "nasher.cfg"):
       return dir
 
-proc getUserCfgFile*: string =
+proc getGlobalCfgFile*: string =
   getConfigDir() / "nasher" / "nasher.cfg"
 
 proc getPkgCfgFile*(baseDir = getCurrentDir()): string =

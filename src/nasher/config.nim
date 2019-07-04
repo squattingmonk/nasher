@@ -2,7 +2,7 @@ import logging, os, osproc, parsecfg, streams, strformat, strutils, tables
 
 import common
 
-const userCfgText* = """
+const globalCfgText* = """
 [User]
 name = ""
 email = ""

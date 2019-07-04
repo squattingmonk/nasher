@@ -31,7 +31,7 @@ type
 
 proc initOptions(): Options =
   result.cmd = Command(kind: ckNil)
-  result.configs = @[getUserCfgFile()]
+  result.configs = @[getGlobalCfgFile()]
   result.verbosity = lvlNotice
 
 proc initCommand*(kind: CommandKind): Command =

@@ -48,12 +48,12 @@ proc unpack(opts: Options) =
 proc init(opts: var Options) =
   let
     dir = opts.cmd.dir
-    userCfgFile = getUserCfgFile()
+    globalCfgFile = getGlobalCfgFile()
     pkgCfgFile = dir / "nasher.cfg"
 
-  if not existsFile(userCfgFile):
+  if not existsFile(globalCfgFile):
     # TODO: allow user to input desired values before writing
-    writeCfgFile(userCfgFile, userCfgText)
+    writeCfgFile(globalCfgFile, globalCfgText)
 
   if existsFile(pkgCfgFile):
     fatal(fmt"{dir} is already a nasher project")
