@@ -1,10 +1,11 @@
-import os, osproc, rdstdin, sequtils, strformat, strutils, tables
+import os, osproc, rdstdin, sequtils, streams, strformat, strutils, tables
 
 import glob
 
 import nasher/options
 import nasher/erf
 import nasher/gff
+import nasher/nwnsc
 
 proc showHelp(kind: CommandKind) =
   let help =
@@ -114,9 +115,9 @@ proc compile(dir, compiler, flags: string) =
       break
 
     if isScripts:
-      let cmd = fmt"{compiler} {flags} *.nss"
-      debug("Compiling:", cmd.escape)
-      discard execCmd(cmd)
+      let errcode = runCompiler(compiler, [flags, "*.nss"])
+      if errcode != 0:
+        warning("Finished with error code " & $errcode)
     else:
       info("Skipping:", "Nothing to compile")
 
