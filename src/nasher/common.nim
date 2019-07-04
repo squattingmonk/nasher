@@ -110,6 +110,7 @@ Logging:
   --debug        Enable debug logging
   --verbose      Enable additional messages about normal operation
   --quiet        Disable all logging except fatal errors
+  --no-color     Disable color output (automatic if not a tty)
 """
 
 const helpInit* = """

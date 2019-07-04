@@ -20,7 +20,7 @@ const
   styles: array[Debug .. High, set[Style]] =
     [{styleDim}, {styleDim}, {}, {styleBright}]
 
-var cli = CLI(showColor: true, logLevel: Medium)
+var cli = CLI(showColor: stdout.isatty, logLevel: Medium)
 
 proc setLogLevel*(level: Priority) =
   cli.logLevel = level
