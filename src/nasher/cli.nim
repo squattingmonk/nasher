@@ -1,4 +1,4 @@
-import strutils, terminal
+import sequtils, strutils, terminal
 
 
 
@@ -14,7 +14,7 @@ type
     Debug, Low, Medium, High
 
 const
-  maxWidth = len("Initializing:")
+  colWidth = len("Initializing:")
   foregrounds:array[Error .. Success, ForegroundColor] =
     [fgRed, fgYellow, fgCyan, fgGreen]
   styles: array[Debug .. High, set[Style]] =
@@ -33,7 +33,7 @@ proc setShowColor*(val: bool) =
 
 proc displayCategory(category: string, displayType: DisplayType, priority: Priority) =
   let
-    offset = max(0, maxWidth - category.len)
+    offset = max(0, colWidth - category.len)
     text = "$#$# " % [spaces(offset), category]
 
   if cli.showColor:
@@ -48,14 +48,22 @@ proc displayLine(category, line: string, displayType: DisplayType, priority: Pri
   displayCategory(category, displayType, priority)
   echo(line)
 
+proc getMsgWidth: int =
+  let maxWidth = if stdout.isatty: terminalWidth() else: 80
+  result = maxWidth - colWidth - 1
+
 proc display*(category, msg: string, displayType = Message, priority = Medium) =
   ## Displayes a message in the format "{category} {msg}" if the log level is at
   ## or below the given priority. The message is styled based on displayType.
   if priority < cli.logLevel:
     return
 
+  # Word wrap each line so it fits in the terminal
+  let lines =
+    msg.splitLines.mapIt(it.wordWrap(getMsgWidth())).join("\n").splitLines
+
   var i = 0
-  for line in msg.splitLines:
+  for line in lines:
     if line.len == 0: continue
     displayLine(if i == 0: category else: "...", line, displayType, priority)
     i.inc
