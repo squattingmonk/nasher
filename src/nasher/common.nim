@@ -43,6 +43,12 @@ proc getBuildDir*(build: string, baseDir = getCurrentDir()): string =
 proc isNasherProject*(dir = getCurrentDir()): bool =
   existsFile(getPkgCfgFile(dir))
 
+proc getNwnInstallDir*: string =
+  when defined(Linux):
+    getHomeDir() / ".local" / "share" / "Neverwinter Nights"
+  else:
+    getHomeDir() / "Documents" / "Neverwinter Nights"
+
 template withDir*(dir: string, body: untyped): untyped =
   let curDir = getCurrentDir()
   try:
@@ -50,9 +56,6 @@ template withDir*(dir: string, body: untyped): untyped =
     body
   finally:
     setCurrentDir(curDir)
-
-let
-  nwnInstallDir* = getHomeDir() / "Documents" / "Neverwinter Nights"
 
 const helpAll* = """
 nasher: a build tool for Neverwinter Nights projects

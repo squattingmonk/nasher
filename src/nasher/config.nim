@@ -57,7 +57,7 @@ proc writeCfgFile*(fileName, text: string) =
     writeFile(fileName, text)
 
 proc initConfig(): Config =
-  result.install = nwnInstallDir
+  result.install = getNwnInstallDir()
   result.compiler.binary = "nwnsc"
 
 proc initTarget(): Target =
