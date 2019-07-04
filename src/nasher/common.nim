@@ -1,26 +1,21 @@
-import os, strformat
+import os
 
 import cli
 export cli
 
 const nasherVersion* = "nasher 0.1.0"
 
-type
-  NasherError* = object of Exception
-
 template tryOrQuit*(msg: string, statements: untyped) =
   try:
     statements
   except:
     error(msg)
-    quit()
 
 template tryOrQuit*(statements: untyped) =
   try:
     statements
   except:
     error(getCurrentExceptionMsg())
-    quit()
 
 template sandwich*(statements: untyped) =
   stdout.write("\n")

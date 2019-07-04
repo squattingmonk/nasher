@@ -1,6 +1,8 @@
-import logging, json, os, streams, strformat, strutils, tables
+import json, os, streams, strformat, strutils, tables
 
 import neverwinter/gff, neverwinter/gffjson
+
+import common
 
 const
   GffExtensions* = @[
@@ -57,5 +59,6 @@ proc gffConvert*(inFile, destDir = getCurrentDir()) =
     outStream.write(state)
     outStream.close()
 
-  if getLogFilter() == lvlDebug:
-    echo inFile.extractFilename(), " -> ", outFile.extractFilename()
+
+  let msg =inFile.extractFilename & " -> " & outFile.extractFilename
+  display("Converting:", msg, priority = Low)

@@ -80,17 +80,19 @@ proc debug*(msg: string) =
   ## Convenience proc for displaying debug messages with a default category
   debug("Debug:", msg)
 
-proc info*(msg: string) =
+proc info*(category, msg: string) =
   ## Convenience proc for displaying low priority messages
-  display(msg, priority = Low)
+  display(category, msg, priority = Low)
 
 proc warning*(msg: string, priority: Priority = Medium) =
   ## Convenience proc for displaying warnings
   display("Warning:", msg, displayType = Warning, priority = priority)
 
-proc error*(msg: string) =
+proc error*(msg: string, quit = true) =
   ## Convenience proc for displaying errors
   display("Error:", msg, displayType = Error, priority = High)
+  if quit:
+    quit(QuitFailure)
 
 proc success*(msg: string, priority: Priority = Medium) =
   display("Success:", msg, displayType = Success, priority = priority)

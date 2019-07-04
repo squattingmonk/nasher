@@ -99,8 +99,10 @@ proc parseFlag(flag, value: string, result: var Options) =
     setLogLevel(Low)
   of "quiet":
     setLogLevel(High)
+  of "no-color":
+    setShowColor(false)
   else:
-    raise newException(NasherError, "Unknown option --" & flag)
+    warning("Unknown option --" & flag)
 
 proc dumpOptions(opts: Options) =
   if not isLogging(Debug):
@@ -125,7 +127,8 @@ proc dumpOptions(opts: Options) =
 const
   shortOpts = {'h', 'v'}
   longOpts =
-    @["help", "version", "verbose", "debug", "quiet", "yes", "no", "default"]
+    @["help", "version", "verbose", "debug", "quiet", "yes", "no", "default",
+      "no-color"]
 
 proc parseCmdLine*(params: seq[string] = @[]): Options =
   result = initOptions()

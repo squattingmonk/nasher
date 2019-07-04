@@ -28,7 +28,6 @@ proc unpack(opts: Options) =
 
   if not existsFile(file):
     error(fmt"Cannot unpack file {file}: file does not exist")
-    quit(QuitFailure)
 
   tryOrQuit(fmt"Could not create directory {cacheDir}"):
     createDir(cacheDir)
@@ -57,7 +56,6 @@ proc init(opts: var Options) =
 
   if existsFile(pkgCfgFile):
     error(fmt"{dir} is already a nasher project")
-    quit(QuitFailure)
 
   display(fmt"Initializing into {dir}...")
   # TODO: allow user to input desired values before writing
@@ -95,15 +93,15 @@ proc getTarget(opts: Options): Target =
       for target in opts.cfg.targets.values:
         return target
   except IndexError:
-    quit("No targets found. Please check your nasher.cfg file.")
+    error("No targets found. Please check your nasher.cfg file.")
   except KeyError:
-    quit(fmt"Unknown target: {opts.cmd.target}")
+    error("Unknown target: " & opts.cmd.target)
 
 proc copySourceFiles(target: Target, dir: string) =
   ## Copies all source files for target to dir
   withDir(getPkgRoot()):
     for source in target.sources:
-      debug("Copying:", fmt"source files from " & source)
+      debug("Copying:", "source files from " & source)
       for file in glob.walkGlob(source):
         debug("Copying:", file)
         copyFile(file, dir / file.extractFilename)
@@ -120,18 +118,18 @@ proc compile(dir, compiler, flags: string) =
       debug("Compiling:", cmd.escape)
       discard execCmd(cmd)
     else:
-      info("Nothing to compile")
+      info("Skipping:", "Nothing to compile")
 
 proc convert(dir: string) =
   withDir(dir):
     for file in walkFiles("*.*.json"):
-      display("Converting:", file, priority = Low)
       file.gffConvert
       file.removeFile
 
 proc install (file, dir: string, force: Answer) =
+  display("Installing:", file & " into " & dir)
   if not existsFile(file):
-    quit(fmt"Cannot install {file}: file does not exist")
+    error(fmt"Cannot install {file}: file does not exist")
 
   let
     fileName = file.extractFilename
@@ -144,7 +142,7 @@ proc install (file, dir: string, force: Answer) =
     )
 
   if not existsDir(installDir):
-    quit(fmt"Cannot install to {installDir}: directory does not exist")
+    error(fmt"Cannot install to {installDir}: directory does not exist")
 
   if existsFile(installDir / fileName):
     let prompt = fmt"{fileName} already exists. Overwrite? (y/N): "
@@ -176,26 +174,23 @@ proc pack(opts: Options) =
   copySourceFiles(target, buildDir)
 
   if opts.cmd.kind in {ckInstall, ckPack, ckCompile}:
-    info(fmt"Compiling scripts for target: {target.name}")
     compile(buildDir, opts.cfg.compiler.binary, opts.cfg.compiler.flags.join(" "))
 
   if opts.cmd.kind in {ckInstall, ckPack}:
-    info(fmt"Converting sources for target: {target.name}")
     convert(buildDir)
 
-    info(fmt"Packing files for target: {target.name}")
+    display("Packing", "files for " & target.name)
     let
       # sourceFiles = toSeq(walkFiles(buildDir / "*"))
       sourceFiles = @[buildDir / "*"]
       error = createErf(getPkgRoot() / target.file, sourceFiles)
 
     if error == 0:
-      info(fmt"Successfully packed file: {target.file}")
+      success("Packed " & target.file)
     else:
-      quit("Something went wrong!")
+      error("Something went wrong!")
 
   if opts.cmd.kind == ckInstall:
-    info(fmt"Installing {target.file} to {opts.cfg.install}")
     install(target.file, opts.cfg.install, opts.forceAnswer)
 
 when isMainModule:
@@ -204,7 +199,6 @@ when isMainModule:
   if opts.cmd.kind notin {ckNil, ckInit}:
     if not isNasherProject():
       error("This is not a nasher project. Please run nasher init.")
-      quit(QuitFailure)
     else:
       opts.cfg = loadConfig(opts.configs)
 
