@@ -32,6 +32,7 @@ type
 proc initOptions(): Options =
   result.cmd = Command(kind: ckNil)
   result.configs = @[getGlobalCfgFile()]
+  result.forceAnswer = None
   result.verbosity = lvlNotice
 
 proc initCommand*(kind: CommandKind): Command =
@@ -104,8 +105,9 @@ proc parseFlag(flag, value: string, result: var Options) =
     raise newException(NasherError, "Unknown option --" & flag)
 
 const
-  longOpts = @["help", "version", "verbose", "debug", "quiet"]
   shortOpts = {'h', 'v'}
+  longOpts =
+    @["help", "version", "verbose", "debug", "quiet", "yes", "no", "default"]
 
 proc parseCmdLine*(params: seq[string] = @[]): Options =
   result = initOptions()
