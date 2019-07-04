@@ -101,10 +101,12 @@ proc getTarget(opts: Options): Target =
 
 proc copySourceFiles(target: Target, dir: string) =
   ## Copies all source files for target to dir
-  for source in target.sources:
-    for file in glob.walkGlob(source):
-      debug(fmt"Got file: {file}")
-      copyFile(file, dir / file.extractFilename)
+  withDir(getPkgRoot()):
+    for source in target.sources:
+      debug("Copying:", fmt"source files from " & source)
+      for file in glob.walkGlob(source):
+        debug("Copying:", file)
+        copyFile(file, dir / file.extractFilename)
 
 proc compile(dir, compiler, flags: string) =
   withDir(dir):
@@ -115,6 +117,7 @@ proc compile(dir, compiler, flags: string) =
 
     if isScripts:
       let cmd = fmt"{compiler} {flags} *.nss"
+      debug("Compiling:", cmd.escape)
       discard execCmd(cmd)
     else:
       info("Nothing to compile")
