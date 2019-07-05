@@ -7,7 +7,7 @@ type
     forceAnswer: Answer
 
   DisplayType* = enum
-    Error, Warning, Message, Success
+    Error, Warning, Message, Success, Prompt
 
   Priority* = enum
     Debug, Low, Medium, High
@@ -17,8 +17,8 @@ type
 
 const
   colWidth = len("Initializing")
-  foregrounds:array[Error .. Success, ForegroundColor] =
-    [fgRed, fgYellow, fgCyan, fgGreen]
+  foregrounds:array[Error .. Prompt, ForegroundColor] =
+    [fgRed, fgYellow, fgCyan, fgGreen, fgYellow]
   styles: array[Debug .. High, set[Style]] =
     [{styleDim}, {styleDim}, {}, {styleBright}]
 
@@ -108,7 +108,15 @@ proc fatal*(msg: string) =
 proc success*(msg: string, priority: Priority = Medium) =
   display("Success:", msg, displayType = Success, priority = priority)
 
-proc prompt*(question: string, default: Answer = No): bool =
+proc prompt(msg: string): string =
+  display("Prompt:", msg, Prompt, High)
+  displayCategory("Answer:", Prompt, High)
+  result = stdin.readLine
+
+proc forced(msg, answer: string) =
+  display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt, High)
+
+proc askIf*(question: string, default: Answer = No): bool =
   ## Displays a yes/no question/answer prompt to the user. If the user does not
   ## choose an answer or that answer cannot be converted into a bool, the
   ## default answer is chosen instead. If the user has passed a --yes, --no, or
@@ -119,18 +127,14 @@ proc prompt*(question: string, default: Answer = No): bool =
 
   case forceAnswer
   of Yes:
-    display("Prompt:", question & " -> [forced yes]", Warning, High)
+    forced(question, "yes")
     result = true
   of No:
-    display("Prompt:", question & " -> [forced no]", Warning, High)
+    forced(question, "no")
     result = false
   else:
-    let tip = if default == Yes: " (Y/n)" else: " (y/N)"
-    display("Prompt:", question & tip, Warning, High)
-    displayCategory("Answer:", Warning, High)
-    let answer = stdin.readLine
     try:
-      result = answer.parseBool
+      result = prompt(question).parseBool
     except ValueError:
       result = default == Yes
 

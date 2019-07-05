@@ -146,7 +146,7 @@ proc install (file, dir: string, force: Answer) =
     fatal(fmt"Cannot install to {installDir}: directory does not exist")
 
   if existsFile(installDir / fileName):
-    if not prompt(fmt"Installed file {fileName} already exists. Overwrite?"):
+    if not askIf(fmt"Installed file {fileName} already exists. Overwrite? (y/N)"):
       quit(QuitSuccess)
 
   copyFile(file, installDir / fileName)
@@ -169,7 +169,7 @@ proc pack(opts: Options) =
 
     display("Packing", fmt"files for target {target.name} into {target.file}")
     if existsFile(target.file):
-      if not prompt(fmt"Packed file {target.file} already exists. Overwrite?"):
+      if not askIf(fmt"Packed file {target.file} already exists. Overwrite? (y/N)"):
         quit(QuitSuccess)
 
     let
