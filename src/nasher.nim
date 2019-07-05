@@ -79,7 +79,7 @@ proc list(opts: Options) =
         display("Target:", target.name)
         display("Description:", target.description)
         display("File:", target.file)
-        display("Sources:", target.sources.mapIt(it.escape).join("\n"))
+        display("Sources:", target.sources.join("\n"))
         hasRun = true
     else:
       echo toSeq(opts.cfg.targets.keys).join("\n")
@@ -102,9 +102,9 @@ proc copySourceFiles(target: Target, dir: string) =
   ## Copies all source files for target to dir
   withDir(getPkgRoot()):
     for source in target.sources:
-      debug("Copying:", "source files from " & source)
+      debug("Copying", "source files from " & source)
       for file in glob.walkGlob(source):
-        debug("Copying:", file)
+        debug("Copying", file)
         copyFile(file, dir / file.extractFilename)
 
 proc compile(dir, compiler, flags: string) =
@@ -119,7 +119,7 @@ proc compile(dir, compiler, flags: string) =
       if errcode != 0:
         warning("Finished with error code " & $errcode)
     else:
-      info("Skipping:", "Nothing to compile")
+      info("Skipping", "compilation: nothing to compile")
 
 proc convert(dir: string) =
   withDir(dir):
@@ -128,7 +128,7 @@ proc convert(dir: string) =
       file.removeFile
 
 proc install (file, dir: string, force: Answer) =
-  display("Installing:", file & " into " & dir)
+  display("Installing", file & " into " & dir)
   if not existsFile(file):
     error(fmt"Cannot install {file}: file does not exist")
 

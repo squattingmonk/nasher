@@ -61,4 +61,4 @@ proc gffConvert*(inFile, destDir = getCurrentDir()) =
 
 
   let msg =inFile.extractFilename & " -> " & outFile.extractFilename
-  display("Converting:", msg, priority = Low)
+  display("Converting", msg, priority = Low)

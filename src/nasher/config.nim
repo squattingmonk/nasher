@@ -1,4 +1,4 @@
-import os, osproc, parsecfg, sequtils, streams, strformat, strutils, tables
+import os, osproc, parsecfg, streams, strformat, strutils, tables
 
 import common
 export common
@@ -123,11 +123,7 @@ proc parseConfig*(cfg: var Config, fileName: string) =
     of cfgSectionStart:
       cfg.addTarget(target)
 
-      if isLogging(Debug):
-        doAfter(hasRun):
-          stdout.write("\n")
-        debug("Section:", fmt"[{e.section}]")
-
+      debug("Section:", fmt"[{e.section}]")
       section = e.section.normalize
       target = initTarget()
 
@@ -156,31 +152,28 @@ proc dumpConfig(cfg: Config) =
     return
 
   sandwich:
-    debug("Begin:", "configuration dump")
+    debug("Beginning", "configuration dump")
 
   debug("User:", cfg.user.name)
   debug("Email:", cfg.user.email)
-  debug("Compiler:", cfg.compiler.binary.escape)
+  debug("Compiler:", cfg.compiler.binary)
   debug("Flags:", cfg.compiler.flags.join("\n"))
-  debug("NWN Install:", cfg.install.escape)
+  debug("NWN Install:", cfg.install)
   debug("Package:", cfg.name)
   debug("Description:", cfg.description)
   debug("Version:", cfg.version)
-  debug("URL:", cfg.url.escape)
+  debug("URL:", cfg.url)
   debug("Authors:", cfg.authors.join("\n"))
 
-  var hasRun = false
   for target in cfg.targets.values:
-    doAfter(hasRun):
-      stdout.write("\n")
-
+    stdout.write("\n")
     debug("Target:", target.name)
     debug("Description:", target.description)
     debug("File:", target.file)
-    debug("Sources:", target.sources.mapIt(it.escape).join("\n"))
+    debug("Sources:", target.sources.join("\n"))
 
   sandwich:
-    debug("End:", "configuration dump")
+    debug("Ending", "configuration dump")
 
 
 proc loadConfig*(configs: seq[string]): Config =

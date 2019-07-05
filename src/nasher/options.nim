@@ -1,4 +1,4 @@
-import os, parseopt, sequtils, strutils
+import os, parseopt, strutils
 
 import config
 export config
@@ -108,7 +108,7 @@ proc dumpOptions(opts: Options) =
   if not isLogging(Debug):
     return
 
-  debug("Args:", commandLineParams().mapIt(it.escape).join("\n"))
+  debug("Args:", commandLineParams().join("\n"))
   debug("Command:", $opts.cmd.kind)
   case opts.cmd.kind
   of ckCompile, ckPack, ckInstall:
@@ -118,7 +118,7 @@ proc dumpOptions(opts: Options) =
     debug("Directory:", opts.cmd.dir)
   else: discard
 
-  debug("Configs:", opts.configs.mapIt(it.escape).join("\n"))
+  debug("Configs:", opts.configs.join("\n"))
   debug("Force:", $opts.forceAnswer)
   debug("Help:", $opts.showHelp)
   debug("Version:", $opts.showVersion)

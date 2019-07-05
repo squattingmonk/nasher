@@ -14,7 +14,7 @@ type
     Debug, Low, Medium, High
 
 const
-  colWidth = len("Initializing:")
+  colWidth = len("Initializing")
   foregrounds:array[Error .. Success, ForegroundColor] =
     [fgRed, fgYellow, fgCyan, fgGreen]
   styles: array[Debug .. High, set[Style]] =
