@@ -146,11 +146,11 @@ proc install (file, dir: string, force: Answer) =
     fatal(fmt"Cannot install to {installDir}: directory does not exist")
 
   if existsFile(installDir / fileName):
-    if not prompt(fileName & " already exists. Overwrite?"):
+    if not prompt(fmt"Installed file {fileName} already exists. Overwrite?"):
       quit(QuitSuccess)
 
   copyFile(file, installDir / fileName)
-  success("file installed")
+  success("installed " & fileName)
 
 proc pack(opts: Options) =
   let
@@ -167,9 +167,9 @@ proc pack(opts: Options) =
   if opts.cmd.kind in {ckInstall, ckPack}:
     convert(buildDir)
 
-    display("Packing", "files for " & target.name)
+    display("Packing", fmt"files for target {target.name} into {target.file}")
     if existsFile(target.file):
-      if not prompt(target.file & " already exists. Overwrite?"):
+      if not prompt(fmt"Packed file {target.file} already exists. Overwrite?"):
         quit(QuitSuccess)
 
     let
@@ -178,7 +178,7 @@ proc pack(opts: Options) =
       error = createErf(getPkgRoot() / target.file, sourceFiles)
 
     if error == 0:
-      success("Packed " & target.file)
+      success("packed " & target.file)
     else:
       fatal("Something went wrong!")
 
