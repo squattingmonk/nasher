@@ -139,3 +139,87 @@ proc askIf*(question: string, default: Answer = No): bool =
       result = default == Yes
 
   debug("Answer:", $result)
+
+proc ask*(question: string, default = ""): string =
+  if cli.forceAnswer in {Yes, Default} and default == "":
+    forced(question, default)
+    result = default
+  else:
+    if default == "":
+      result = prompt(question)
+      if result.isNilOrWhitespace:
+        result = ask(question)
+    else:
+      result = prompt("$1 (default: $2)" % [question, default])
+      if result.isNilOrWhitespace:
+        result = default
+
+  debug("Answer:", result)
+
+proc choose*(question: string, choices: openarray[string]): string =
+  display("Prompt:", question, Prompt, High)
+  display("Select:", "Cycle with Tab, Choose with Enter", Prompt, High)
+
+  var
+    current = 0
+    selected = false
+
+  # In case the cursor is at the bottom of the terminal
+  stdout.write(repeat("\n", choices.len - 1))
+
+  # Reset the cursor to the start of the selection prompt
+  stdout.cursorUp(choices.len - 1)
+  stdout.cursorForward(colWidth)
+  stdout.hideCursor
+
+  # The selection loop
+  while not selected:
+    setForegroundColor(fgDefault)
+
+    # Loop through the options
+    for i, choice in choices:
+      if i == current:
+        writeStyled(" > " & choice, {styleBright})
+      else:
+        writeStyled("   " & choice, {styleDim})
+
+      # Move the cursor back to the start
+      stdout.cursorBackward(choice.len + 3)
+
+      # Move down to the next item
+      stdout.cursorDown
+
+    # Move the cursor back to the top of the selection prompt
+    stdout.cursorUp(choices.len - 1)
+
+    # Begin key input
+    while true:
+      case getch():
+        of '\t', 'j':
+          current = (current + 1) mod choices.len
+          break
+        of 'k':
+          current.dec
+          if current < 0:
+            current = choices.len - 1
+          break
+        of '\r':
+          selected = true
+          break
+        of '\3':
+          stdout.showCursor
+          fatal("keyboard interrupt")
+        else:
+          discard
+
+  # Erase all lines of the selection
+  stdout.cursorUp
+  for i in 0..<choices.len:
+    stdout.eraseLine
+    stdout.cursorDown
+
+  # Move the cursor back up the initial selection line
+  stdout.cursorUp(choices.len)
+  stdout.showCursor
+  display("Answer:", choices[current], Prompt, High)
+  return choices[current]
