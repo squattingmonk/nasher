@@ -53,8 +53,8 @@ type
     sources*: seq[string]
 
 proc writeCfgFile*(fileName, text: string) =
-  tryOrQuit(fmt"Could not create config file at {fileName}"):
-    display(fmt"Creating configuration file at {fileName}")
+  tryOrQuit("Could not create config file at " & fileName):
+    display("Creating", "configuration file at " & fileName)
     createDir(fileName.splitFile().dir)
     writeFile(fileName, text)
 

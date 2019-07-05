@@ -58,10 +58,10 @@ proc init(opts: var Options) =
   if existsFile(pkgCfgFile):
     error(fmt"{dir} is already a nasher project")
 
-  display(fmt"Initializing into {dir}...")
+  display("Initializing", "into " & dir)
   # TODO: allow user to input desired values before writing
   writeCfgFile(pkgCfgFile, pkgCfgText)
-  display("Successfully initialized project")
+  success("project initialized")
 
   if opts.cmd.file.len() > 0:
     opts.cmd.dir = getSrcDir(dir)
