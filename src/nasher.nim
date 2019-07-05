@@ -168,6 +168,10 @@ proc pack(opts: Options) =
     convert(buildDir)
 
     display("Packing", "files for " & target.name)
+    if existsFile(target.file):
+      if not prompt(target.file & " already exists. Overwrite?"):
+        quit(QuitSuccess)
+
     let
       # sourceFiles = toSeq(walkFiles(buildDir / "*"))
       sourceFiles = @[buildDir / "*"]
