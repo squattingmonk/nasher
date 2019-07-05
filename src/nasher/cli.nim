@@ -34,7 +34,9 @@ proc setShowColor*(val: bool) =
 proc displayCategory(category: string, displayType: DisplayType, priority: Priority) =
   let
     offset = max(0, colWidth - category.len)
-    text = "$#$# " % [spaces(offset), category]
+    text =
+      if stdout.isatty: "$#$# " % [spaces(offset), category]
+      else: category & " "
 
   if cli.showColor:
     if priority != Debug:
@@ -48,8 +50,8 @@ proc displayLine(category, line: string, displayType: DisplayType, priority: Pri
   displayCategory(category, displayType, priority)
   echo(line)
 
-proc getMsgWidth: int =
-  let maxWidth = if stdout.isatty: terminalWidth() else: 80
+proc getMsgWidth(category: string): int =
+  let maxWidth = if stdout.isatty: terminalWidth() - category.len else: 80
   result = maxWidth - colWidth - 1
 
 proc display*(category, msg: string, displayType = Message, priority = Medium) =
@@ -59,8 +61,9 @@ proc display*(category, msg: string, displayType = Message, priority = Medium) =
     return
 
   # Word wrap each line so it fits in the terminal
-  let lines =
-    msg.splitLines.mapIt(it.wordWrap(getMsgWidth())).join("\n").splitLines
+  let
+    width = getMsgWidth(category)
+    lines = msg.splitLines.mapIt(it.wordWrap(width)).join("\n").splitLines
 
   var i = 0
   for line in lines:
