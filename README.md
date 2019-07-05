@@ -23,97 +23,51 @@ This will create a `nasher.cfg` file in the project directory. You can alter
 the contents of this file to customize the paths to sources, add author 
 information, etc.
 
-### Listing builds
-    # List build names only
+### Listing build targets
+    # List target names only
     $ nasher list
 
-    # List build names, descriptions, target file, and source files
+    # List target names, descriptions, packed file, and source files
     $ nasher list --verbose
 
-This will list the builds available in the current project. The first build 
-listed is treated as the default build.
+This will list the targets available in the current project. The first target 
+listed is treated as the default.
 
 ### Compiling
-    # Compile all scripts in the default build
+    # Compile all scripts for the default target
     $ nasher compile
 
-    # Compile all scripts in the build "demo"
+    # Compile all scripts for the target "demo"
     $ nasher compile demo
 
-The compiled scripts are placed into `.nasher/build/`, where `build` is the 
-name of the build compiled.
+The compiled scripts are placed into `.nasher/build/x`, where `x` is the name 
+of the target.
 
-### Building
-    # Build the default build
-    $ nasher build
+### Packing
+    # Packing the default target
+    $ nasher pack
 
-    # Build "demo"
-    $ nasher build demo
+    # Pack "demo"
+    $ nasher pack demo
 
 This compiles scripts, converts json sources into their gff counterparts, and 
 packs the resources into the target file. The resources are placed into 
-`.nasher/build/`, where `build` is the name of the build. The target file is 
-placed into the project root directory.
+`.nasher/build/x`, where `x` is the name of the target. The packed file is 
+placed into the project root directory. If the file to be packed already exists 
+in the project root, you will be prompted to overwrite it. You can force answer 
+the prompt by passing the `--yes`, `--no`, or `--default` flags.
 
-### Installing built files
-    # Install demo.mod to the NWN install directory
-    # default: "~/Documents/Neverwinter Nights/mod"
-    $ nasher install demo.mod
+### Installing
+    # Install the packed file for the default target
+    $ nasher install
 
-    # Install demo.mod to /opt/nwn/mod
-    $ nasher install demo.mod /opt/nwn/mod
-
-If the file to be installed already exists at the target location, you will be 
-prompted to overwrite it. You can force answer the prompt by passing the 
-`--yes`, `--no`, or `--newer` flags:
-
-    # Install and overwrite if present
-    $ nasher install demo.mod --yes
-
-    # Install but do not overwrite if already present
-    $ nasher install demo.mod --no
-
-    # Install, overwriting if newer than present file
-    $ nasher install demo.mod --newer
-
-If you try to install a file that does not exist, nasher will instead try to 
-build and install the target file. If multiple builds exist for the target 
-file, you will be prompted to choose from them. If no build target of that name 
-can be found, nasher will instead attempt to build a build of that name:
-
-    # Build and install the file for build demo
+    # Install the packed file for "demo"
     $ nasher install demo
 
-    ### Cleaning up
-    # Remove all build directories
-    $ nasher clean
-
-    # Remove build directory for build "demo"
-    $ nasher clean demo
-
-    # Remove build directories and built targets for all builds
-    $ nasher clobber
-
-    # Remove build directories and built targets for build "demo"
-    $ nasher clobber demo
-
-These commands can be used to ensure a clean build (i.e., free from unwanted 
-files).
-
-You can also pass the `--clean` and `--clobber` flags to the `build` and 
-`install` commands when operating on a particular build:
-- `--clean` will remove the associated directory *before* building
-- `--clobber` will remove the associated directory and its built products 
-  *after* building.
-
-For example:
-
-    # Cleanly build demo
-    $ nasher build demo --clean
-
-    # Cleanly build demo, install the built target, then remove the build directory 
-    # and built target
-    $ nasher install demo --clean --clobber
+This command packs the target file and then installs it to the appropriate 
+folder in the NWN installation path. If the file to be installed already exists 
+at the target location, you will be prompted to overwrite it. You can force 
+answer the prompt by passing the `--yes`, `--no`, or `--default` flags.
 
 ### Unpacking a file
     # Unpack "demo.mod" into src/
@@ -140,6 +94,7 @@ prompts by passing the `--yes`, `--no`, or `--newer` flags.
 
 You can initialize a project with the contents of a `.mod`, `.erf`, or `.hak` 
 file by running:
+
     # Initialize into foo using the contents of bar.mod as source files
     # e.g., module.ifo -> foo/src/ifo/module.ifo.json
     $ nasher init foo bar.mod
@@ -149,6 +104,7 @@ file by running:
     $ nasher init foo bar.mod --flat
 
 This is equivalent to:
+
     $ nasher init foo
     $ cd foo
     $ nasher unpack ../bar.mod
