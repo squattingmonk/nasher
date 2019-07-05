@@ -28,7 +28,7 @@ proc unpack(opts: Options) =
     cacheDir = file.getCacheDir(dir)
 
   if not existsFile(file):
-    error(fmt"Cannot unpack file {file}: file does not exist")
+    fatal(fmt"Cannot unpack file {file}: file does not exist")
 
   tryOrQuit(fmt"Could not create directory {cacheDir}"):
     createDir(cacheDir)
@@ -56,7 +56,7 @@ proc init(opts: var Options) =
     writeCfgFile(globalCfgFile, globalCfgText)
 
   if existsFile(pkgCfgFile):
-    error(fmt"{dir} is already a nasher project")
+    fatal(fmt"{dir} is already a nasher project")
 
   display("Initializing", "into " & dir)
   # TODO: allow user to input desired values before writing
@@ -94,9 +94,9 @@ proc getTarget(opts: Options): Target =
       for target in opts.cfg.targets.values:
         return target
   except IndexError:
-    error("No targets found. Please check your nasher.cfg file.")
+    fatal("No targets found. Please check your nasher.cfg file.")
   except KeyError:
-    error("Unknown target: " & opts.cmd.target)
+    fatal("Unknown target: " & opts.cmd.target)
 
 proc copySourceFiles(target: Target, dir: string) =
   ## Copies all source files for target to dir
@@ -130,7 +130,7 @@ proc convert(dir: string) =
 proc install (file, dir: string, force: Answer) =
   display("Installing", file & " into " & dir)
   if not existsFile(file):
-    error(fmt"Cannot install {file}: file does not exist")
+    fatal(fmt"Cannot install {file}: file does not exist")
 
   let
     fileName = file.extractFilename
@@ -143,7 +143,7 @@ proc install (file, dir: string, force: Answer) =
     )
 
   if not existsDir(installDir):
-    error(fmt"Cannot install to {installDir}: directory does not exist")
+    fatal(fmt"Cannot install to {installDir}: directory does not exist")
 
   if existsFile(installDir / fileName):
     let prompt = fmt"{fileName} already exists. Overwrite? (y/N): "
@@ -189,7 +189,7 @@ proc pack(opts: Options) =
     if error == 0:
       success("Packed " & target.file)
     else:
-      error("Something went wrong!")
+      fatal("Something went wrong!")
 
   if opts.cmd.kind == ckInstall:
     install(target.file, opts.cfg.install, opts.forceAnswer)
@@ -199,7 +199,7 @@ when isMainModule:
 
   if opts.cmd.kind notin {ckNil, ckInit}:
     if not isNasherProject():
-      error("This is not a nasher project. Please run nasher init.")
+      fatal("This is not a nasher project. Please run nasher init.")
     else:
       opts.cfg = loadConfig(opts.configs)
 

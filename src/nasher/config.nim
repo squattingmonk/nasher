@@ -107,7 +107,7 @@ proc parseTarget(target: var Target, key, value: string) =
 proc parseConfig*(cfg: var Config, fileName: string) =
   var f = newFileStream(fileName)
   if isNil(f):
-    error(fmt"Cannot open config file: {fileName}")
+    fatal(fmt"Cannot open config file: {fileName}")
     quit(QuitFailure)
 
   debug("File:", fileName)
@@ -143,7 +143,7 @@ proc parseConfig*(cfg: var Config, fileName: string) =
         else:
           discard
     of cfgError:
-      error(e.msg)
+      fatal(e.msg)
   cfg.addTarget(target)
   p.close()
 

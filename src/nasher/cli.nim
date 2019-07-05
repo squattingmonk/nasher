@@ -91,11 +91,14 @@ proc warning*(msg: string, priority: Priority = Medium) =
   ## Convenience proc for displaying warnings
   display("Warning:", msg, displayType = Warning, priority = priority)
 
-proc error*(msg: string, quit = true) =
+proc error*(msg: string) =
   ## Convenience proc for displaying errors
   display("Error:", msg, displayType = Error, priority = High)
-  if quit:
-    quit(QuitFailure)
+
+proc fatal*(msg: string) =
+  ## Displays msg as an error, then quits, sending an error code
+  error(msg)
+  quit(QuitFailure)
 
 proc success*(msg: string, priority: Priority = Medium) =
   display("Success:", msg, displayType = Success, priority = priority)

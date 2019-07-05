@@ -9,13 +9,13 @@ template tryOrQuit*(msg: string, statements: untyped) =
   try:
     statements
   except:
-    error(msg)
+    fatal(msg)
 
 template tryOrQuit*(statements: untyped) =
   try:
     statements
   except:
-    error(getCurrentExceptionMsg())
+    fatal(getCurrentExceptionMsg())
 
 template sandwich*(statements: untyped) =
   stdout.write("\n")
@@ -104,7 +104,7 @@ Global Options:
 Logging:
   --debug        Enable debug logging
   --verbose      Enable additional messages about normal operation
-  --quiet        Disable all logging except fatal errors
+  --quiet        Disable all logging except errors
   --no-color     Disable color output (automatic if not a tty)
 """
 

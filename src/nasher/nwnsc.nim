@@ -12,7 +12,7 @@ proc parseCompilerOutput(line: var string) =
   of "Compiling":
     info("Compiling", line[parsed..^1])
   of "Error":
-    error(line[parsed..^1], false)
+    error(line[parsed..^1])
   else:
     if token == line:
       # if token.endsWith("see above for context."):
@@ -21,7 +21,7 @@ proc parseCompilerOutput(line: var string) =
     else:
       var lines = line.split(':').mapIt(it.strip)
       if lines.contains("Error"):
-        error(lines.filterIt(it != "Error").join("\n"), false)
+        error(lines.filterIt(it != "Error").join("\n"))
       elif lines.contains("Warning"):
         warning(lines.filterIt(it != "Warning").join("\n"))
       else:
