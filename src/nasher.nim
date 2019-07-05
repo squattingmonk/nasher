@@ -1,4 +1,4 @@
-import os, osproc, rdstdin, sequtils, streams, strformat, strutils, tables
+import os, osproc, sequtils, streams, strformat, strutils, tables
 
 import glob
 
@@ -146,24 +146,11 @@ proc install (file, dir: string, force: Answer) =
     fatal(fmt"Cannot install to {installDir}: directory does not exist")
 
   if existsFile(installDir / fileName):
-    let prompt = fmt"{fileName} already exists. Overwrite? (y/N): "
-    var overwrite = false
-    case force
-    of No, Default:
-      echo(prompt, "-> forced no")
-    of Yes:
-      echo(prompt, "-> forced yes")
-      overwrite = true
-    else:
-      try:
-        overwrite = readLineFromStdin(prompt).parseBool
-      except ValueError:
-        discard
-
-    if not overwrite:
+    if not prompt(fileName & " already exists. Overwrite?"):
       quit(QuitSuccess)
 
   copyFile(file, installDir / fileName)
+  success("file installed")
 
 proc pack(opts: Options) =
   let

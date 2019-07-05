@@ -1,17 +1,19 @@
 import sequtils, strutils, terminal
 
-
-
 type
   CLI = ref object
     showColor: bool
     logLevel: Priority
+    forceAnswer: Answer
 
   DisplayType* = enum
     Error, Warning, Message, Success
 
   Priority* = enum
     Debug, Low, Medium, High
+
+  Answer* = enum
+    None, No, Yes, Default
 
 const
   colWidth = len("Initializing")
@@ -20,7 +22,7 @@ const
   styles: array[Debug .. High, set[Style]] =
     [{styleDim}, {styleDim}, {}, {styleBright}]
 
-var cli = CLI(showColor: stdout.isatty, logLevel: Medium)
+var cli = CLI(showColor: stdout.isatty, logLevel: Medium, forceAnswer: None)
 
 proc setLogLevel*(level: Priority) =
   cli.logLevel = level
@@ -30,6 +32,9 @@ proc isLogging*(level: Priority): bool =
 
 proc setShowColor*(val: bool) =
   cli.showColor = val
+
+proc setForceAnswer*(val: Answer) =
+  cli.forceAnswer = val
 
 proc displayCategory(category: string, displayType: DisplayType, priority: Priority) =
   let
@@ -102,3 +107,31 @@ proc fatal*(msg: string) =
 
 proc success*(msg: string, priority: Priority = Medium) =
   display("Success:", msg, displayType = Success, priority = priority)
+
+proc prompt*(question: string, default: Answer = No): bool =
+  ## Displays a yes/no question/answer prompt to the user. If the user does not
+  ## choose an answer or that answer cannot be converted into a bool, the
+  ## default answer is chosen instead. If the user has passed a --yes, --no, or
+  ## --default flag, the appropriate choice will be selected.
+  let forceAnswer =
+    if cli.forceAnswer == Default: default
+    else: cli.forceAnswer
+
+  case forceAnswer
+  of Yes:
+    display("Prompt:", question & " -> [forced yes]", Warning, High)
+    result = true
+  of No:
+    display("Prompt:", question & " -> [forced no]", Warning, High)
+    result = false
+  else:
+    let tip = if default == Yes: " (Y/n)" else: " (y/N)"
+    display("Prompt:", question & tip, Warning, High)
+    displayCategory("Answer:", Warning, High)
+    let answer = stdin.readLine
+    try:
+      result = answer.parseBool
+    except ValueError:
+      result = default == Yes
+
+  debug("Answer:", $result)

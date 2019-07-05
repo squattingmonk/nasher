@@ -12,9 +12,6 @@ type
     showVersion*: bool
     showHelp*: bool
 
-  Answer* = enum
-    None, No, Yes, Default
-
   CommandKind* = enum
     ckNil, ckInit, ckCompile, ckList, ckPack, ckUnpack, ckInstall 
 
@@ -85,10 +82,13 @@ proc parseFlag(flag, value: string, result: var Options) =
     result.configs.add(value.expandFilename)
   of "yes":
     result.forceAnswer = Yes
+    setForceAnswer(Yes)
   of "no":
     result.forceAnswer = No
+    setForceAnswer(No)
   of "default":
     result.forceAnswer = Default
+    setForceAnswer(Default)
   of "h", "help":
     result.showHelp = true
   of "v", "version":
