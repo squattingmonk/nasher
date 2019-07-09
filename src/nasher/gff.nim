@@ -36,7 +36,7 @@ proc gffConvert*(inFile, destDir = getCurrentDir()) =
   ## according to the pattern: module.ifo <-> module.ifo.json.
   let inFormat = inFile.getFormat()
   let inStream = inFile.openFileStream()
-  let (dir, file, ext) = inFile.splitFile()
+  let (_, file, ext) = inFile.splitFile()
 
   var
     state: GffRoot
