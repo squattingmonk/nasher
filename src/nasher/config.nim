@@ -40,13 +40,18 @@ source = "demo/src/*"
 
 type
   Config* = object
-    install*: string
-    user*: tuple[name, email: string]
-    name*, description*, version*, url*: string
-    flat*: bool
+    user*: User
+    pkg*: Package
     compiler*: tuple[binary: string, flags: seq[string]]
-    authors*: seq[string]
     targets*: OrderedTable[string, Target]
+
+  User* = tuple[name, email, install: string]
+
+  Compiler* = tuple[binary: string, flags: seq[string]]
+
+  Package* = object
+    name*, description*, version*, url*: string
+    authors*: seq[string]
 
   Target* = object
     name*, file*, description*: string
@@ -59,7 +64,7 @@ proc writeCfgFile*(fileName, text: string) =
     writeFile(fileName, text)
 
 proc initConfig(): Config =
-  result.install = getNwnInstallDir()
+  result.user.install = getNwnInstallDir()
   result.compiler.binary = "nwnsc"
 
 proc initTarget(): Target =
@@ -73,7 +78,7 @@ proc parseUser(cfg: var Config, key, value: string) =
   case key
   of "name": cfg.user.name = value
   of "email": cfg.user.email = value
-  of "install": cfg.install = value
+  of "install": cfg.user.install = value
   else:
     error(fmt"Unknown key/value pair '{key}={value}'")
 
@@ -86,12 +91,11 @@ proc parseCompiler(cfg: var Config, key, value: string) =
 
 proc parsePackage(cfg: var Config, key, value: string) =
   case key
-  of "name": cfg.name = value
-  of "description": cfg.description = value
-  of "version": cfg.version = value
-  of "author": cfg.authors.add(value)
-  of "url": cfg.url = value
-  of "flat": cfg.flat = parseBool(value)
+  of "name": cfg.pkg.name = value
+  of "description": cfg.pkg.description = value
+  of "version": cfg.pkg.version = value
+  of "author": cfg.pkg.authors.add(value)
+  of "url": cfg.pkg.url = value
   else:
     error(fmt"Unknown key/value pair '{key}={value}'")
 
@@ -158,12 +162,12 @@ proc dumpConfig(cfg: Config) =
   debug("Email:", cfg.user.email)
   debug("Compiler:", cfg.compiler.binary)
   debug("Flags:", cfg.compiler.flags.join("\n"))
-  debug("NWN Install:", cfg.install)
-  debug("Package:", cfg.name)
-  debug("Description:", cfg.description)
-  debug("Version:", cfg.version)
-  debug("URL:", cfg.url)
-  debug("Authors:", cfg.authors.join("\n"))
+  debug("NWN Install:", cfg.user.install)
+  debug("Package:", cfg.pkg.name)
+  debug("Description:", cfg.pkg.description)
+  debug("Version:", cfg.pkg.version)
+  debug("URL:", cfg.pkg.url)
+  debug("Authors:", cfg.pkg.authors.join("\n"))
 
   for target in cfg.targets.values:
     stdout.write("\n")

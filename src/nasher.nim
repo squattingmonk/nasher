@@ -183,7 +183,7 @@ proc pack(opts: Options) =
       fatal("Something went wrong!")
 
   if opts.cmd.kind == ckInstall:
-    install(target.file, opts.cfg.install, opts.forceAnswer)
+    install(target.file, opts.cfg.user.install, opts.forceAnswer)
 
 when isMainModule:
   var opts = parseCmdLine()
