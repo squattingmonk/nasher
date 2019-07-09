@@ -71,7 +71,7 @@ proc init(opts: var Options) =
 
 proc list(opts: Options) =
   tryOrQuit("No targets found. Please check your nasher.cfg."):
-    if isLogging(Low):
+    if isLogging(LowPriority):
       var hasRun = false
       for target in opts.cfg.targets.values:
         if hasRun:

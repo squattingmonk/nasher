@@ -10,7 +10,7 @@ type
     Error, Warning, Message, Success, Prompt
 
   Priority* = enum
-    Debug, Low, Medium, High
+    DebugPriority, LowPriority, MediumPriority, HighPriority
 
   Answer* = enum
     None, No, Yes, Default
@@ -19,10 +19,10 @@ const
   colWidth = len("Initializing")
   foregrounds:array[Error .. Prompt, ForegroundColor] =
     [fgRed, fgYellow, fgCyan, fgGreen, fgYellow]
-  styles: array[Debug .. High, set[Style]] =
+  styles: array[DebugPriority .. HighPriority, set[Style]] =
     [{styleDim}, {styleDim}, {}, {styleBright}]
 
-var cli = CLI(showColor: stdout.isatty, logLevel: Medium, forceAnswer: None)
+var cli = CLI(showColor: stdout.isatty, logLevel: MediumPriority, forceAnswer: None)
 
 proc setLogLevel*(level: Priority) =
   cli.logLevel = level
@@ -44,7 +44,7 @@ proc displayCategory(category: string, displayType: DisplayType, priority: Prior
       else: category & " "
 
   if cli.showColor:
-    if priority != Debug:
+    if priority != DebugPriority:
       setForegroundColor(stdout, foregrounds[displayType])
     writeStyled(text, styles[priority])
     resetAttributes()
@@ -59,7 +59,7 @@ proc getMsgWidth(category: string): int =
   let maxWidth = if stdout.isatty: terminalWidth() - category.len else: 80
   result = maxWidth - colWidth - 1
 
-proc display*(category, msg: string, displayType = Message, priority = Medium) =
+proc display*(category, msg: string, displayType = Message, priority = MediumPriority) =
   ## Displayes a message in the format "{category} {msg}" if the log level is at
   ## or below the given priority. The message is styled based on displayType.
   if priority < cli.logLevel:
@@ -76,13 +76,13 @@ proc display*(category, msg: string, displayType = Message, priority = Medium) =
     displayLine(if i == 0: category else: "...", line, displayType, priority)
     i.inc
 
-proc display*(msg: string, displayType = Message, priority = Medium) =
+proc display*(msg: string, displayType = Message, priority = MediumPriority) =
   ## Convenience proc to display a message with no category
   display("", msg, displayType, priority)
 
 proc debug*(category, msg: string) =
   ## Convenience proc for displaying debug messages
-  display(category, msg, priority = Debug)
+  display(category, msg, priority = DebugPriority)
 
 proc debug*(msg: string) =
   ## Convenience proc for displaying debug messages with a default category
@@ -90,31 +90,31 @@ proc debug*(msg: string) =
 
 proc info*(category, msg: string) =
   ## Convenience proc for displaying low priority messages
-  display(category, msg, priority = Low)
+  display(category, msg, priority = LowPriority)
 
-proc warning*(msg: string, priority: Priority = Medium) =
+proc warning*(msg: string, priority: Priority = MediumPriority) =
   ## Convenience proc for displaying warnings
   display("Warning:", msg, displayType = Warning, priority = priority)
 
 proc error*(msg: string) =
   ## Convenience proc for displaying errors
-  display("Error:", msg, displayType = Error, priority = High)
+  display("Error:", msg, displayType = Error, priority = HighPriority)
 
 proc fatal*(msg: string) =
   ## Displays msg as an error, then quits, sending an error code
   error(msg)
   quit(QuitFailure)
 
-proc success*(msg: string, priority: Priority = Medium) =
+proc success*(msg: string, priority: Priority = MediumPriority) =
   display("Success:", msg, displayType = Success, priority = priority)
 
 proc prompt(msg: string): string =
-  display("Prompt:", msg, Prompt, High)
-  displayCategory("Answer:", Prompt, High)
+  display("Prompt:", msg, Prompt, HighPriority)
+  displayCategory("Answer:", Prompt, HighPriority)
   result = stdin.readLine
 
 proc forced(msg, answer: string) =
-  display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt, High)
+  display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt, HighPriority)
 
 proc askIf*(question: string, default: Answer = No): bool =
   ## Displays a yes/no question/answer prompt to the user. If the user does not
@@ -157,8 +157,8 @@ proc ask*(question: string, default = ""): string =
   debug("Answer:", result)
 
 proc choose*(question: string, choices: openarray[string]): string =
-  display("Prompt:", question, Prompt, High)
-  display("Select:", "Cycle with Tab, Choose with Enter", Prompt, High)
+  display("Prompt:", question, Prompt, HighPriority)
+  display("Select:", "Cycle with Tab, Choose with Enter", Prompt, HighPriority)
 
   var
     current = 0
@@ -221,5 +221,5 @@ proc choose*(question: string, choices: openarray[string]): string =
   # Move the cursor back up the initial selection line
   stdout.cursorUp(choices.len)
   stdout.showCursor
-  display("Answer:", choices[current], Prompt, High)
+  display("Answer:", choices[current], Prompt, HighPriority)
   return choices[current]

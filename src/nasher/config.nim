@@ -148,7 +148,7 @@ proc parseConfig*(cfg: var Config, fileName: string) =
   p.close()
 
 proc dumpConfig(cfg: Config) =
-  if not isLogging(Debug):
+  if not isLogging(DebugPriority):
     return
 
   sandwich:

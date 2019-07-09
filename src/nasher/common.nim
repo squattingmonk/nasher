@@ -29,7 +29,7 @@ template doAfter*(val: var bool, statements: untyped) =
     val = true
 
 template doAfterDebug*(val: var bool, statements: untyped) =
-  if isLogging(Debug):
+  if isLogging(DebugPriority):
     if val:
       statements
     else:

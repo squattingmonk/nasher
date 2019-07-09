@@ -94,18 +94,18 @@ proc parseFlag(flag, value: string, result: var Options) =
   of "v", "version":
     result.showVersion = true
   of "debug":
-    setLogLevel(Debug)
+    setLogLevel(DebugPriority)
   of "verbose":
-    setLogLevel(Low)
+    setLogLevel(LowPriority)
   of "quiet":
-    setLogLevel(High)
+    setLogLevel(HighPriority)
   of "no-color":
     setShowColor(false)
   else:
     warning("Unknown option --" & flag)
 
 proc dumpOptions(opts: Options) =
-  if not isLogging(Debug):
+  if not isLogging(DebugPriority):
     return
 
   debug("Args:", commandLineParams().join("\n"))
