@@ -108,6 +108,10 @@ proc fatal*(msg: string) =
 proc success*(msg: string, priority: Priority = MediumPriority) =
   display("Success:", msg, displayType = Success, priority = priority)
 
+proc hint*(msg: string) =
+  if cli.forceAnswer == None:
+    display("Hint:", msg)
+
 proc prompt(msg: string): string =
   display("Prompt:", msg, Prompt, HighPriority)
   displayCategory("Answer:", Prompt, HighPriority)

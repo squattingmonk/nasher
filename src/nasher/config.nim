@@ -22,36 +22,39 @@ type
     name*, file*, description*: string
     sources*: seq[string]
 
-proc addLine(s: var string, line: string) =
+proc addLine(s: var string, line = "") =
   s.add(line & "\n")
 
 proc addPair(s: var string, key, value: string) =
   s.addLine("$1 = \"$2\"" % [key, value])
 
 proc genGlobalCfgText:string =
+  display("Generating", "global config file")
+  hint("User information will be automatically filled into the authors " &
+       "section of new packages created using nasher init.")
   let
     defaultName = execCmdOrDefault("git config --get user.name").strip
     defaultEmail = execCmdOrDefault("git config --get user.email").strip
 
-  display("Generating", "global config file")
-  display("Hint:", "The following options will be automatically filled into " &
-          "the authors section of new packages created using nasher init:")
-  let
-    name = ask("What is your name?", defaultName)
-    email = ask("What is your email?", defaultEmail)
-
-  display("Hint:", "The following will be used to compile and install packages:")
-  let
-    install = ask("Where is your Neverwinter Nights installation located?", getNwnInstallDir())
-    binary = ask("What is the command to run your script compiler?", "nwnsc")
-    flags = ask("What script compiler flags should always be used?", "-lowqey")
-
   result.addLine("[User]")
-  result.addPair("name", name)
-  result.addPair("email", email)
-  result.addPair("install", install)
-  result.addLine("\n[Compiler]")
-  result.addPair("binary", binary)
+  result.addPair("name", ask("What is your name?", defaultName))
+  result.addPair("email", ask("What is your email?", defaultEmail))
+  result.addPair("install", ask("Where is Neverwinter Nights installed?",
+                                getNwnInstallDir()))
+
+  hint("If the compiler binary is in your $PATH, you can just enter the " &
+       "name of the binary. Otherwise, you should put the absolute path " &
+       "to the compiler binary.")
+  result.addLine
+  result.addLine("[Compiler]")
+  result.addPair(
+    "binary", ask("What is the command to run your script compiler?", "nwnsc"))
+
+  hint("Any flags entered here will be passed to the compiler for every " &
+       "package. Package configs can specify extra flags on a per-target " &
+       "basis if needed.")
+  let
+    flags = ask("What script compiler flags should always be used?", "-lowqey")
 
   for flag in flags.split:
     result.addPair("flags", flag)
@@ -62,8 +65,9 @@ proc genTargetText(defaultName: string): string =
   result.addPair("file", ask("File to generate:", "demo.mod"))
   result.addPair("description", ask("File description:"))
 
-  display("Hint:", "you can list individual source files or specify glob " &
-          "patterns that match multiple files.")
+  hint("Add individual source files or use a glob to match multiple files. " &
+       "For instance, you can match all nss and json files in subdirectories " &
+       "of src/ with the pattern \"src/*/*.{nss,json}\".")
   var
     defaultSrc = "src/*.{nss,json}"
   while true:
@@ -79,7 +83,7 @@ proc genPkgCfgText(user: User): string =
     defaultUrl = execCmdOrDefault("git remote get-url origin").strip
 
   result.addLine("[Package]")
-  result.addPair("name", ask("Enter your package name"))
+  result.addPair("name", ask("Package name:"))
   result.addPair("description", ask("Package description:"))
   result.addPair("version", ask("Package version", "0.1.0"))
   result.addPair("url", ask("Package URL:", defaultUrl))
@@ -88,6 +92,9 @@ proc genPkgCfgText(user: User): string =
     defaultAuthor = user.name
     defaultEmail = user.email
 
+  hint("Add each package author separately. If additional people contribute " &
+       "to the project later, you can add separate lines for them in the " &
+       "package config file.")
   while true:
     let
       authorName = ask("Author name:", defaultAuthor, allowBlank = false)
@@ -104,11 +111,14 @@ proc genPkgCfgText(user: User): string =
     defaultAuthor = ""
     defaultEmail = ""
 
-  display("Hint:", "generating targets")
-
+  hint("Build targets are used by the compile, pack, and install commands " &
+       "to map source files to an output file. Each target must have a " &
+       "unique name to identify it. You can have multiple targets (e.g., " &
+       "one for an installable erf and one for a demo module). The first " &
+       "target defined in a package config will be the default.")
   var targetName = "default"
   while true:
-    result.add("\n")
+    result.addLine
     result.add(genTargetText(targetName))
     targetName = ""
 
@@ -120,6 +130,7 @@ proc writeCfgFile(fileName, text: string) =
     display("Creating", "configuration file at " & fileName)
     createDir(fileName.splitFile().dir)
     writeFile(fileName, text)
+    success("created configuration file")
 
 proc genCfgFile(file: string, user: User) =
   if file == getGlobalCfgFile():
