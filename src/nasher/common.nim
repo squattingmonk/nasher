@@ -125,6 +125,9 @@ Description:
   directory will be the project root.
 
   If supplied, <file> will be unpacked into the project root's source tree.
+
+Options:
+  --default      Automatically accept the default answers to prompts
 """
 
 const helpList* = """
