@@ -140,15 +140,15 @@ proc askIf*(question: string, default: Answer = No): bool =
 
   debug("Answer:", $result)
 
-proc ask*(question: string, default = ""): string =
-  if cli.forceAnswer in {Yes, Default} and default == "":
+proc ask*(question: string, default = "", allowBlank = true): string =
+  if cli.forceAnswer in {Yes, Default} and default != "":
     forced(question, default)
     result = default
   else:
     if default == "":
       result = prompt(question)
       if result.isNilOrWhitespace:
-        result = ask(question)
+        result = if allowBlank: "" else: ask(question)
     else:
       result = prompt("$1 (default: $2)" % [question, default])
       if result.isNilOrWhitespace:
