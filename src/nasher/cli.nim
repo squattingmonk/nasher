@@ -141,6 +141,10 @@ proc askIf*(question: string, default: Answer = No): bool =
       result = prompt(question).parseBool
     except ValueError:
       result = default == Yes
+      stdout.cursorUp
+      stdout.eraseLine
+      displayCategory("Answer:", Prompt, HighPriority)
+      echo(if result: "yes" else: "no")
 
   debug("Answer:", $result)
 
@@ -157,6 +161,10 @@ proc ask*(question: string, default = "", allowBlank = true): string =
       result = prompt("$1 (default: $2)" % [question, default])
       if result.isNilOrWhitespace:
         result = default
+        stdout.cursorUp
+        stdout.eraseLine
+        displayCategory("Answer:", Prompt, HighPriority)
+        echo default
 
   debug("Answer:", result)
 
