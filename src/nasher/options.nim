@@ -79,7 +79,7 @@ proc parseArgument(key: string, result: var Options) =
 proc parseFlag(flag, value: string, result: var Options) =
   case flag
   of "config":
-    result.configs.add(value.expandFilename)
+    result.configs.add(value.absolutePath)
   of "yes":
     result.forceAnswer = Yes
     setForceAnswer(Yes)
