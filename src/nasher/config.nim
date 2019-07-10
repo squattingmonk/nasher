@@ -85,7 +85,7 @@ proc genPkgCfgText(user: User): string =
   result.addLine("[Package]")
   result.addPair("name", ask("Package name:"))
   result.addPair("description", ask("Package description:"))
-  result.addPair("version", ask("Package version", "0.1.0"))
+  result.addPair("version", ask("Package version:", "0.1.0"))
   result.addPair("url", ask("Package URL:", defaultUrl))
 
   var
