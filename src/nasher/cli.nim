@@ -142,7 +142,7 @@ proc askIf*(question: string, default: Answer = No): bool =
 
 proc ask*(question: string, default = "", allowBlank = true): string =
   if cli.forceAnswer in {Yes, Default} and (default != "" or allowBlank):
-    forced(question, default)
+    forced(question, "\"" & default & "\"")
     result = default
   else:
     if default == "":
