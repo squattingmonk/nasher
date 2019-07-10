@@ -118,7 +118,7 @@ proc prompt(msg: string): string =
   result = stdin.readLine
 
 proc forced(msg, answer: string) =
-  display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt, HighPriority)
+  display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt)
 
 proc askIf*(question: string, default: Answer = No): bool =
   ## Displays a yes/no question/answer prompt to the user. If the user does not
