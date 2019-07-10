@@ -1,4 +1,4 @@
-import os
+import os, osproc
 
 import cli
 export cli
@@ -74,6 +74,13 @@ template withDir*(dir: string, body: untyped): untyped =
     body
   finally:
     setCurrentDir(curDir)
+
+proc execCmdOrDefault*(cmd: string, default = ""): string =
+  let (output, errcode) = execCmdEx(cmd)
+  if errcode != 0:
+    default
+  else:
+    output
 
 const helpAll* = """
 nasher: a build tool for Neverwinter Nights projects

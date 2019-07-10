@@ -13,7 +13,7 @@ type
     showHelp*: bool
 
   CommandKind* = enum
-    ckNil, ckInit, ckCompile, ckList, ckPack, ckUnpack, ckInstall 
+    ckNil, ckInit, ckCompile, ckList, ckPack, ckUnpack, ckInstall
 
   Command* = object
     case kind*: CommandKind

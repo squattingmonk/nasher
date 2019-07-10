@@ -48,25 +48,18 @@ proc unpack(opts: Options) =
 proc init(opts: var Options) =
   let
     dir = opts.cmd.dir
-    globalCfgFile = getGlobalCfgFile()
     pkgCfgFile = dir / "nasher.cfg"
-
-  if not existsFile(globalCfgFile):
-    # TODO: allow user to input desired values before writing
-    writeCfgFile(globalCfgFile, globalCfgText)
 
   if existsFile(pkgCfgFile):
     fatal(fmt"{dir} is already a nasher project")
 
   display("Initializing", "into " & dir)
-  # TODO: allow user to input desired values before writing
-  writeCfgFile(pkgCfgFile, pkgCfgText)
+  opts.configs.add(getPkgCfgFile(dir))
+  opts.cfg = loadConfigs(opts.configs)
   success("project initialized")
 
   if opts.cmd.file.len() > 0:
     opts.cmd.dir = getSrcDir(dir)
-    opts.configs.add(getPkgCfgFile(dir))
-    opts.cfg = loadConfig(opts.configs)
     unpack(opts)
 
 proc list(opts: Options) =
@@ -188,15 +181,15 @@ proc pack(opts: Options) =
 when isMainModule:
   var opts = parseCmdLine()
 
-  if opts.cmd.kind notin {ckNil, ckInit}:
-    if not isNasherProject():
-      fatal("This is not a nasher project. Please run nasher init.")
-    else:
-      opts.cfg = loadConfig(opts.configs)
-
   if opts.showHelp:
     showHelp(opts.cmd.kind)
   else:
+    if opts.cmd.kind != ckNil:
+      if opts.cmd.kind != ckInit and not isNasherProject():
+        fatal("This is not a nasher project. Please run nasher init.")
+
+      opts.cfg = loadConfigs(opts.configs)
+
     case opts.cmd.kind
     of ckList: list(opts)
     of ckInit: init(opts)
