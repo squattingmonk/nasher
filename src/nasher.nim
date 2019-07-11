@@ -91,13 +91,20 @@ proc getTarget(opts: Options): Target =
   except KeyError:
     fatal("Unknown target: " & opts.cmd.target)
 
-proc copySourceFiles(target: Target, dir: string) =
-  ## Copies all source files for target to dir
+proc copySourceFiles(target: Target, dir: string): string =
+  ## Copies all source files for target to dir. Returns the newest source file
   withDir(getPkgRoot()):
     for source in target.sources:
       debug("Copying", "source files from " & source)
       for file in glob.walkGlob(source):
         debug("Copying", file)
+        try:
+          if file.fileNewer(result):
+            debug(fmt"{file} is newer than {result}")
+            result = file
+        except OSError:
+          # This is the first source file
+          result = file
         copyFile(file, dir / file.extractFilename)
 
 proc compile(dir, compiler, flags: string) =
@@ -139,6 +146,8 @@ proc install (file, dir: string, force: Answer) =
     fatal(fmt"Cannot install to {installDir}: directory does not exist")
 
   if existsFile(installDir / fileName):
+    let age = if file.fileNewer(installDir / fileName): "newer" else: "older"
+    hint(fmt"The file to be installed is {age} than the existing file.")
     if not askIf(fmt"Installed file {fileName} already exists. Overwrite? (y/N)"):
       quit(QuitSuccess)
 
@@ -152,7 +161,7 @@ proc pack(opts: Options) =
 
   removeDir(buildDir)
   createDir(buildDir)
-  copySourceFiles(target, buildDir)
+  let newestSource = copySourceFiles(target, buildDir)
 
   if opts.cmd.kind in {ckInstall, ckPack, ckCompile}:
     compile(buildDir, opts.cfg.compiler.binary, opts.cfg.compiler.flags.join(" "))
@@ -162,6 +171,8 @@ proc pack(opts: Options) =
 
     display("Packing", fmt"files for target {target.name} into {target.file}")
     if existsFile(target.file):
+      let age = if target.file.fileNewer(newestSource): "older" else: "newer"
+      hint(fmt"The file to be packed is {age} than the existing file.")
       if not askIf(fmt"Packed file {target.file} already exists. Overwrite? (y/N)"):
         quit(QuitSuccess)
 
@@ -172,6 +183,7 @@ proc pack(opts: Options) =
 
     if error == 0:
       success("packed " & target.file)
+      target.file.setLastModificationTime(newestSource.getLastModificationTime)
     else:
       fatal("Something went wrong!")
 
