@@ -98,7 +98,8 @@ proc genPkgCfgText(user: User): string =
   while true:
     let
       authorName = ask("Author name:", defaultAuthor, allowBlank = false)
-      authorEmail = ask("Author email:", defaultEmail)
+      authorEmail = ask("Author email:",
+                        if authorName == defaultAuthor: defaultEmail else: "")
 
     if authorEmail.isNilOrWhitespace:
       result.addPair("author", authorName)
