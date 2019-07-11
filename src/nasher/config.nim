@@ -256,15 +256,17 @@ proc dumpConfig(cfg: Config) =
   sandwich:
     debug("Ending", "configuration dump")
 
+proc loadConfig*(cfg: var Config, file: string) =
+  if not existsFile(file):
+    genCfgFile(file, cfg.user)
+  cfg.parseConfig(file)
 
-proc loadConfigs*(configs: seq[string]): Config =
+proc loadConfigs*(files: seq[string]): Config =
   result = initConfig()
   var hasRun = false
-  for config in configs:
+  for file in files:
     doAfterDebug(hasRun):
       stdout.write("\n")
-    if not existsFile(config):
-      genCfgFile(config, result.user)
+    result.loadConfig(file)
 
-    result.parseConfig(config)
   result.dumpConfig()

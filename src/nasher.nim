@@ -54,8 +54,8 @@ proc init(opts: var Options) =
     fatal(fmt"{dir} is already a nasher project")
 
   display("Initializing", "into " & dir)
-  opts.configs.add(getPkgCfgFile(dir))
-  opts.cfg = loadConfigs(opts.configs)
+  opts.configs.add(pkgCfgFile)
+  opts.cfg.loadConfig(pkgCfgFile)
   success("project initialized")
 
   if opts.cmd.file.len() > 0:
