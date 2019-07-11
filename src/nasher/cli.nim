@@ -18,10 +18,15 @@ type
 
 const
   colWidth = len("Initializing")
-  foregrounds:array[Error .. Prompt, ForegroundColor] =
+  foregrounds: array[Error .. Prompt, ForegroundColor] =
     [fgRed, fgYellow, fgCyan, fgGreen, fgYellow]
   styles: array[DebugPriority .. HighPriority, set[Style]] =
     [{styleDim}, {styleDim}, {}, {styleBright}]
+
+const
+  AllAnswers* = {None..Default}
+  NotYes* = AllAnswers - {Yes}
+  NotNo* = AllAnswers - {No}
 
 var cli = CLI(showColor: stdout.isatty, logLevel: MediumPriority, forceAnswer: None)
 
@@ -123,14 +128,18 @@ proc forced(msg, answer: string) =
   display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt)
   cli.hint = ""
 
-proc askIf*(question: string, default: Answer = No): bool =
+proc askIf*(question: string, default: Answer = No, allowed = AllAnswers): bool =
   ## Displays a yes/no question/answer prompt to the user. If the user does not
   ## choose an answer or that answer cannot be converted into a bool, the
   ## default answer is chosen instead. If the user has passed a --yes, --no, or
   ## --default flag, the appropriate choice will be selected.
   let forceAnswer =
-    if cli.forceAnswer == Default: default
-    else: cli.forceAnswer
+    if cli.forceAnswer notin allowed:
+      None
+    elif cli.forceAnswer == Default:
+      default
+    else:
+      cli.forceAnswer
 
   case forceAnswer
   of Yes:
