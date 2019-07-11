@@ -73,7 +73,7 @@ proc genTargetText(defaultName: string): string =
   while true:
     result.addPair("source", ask("Source pattern:", defaultSrc, allowBlank = false))
     defaultSrc = ""
-    if not askIf("Do you wish to add another source pattern? (y/N)", allowed = NotYes):
+    if not askIf("Do you wish to add another source pattern?", allowed = NotYes):
       break
 
 proc genPkgCfgText(user: User): string =
@@ -105,7 +105,7 @@ proc genPkgCfgText(user: User): string =
     else:
       result.addPair("author", "$1 <$2>" % [authorName, authorEmail])
 
-    if not askIf("Do you wish to add another author? (y/N)", allowed = NotYes):
+    if not askIf("Do you wish to add another author?", allowed = NotYes):
       break
 
     defaultAuthor = ""
@@ -122,7 +122,7 @@ proc genPkgCfgText(user: User): string =
     result.add(genTargetText(targetName))
     targetName = ""
 
-    if not askIf("Do you wish to add another target? (y/N)", allowed = NotYes):
+    if not askIf("Do you wish to add another target?", allowed = NotYes):
       break
 
 proc writeCfgFile(fileName, text: string) =

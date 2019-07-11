@@ -150,7 +150,8 @@ proc askIf*(question: string, default: Answer = No, allowed = AllAnswers): bool 
     result = false
   else:
     try:
-      result = prompt(question).parseBool
+      let help = if default == Yes: " (Y/n)" else: " (y/N)"
+      result = prompt(question & help).parseBool
     except ValueError:
       result = default == Yes
       stdout.cursorUp
