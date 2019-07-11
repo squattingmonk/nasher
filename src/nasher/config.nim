@@ -16,7 +16,7 @@ type
 
   Package* = object
     name*, description*, version*, url*: string
-    authors*: seq[string]
+    authors*, sources*: seq[string]
 
   Target* = object
     name*, file*, description*: string
@@ -59,22 +59,29 @@ proc genGlobalCfgText:string =
   for flag in flags.split:
     result.addPair("flags", flag)
 
+proc genSrcText: string =
+  hint("Add individual source files or use a glob to match multiple files. " &
+       "For instance, you can match all nss and json files in subdirectories " &
+       "of src/ with the pattern \"src/**/*.{nss,json}\".")
+  var
+    defaultSrc = "src/**/*.{nss,json}"
+  while true:
+    result.addPair("source", ask("Source pattern:", defaultSrc, allowBlank = false))
+    defaultSrc = ""
+    if not askIf("Do you wish to add another source pattern?", allowed = NotYes):
+      break
+
 proc genTargetText(defaultName: string): string =
   result.addLine("[Target]")
   result.addPair("name", ask("Target name:", defaultName))
   result.addPair("file", ask("File to generate:", "demo.mod"))
   result.addPair("description", ask("File description:"))
 
-  hint("Add individual source files or use a glob to match multiple files. " &
-       "For instance, you can match all nss and json files in subdirectories " &
-       "of src/ with the pattern \"src/*/*.{nss,json}\".")
-  var
-    defaultSrc = "src/*.{nss,json}"
-  while true:
-    result.addPair("source", ask("Source pattern:", defaultSrc, allowBlank = false))
-    defaultSrc = ""
-    if not askIf("Do you wish to add another source pattern?", allowed = NotYes):
-      break
+  hint("Adding a list of sources for this target will limit the target " &
+       "to those sources. If you don't add sources to this target, it will " &
+       "default to using the sources defined for the whole package.")
+  if askIf("Do you wish to add source files specific to this target?"):
+    result.add(genSrcText())
 
 proc genPkgCfgText(user: User): string =
   display("Generating", "package config file")
@@ -112,6 +119,12 @@ proc genPkgCfgText(user: User): string =
     defaultAuthor = ""
     defaultEmail = ""
 
+  hint("Adding sources tells nasher where to look when packing and " &
+       "unpacking files. When adding sources, you should be sure to add " &
+       "patterns that match every source file in your project. Otherwise, " &
+       "nasher might not be able to properly update files when unpacking.")
+  result.add(genSrcText())
+
   hint("Build targets are used by the compile, pack, and install commands " &
        "to map source files to an output file. Each target must have a " &
        "unique name to identify it. You can have multiple targets (e.g., " &
@@ -146,9 +159,12 @@ proc initConfig*(): Config =
 proc initTarget(): Target =
   result.name = ""
 
-proc addTarget(cfg: var Config, target: Target) =
+proc addTarget(cfg: var Config, target: var Target) =
   if target.name.len() > 0:
+    if target.sources.len == 0:
+      target.sources = cfg.pkg.sources
     cfg.targets[target.name] = target
+  target = initTarget()
 
 proc parseUser(cfg: var Config, key, value: string) =
   case key
@@ -172,6 +188,7 @@ proc parsePackage(cfg: var Config, key, value: string) =
   of "version": cfg.pkg.version = value
   of "author": cfg.pkg.authors.add(value)
   of "url": cfg.pkg.url = value
+  of "source": cfg.pkg.sources.add(value)
   else:
     error(fmt"Unknown key/value pair '{key}={value}'")
 
@@ -201,11 +218,8 @@ proc parseConfig*(cfg: var Config, fileName: string) =
     of cfgEof: break
     of cfgSectionStart:
       cfg.addTarget(target)
-
       debug("Section:", fmt"[{e.section}]")
       section = e.section.normalize
-      target = initTarget()
-
     of cfgKeyValuePair, cfgOption:
       key = e.key.normalize
       debug("Option:", fmt"{key}: {e.value}")
@@ -243,6 +257,7 @@ proc dumpConfig(cfg: Config) =
   debug("Version:", cfg.pkg.version)
   debug("URL:", cfg.pkg.url)
   debug("Authors:", cfg.pkg.authors.join("\n"))
+  debug("Sources:", cfg.pkg.sources.join("\n"))
 
   try:
     for target in cfg.targets.values:
