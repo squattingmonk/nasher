@@ -243,12 +243,15 @@ proc dumpConfig(cfg: Config) =
   debug("URL:", cfg.pkg.url)
   debug("Authors:", cfg.pkg.authors.join("\n"))
 
-  for target in cfg.targets.values:
-    stdout.write("\n")
-    debug("Target:", target.name)
-    debug("Description:", target.description)
-    debug("File:", target.file)
-    debug("Sources:", target.sources.join("\n"))
+  try:
+    for target in cfg.targets.values:
+      stdout.write("\n")
+      debug("Target:", target.name)
+      debug("Description:", target.description)
+      debug("File:", target.file)
+      debug("Sources:", target.sources.join("\n"))
+  except IndexError:
+    discard
 
   sandwich:
     debug("Ending", "configuration dump")
