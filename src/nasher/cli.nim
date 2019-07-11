@@ -5,7 +5,7 @@ type
     showColor: bool
     logLevel: Priority
     forceAnswer: Answer
-    hint: string
+    hints: seq[string]
 
   DisplayType* = enum
     Error, Warning, Message, Success, Prompt
@@ -115,18 +115,22 @@ proc success*(msg: string, priority: Priority = MediumPriority) =
   display("Success:", msg, displayType = Success, priority = priority)
 
 proc hint*(msg: string) =
-  cli.hint = msg
+  cli.hints.add(msg)
+
+proc displayHints =
+  for hint in cli.hints:
+    display("Hint:", hint)
+  cli.hints = @[]
 
 proc prompt(msg: string): string =
   display("Prompt:", msg, Prompt, HighPriority)
-  display("Hint:", cli.hint)
-  cli.hint = ""
+  displayHints()
   displayCategory("Answer:", Prompt, HighPriority)
   result = stdin.readLine
 
 proc forced(msg, answer: string) =
   display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt)
-  cli.hint = ""
+  cli.hints = @[]
 
 proc askIf*(question: string, default: Answer = No, allowed = AllAnswers): bool =
   ## Displays a yes/no question/answer prompt to the user. If the user does not
