@@ -1,4 +1,4 @@
-import os, osproc, sequtils, streams, strformat, strutils, tables
+import os, osproc, sequtils, streams, strformat, strutils, tables, times
 
 import glob
 
@@ -127,32 +127,57 @@ proc convert(dir: string) =
       file.gffConvert
       file.removeFile
 
-proc install (file, dir: string, force: Answer) =
+proc confirmOverwrite(time: Time, file: string): bool =
+  ## Asks the user to confirm overwriting a file to be installed or packed. If
+  ## the file is newer than time, default to no; otherwise, default to yes.
+  ## Returns the user response.
+  if not existsFile(file):
+    return true
+
+  let
+    timeDiff = (time - file.getLastModificationTime).inSeconds
+
+  var
+    defaultAnswer = Yes
+    ageHint: string
+
+  if timeDiff > 0:
+    ageHint = "newer than"
+  elif timeDiff == 0:
+    ageHint = "the same age as"
+  else:
+    ageHint = "older than"
+    defaultAnswer = No
+
+  hint(fmt"The source file is {ageHint} the existing file.")
+  askIf(fmt"{file} already exists. Overwrite?", defaultAnswer)
+
+proc copyModificationTime(target, src: string) =
+  target.setLastModificationTime(src.getLastModificationTime)
+
+proc install (file, dir: string) =
   display("Installing", file & " into " & dir)
   if not existsFile(file):
     fatal(fmt"Cannot install {file}: file does not exist")
 
   let
+    fileTime = file.getLastModificationTime
     fileName = file.extractFilename
     installDir = expandTilde(
       case fileName.splitFile.ext.strip(chars = {'.'})
       of "erf": dir / "erf"
       of "hak": dir / "hak"
       of "mod": dir / "modules"
-      else: dir
-    )
+      else: dir)
 
   if not existsDir(installDir):
     fatal(fmt"Cannot install to {installDir}: directory does not exist")
 
-  if existsFile(installDir / fileName):
-    let age = if file.fileNewer(installDir / fileName): "newer" else: "older"
-    hint(fmt"The file to be installed is {age} than the existing file.")
-    if not askIf(fmt"Installed file {fileName} already exists. Overwrite? (y/N)"):
-      quit(QuitSuccess)
-
-  copyFile(file, installDir / fileName)
-  success("installed " & fileName)
+  let installed = installDir / fileName
+  if confirmOverwrite(fileTime, installed):
+    copyFile(file, installed)
+    installed.copyModificationTime(file)
+    success("installed " & fileName)
 
 proc pack(opts: Options) =
   let
@@ -161,7 +186,9 @@ proc pack(opts: Options) =
 
   removeDir(buildDir)
   createDir(buildDir)
-  let newestSource = copySourceFiles(target, buildDir)
+  let
+    newestSource = copySourceFiles(target, buildDir)
+    fileTime = newestSource.getLastModificationTime
 
   if opts.cmd.kind in {ckInstall, ckPack, ckCompile}:
     compile(buildDir, opts.cfg.compiler.binary, opts.cfg.compiler.flags.join(" "))
@@ -170,11 +197,8 @@ proc pack(opts: Options) =
     convert(buildDir)
 
     display("Packing", fmt"files for target {target.name} into {target.file}")
-    if existsFile(target.file):
-      let age = if target.file.fileNewer(newestSource): "older" else: "newer"
-      hint(fmt"The file to be packed is {age} than the existing file.")
-      if not askIf(fmt"Packed file {target.file} already exists. Overwrite? (y/N)"):
-        quit(QuitSuccess)
+    if not confirmOverwrite(fileTime, target.file):
+      quit(QuitSuccess)
 
     let
       # sourceFiles = toSeq(walkFiles(buildDir / "*"))
@@ -183,12 +207,12 @@ proc pack(opts: Options) =
 
     if error == 0:
       success("packed " & target.file)
-      target.file.setLastModificationTime(newestSource.getLastModificationTime)
+      target.file.copyModificationTime(newestSource)
     else:
       fatal("Something went wrong!")
 
   if opts.cmd.kind == ckInstall:
-    install(target.file, opts.cfg.user.install, opts.forceAnswer)
+    install(target.file, opts.cfg.user.install)
 
 when isMainModule:
   var opts = parseCmdLine()
