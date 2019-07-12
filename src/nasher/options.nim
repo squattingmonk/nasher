@@ -37,7 +37,6 @@ proc initCommand*(kind: CommandKind): Command =
     result.dir = getCurrentDir()
     result.file = ""
   of ckUnpack:
-    result.dir = getSrcDir()
     result.file = ""
   of ckCompile, ckPack, ckInstall:
     result.target = ""
@@ -62,17 +61,20 @@ proc parseArgument(key: string, result: var Options) =
   of ckNil:
     assert(false)
   of ckInit:
-    if result.cmd.dir != getCurrentDir() or key == getCurrentDir():
-      result.cmd.file = key
+    if result.cmd.dir != getCurrentDir():
+      if existsFile(key):
+        result.cmd.file = key.expandFilename
+      else:
+        fatal("Cannot unpack " & key & ": file does not exist")
     else:
       result.cmd.dir = key
   of ckCompile, ckPack, ckInstall:
     result.cmd.target = key.normalize
   of ckUnpack:
-    if result.cmd.file != "":
-      result.cmd.dir = key
+    if existsFile(key):
+      result.cmd.file = key.expandFilename
     else:
-      result.cmd.file = key
+      fatal("Cannot unpack " & key & ": file does not exist")
   else:
     discard
 

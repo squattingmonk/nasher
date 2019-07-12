@@ -49,9 +49,6 @@ proc getGlobalCfgFile*: string =
 proc getPkgCfgFile*(baseDir = getCurrentDir()): string =
   getPkgRoot(baseDir) / "nasher.cfg"
 
-proc getSrcDir*(baseDir = getCurrentDir()): string =
-  getPkgRoot(baseDir) / "src"
-
 proc getCacheDir*(file: string, baseDir = getCurrentDir()): string =
   getPkgRoot(baseDir) / ".nasher" / "cache" / file.extractFilename()
 
@@ -196,11 +193,18 @@ Options:
 
 const helpUnpack* = """
 Usage:
-  nasher unpack [options] <file> [<dir>]
+  nasher unpack [options] <file>
 
 Description:
-  Unpacks <file> into the source tree (default: $PKG_ROOT/src), or <dir> if
-  supplied.
+  Unpacks <file> into the source tree as defined in the project config file.
+
+  Each extracted file is checked against the source tree. If the file exists in
+  the source tree in one location, it is copied there, overwriting the existing
+  file. If the file does not exist in the source tree, it is copied to a folder
+  in the project root called "unknown". If the file exists in multiple folders,
+  you will be prompted to select which one you wish to copy the file to. You
+  can choose to copy it into the "unknown" folder so you can manually copy it
+  to the correct location later.
 
   By default, the files are placed directly into the source folder. To customize
   the location of a file in the source tree, you can add a [FileMap] section to

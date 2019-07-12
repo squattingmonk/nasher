@@ -21,45 +21,90 @@ proc showHelp(kind: CommandKind) =
   echo help
   echo helpOptions
 
-proc unpack(opts: Options) =
-  let
-    dir = opts.cmd.dir
-    file = opts.cmd.file.expandFilename
-    cacheDir = file.getCacheDir(dir)
+proc genSrcMap(sources: seq[string]): Table[string, seq[string]] =
+  ## Generates a table mapping unconverted source files to the proper directory
+  debug("Generating", "source map from sources " & $sources)
+  var fileName: string
+  for source in sources:
+    debug("Walking", "pattern " & source)
+    for path in glob.walkGlob(source):
+      debug("Found", path)
+      let
+        (dir, file, ext) = splitFile(path)
+        fileName = if ext == "json": file else: file.addFileExt(ext)
+      if result.hasKeyOrPut(fileName, @[dir]):
+        result[fileName].add(dir)
 
-  if not existsFile(file):
-    fatal(fmt"Cannot unpack file {file}: file does not exist")
+proc mapSrc(file: string, srcMap: Table[string, seq[string]]): string =
+  var choices = srcMap.getOrDefault(file)
+  case choices.len
+  of 0: result = "unknown"
+  of 1: result = choices[0]
+  else:
+    choices.add("unknown")
+    result =
+      choose(fmt"Cannot decide where to extract {file}. Please choose:",
+             choices)
+
+proc unpack(opts: Options) =
+  let cacheDir = ".nasher" / "cache" / opts.cmd.file.extractFilename
 
   tryOrQuit(fmt"Could not create directory {cacheDir}"):
     createDir(cacheDir)
 
-  withDir(cacheDir):
-    extractErf(file, cacheDir)
+  tryOrQuit(fmt"Could not unpack file {opts.cmd.file}"):
+    extractErf(opts.cmd.file, cacheDir)
 
-  for ext in GffExtensions:
-    createDir(dir / ext)
-    for file in walkFiles(cacheDir / "*".addFileExt(ext)):
-      gffConvert(file, dir / ext)
+  let
+    srcMap = genSrcMap(opts.cfg.pkg.sources)
 
-  createDir(dir / "nss")
-  for file in walkFiles(cacheDir / "*".addFileExt("nss")):
-    copyFileWithPermissions(file, dir / "nss" / file.extractFilename())
+  var warnings = 0
+
+  for file in walkFiles(cacheDir / "*"):
+    let ext = file.splitFile.ext.strip(chars = {'.'})
+    if ext == "ncs":
+      continue
+
+    let
+      fileName = file.extractFilename
+      relPath = file.relativePath(cacheDir)
+      dir = mapSrc(fileName, srcMap)
+
+    if dir == "unknown":
+      warning("cannot decide where to extract " & fileName)
+      warnings.inc
+    createDir(dir)
+
+    if ext in GffExtensions:
+      gffConvert(file, dir)
+    else:
+      display("Copying", relPath & " -> " & dir / fileName,
+              priority = LowPriority)
+      copyFile(file, dir / fileName)
+
+  if warnings > 0:
+    let words =
+      if warnings == 1: ["1", "file", "has", "this", "location"]
+      else: [$warnings, "files", "have", "these", "locations"]
+
+    warning(("$1 $2 could not be automatically extracted and $3 been placed " &
+             "into \"unknown\". You will need to manually copy $4 $2 to the " &
+             "correct $5.") % words)
 
 proc init(opts: var Options) =
   let
-    dir = opts.cmd.dir
-    pkgCfgFile = dir / "nasher.cfg"
+    pkgCfgFile = opts.cmd.dir / "nasher.cfg"
 
   if existsFile(pkgCfgFile):
-    fatal(fmt"{dir} is already a nasher project")
+    fatal(fmt"{opts.cmd.dir} is already a nasher project")
 
-  display("Initializing", "into " & dir)
+  display("Initializing", "into " & opts.cmd.dir)
   opts.configs.add(pkgCfgFile)
   opts.cfg.loadConfig(pkgCfgFile)
   success("project initialized")
 
   if opts.cmd.file.len() > 0:
-    opts.cmd.dir = getSrcDir(dir)
+    setCurrentDir(opts.cmd.dir)
     unpack(opts)
 
 proc list(opts: Options) =
@@ -221,8 +266,11 @@ when isMainModule:
     showHelp(opts.cmd.kind)
   else:
     if opts.cmd.kind != ckNil:
-      if opts.cmd.kind != ckInit and not isNasherProject():
-        fatal("This is not a nasher project. Please run nasher init.")
+      if opts.cmd.kind != ckInit:
+        if not isNasherProject():
+          fatal("This is not a nasher project. Please run nasher init.")
+        else:
+          setCurrentDir(getPkgRoot())
 
       opts.cfg = loadConfigs(opts.configs)
 
