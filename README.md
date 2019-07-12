@@ -2,10 +2,24 @@
 This is a command-line utility for managing a Neverwinter Nights script or
 module repository.
 
+## Requirements
+- [nim](https://github.com/dom96/choosenim) >= 0.20.0
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.5
+- [nwnsc](https://gitlab.com/glorwinger/nwnsc)
+
 ## Installation
+You can install nasher through `nimble`:
+
+    nimble install nasher
+
+Or by building from source:
+
     $ git clone https://github.com/squattingmonk/nasher.nim.git nasher
     $ cd nasher
     $ nimble install
+
+If `nimble` has been configured correctly, the binary should be available on
+your path.
 
 ## Usage
 Run `nasher --help` to see usage information. To get detailed usage information
@@ -89,4 +103,3 @@ This is equivalent to:
     $ cd foo
     $ nasher unpack ../bar.mod
 
-## Configuration
