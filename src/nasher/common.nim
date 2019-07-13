@@ -196,20 +196,20 @@ Usage:
   nasher unpack [options] <file>
 
 Description:
-  Unpacks <file> into the source tree as defined in the project config file.
+  Unpacks <file> into the project source tree.
 
-  Each extracted file is checked against the source tree. If the file exists in
-  the source tree in one location, it is copied there, overwriting the existing
-  file. If the file does not exist in the source tree, it is copied to a folder
-  in the project root called "unknown". If the file exists in multiple folders,
-  you will be prompted to select which one you wish to copy the file to. You
-  can choose to copy it into the "unknown" folder so you can manually copy it
-  to the correct location later.
+  Each extracted file is checked against the source tree (as defined in the 
+  [Package] section of the package config). If the file exists in one location,
+  it is copied there, overwriting the existing file. If the file exists in
+  multiple folders, you will be prompted to select where it should be copied.
 
-  By default, the files are placed directly into the source folder. To customize
-  the location of a file in the source tree, you can add a [FileMap] section to
-  the package config. Each pattern in the filemap is tried until one matches the
-  file. When a match is found, it is placed into the appropriate folder.
+  If the extracted file does not exist in the source tree already, it is checked
+  against each pattern listed in the [Rules] section of the package config. If
+  a match is found, the file is copied to that location.
+
+  If, after checking the source tree and rules, a suitable location has not been
+  found, the file is copied into a folder in the project root called "unknown"
+  so you can manually move it later.
 
   If an unpacked source would overwrite an existing source, you will be prompted
   to overwrite the file. The newly unpacked file will have a modification time

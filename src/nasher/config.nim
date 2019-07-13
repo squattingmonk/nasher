@@ -9,6 +9,7 @@ type
     pkg*: Package
     compiler*: tuple[binary: string, flags: seq[string]]
     targets*: OrderedTable[string, Target]
+    rules*: seq[Rule]
 
   User* = tuple[name, email, install: string]
 
@@ -22,13 +23,17 @@ type
     name*, file*, description*: string
     sources*: seq[string]
 
+  SourceMap* = Table[string, seq[string]]
+
+  Rule* = tuple[pattern, dir: string]
+
 proc addLine(s: var string, line = "") =
   s.add(line & "\n")
 
 proc addPair(s: var string, key, value: string) =
   s.addLine("$1 = \"$2\"" % [key, value])
 
-proc genGlobalCfgText:string =
+proc genGlobalCfgText: string =
   display("Generating", "global config file")
   hint("User information will be automatically filled into the authors " &
        "section of new packages created using nasher init.")
@@ -70,6 +75,51 @@ proc genSrcText: string =
     defaultSrc = ""
     if not askIf("Do you wish to add another source pattern?", allowed = NotYes):
       break
+
+proc genRuleText: string =
+  const
+    choiceSrc = "Put all files in src/"
+    choiceSrcType = "Put all files in src/, organized by extension"
+    choiceCustom = "Customize rules"
+    choices = [choiceSrc, choiceSrcType, choiceCustom]
+
+  result.addLine("[Rules]")
+  hint("When unpacking, new files are extracted to directories based on " &
+       "a list of rule. Each rule contains a pattern and a destination. The " &
+       "file name is compared against each rule's pattern until a match is " &
+       "found. The file is then extracted to that rule's destination. If no " &
+       "match is found, it is extracted into \"unknown\".")
+  case choose("How do you want to sort files?", choices)
+  of choiceSrc:
+    result.addPair("*".escape, "src")
+  of choiceSrcType:
+    result.addPair("*".escape, "src/$ext")
+  of choiceCustom:
+    var
+      pattern, dir: string
+      patternHint =
+        "Patterns can be specific file names or a glob pattern matching " &
+        "multiple files. For instance, you can match all nss files with the " &
+        "pattern \"*.nss\"."
+      dirHint =
+        "A destination is a directory path relative to the project root. " &
+        "It can make use of the special variable \"$ext\" to match the " &
+        "file's extension. For example \"src/$ext\" maps foo.nss to " &
+        "src/nss but maps module.ifo to src/ifo."
+
+    while true:
+      hint(patternHint)
+      patternHint = ""
+      pattern = ask("File pattern:", allowBlank = false)
+
+      hint(dirHint)
+      dirHint = ""
+      dir = ask("Destination:")
+
+      result.addPair(pattern.escape, dir)
+
+      if not askIf("Do you wish to add another rule?", allowed = NotYes):
+        break
 
 proc genTargetText(defaultName: string): string =
   result.addLine("[Target]")
@@ -124,6 +174,9 @@ proc genPkgCfgText(user: User): string =
        "patterns that match every source file in your project. Otherwise, " &
        "nasher might not be able to properly update files when unpacking.")
   result.add(genSrcText())
+
+  result.addLine
+  result.add(genRuleText())
 
   hint("Build targets are used by the compile, pack, and install commands " &
        "to map source files to an output file. Each target must have a " &
@@ -192,6 +245,9 @@ proc parsePackage(cfg: var Config, key, value: string) =
   else:
     error(fmt"Unknown key/value pair '{key}={value}'")
 
+proc parseRule(cfg: var Config, key, value: string) =
+  cfg.rules.add((key, value))
+
 proc parseTarget(target: var Target, key, value: string) =
   case key
   of "name": target.name = value.normalize
@@ -231,6 +287,8 @@ proc parseConfig*(cfg: var Config, fileName: string) =
           parseCompiler(cfg, key, e.value)
         of "package":
           parsePackage(cfg, key, e.value)
+        of "rules":
+          parseRule(cfg, e.key, e.value)
         of "target":
           parseTarget(target, key, e.value)
         else:
@@ -258,6 +316,9 @@ proc dumpConfig(cfg: Config) =
   debug("URL:", cfg.pkg.url)
   debug("Authors:", cfg.pkg.authors.join("\n"))
   debug("Sources:", cfg.pkg.sources.join("\n"))
+
+  for pattern, dir in cfg.rules.items:
+    debug("Rule:", pattern & " -> " & dir)
 
   try:
     for target in cfg.targets.values:

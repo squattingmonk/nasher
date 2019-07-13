@@ -21,7 +21,7 @@ proc showHelp(kind: CommandKind) =
   echo help
   echo helpOptions
 
-proc genSrcMap(sources: seq[string]): Table[string, seq[string]] =
+proc genSrcMap(sources: seq[string]): SourceMap =
   ## Generates a table mapping unconverted source files to the proper directory
   debug("Generating", "source map from sources " & $sources)
   var fileName: string
@@ -35,11 +35,18 @@ proc genSrcMap(sources: seq[string]): Table[string, seq[string]] =
       if result.hasKeyOrPut(fileName, @[dir]):
         result[fileName].add(dir)
 
-proc mapSrc(file: string, srcMap: Table[string, seq[string]]): string =
+proc mapSrc(file, ext: string, srcMap: SourceMap, rules: seq[Rule]): string =
   var choices = srcMap.getOrDefault(file)
   case choices.len
-  of 0: result = "unknown"
-  of 1: result = choices[0]
+  of 1:
+    result = choices[0]
+  of 0:
+    result = "unknown"
+    for pattern, dir in rules.items:
+      if glob.matches(file, pattern):
+        result = dir % ["ext", ext]
+        debug("Matched", file & " to pattern " & pattern.escape)
+        break
   else:
     choices.add("unknown")
     result =
@@ -68,7 +75,7 @@ proc unpack(opts: Options) =
     let
       fileName = file.extractFilename
       relPath = file.relativePath(cacheDir)
-      dir = mapSrc(fileName, srcMap)
+      dir = mapSrc(fileName, ext, srcMap, opts.cfg.rules)
 
     if dir == "unknown":
       warning("cannot decide where to extract " & fileName)

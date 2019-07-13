@@ -89,7 +89,9 @@ answer the prompt by passing the `--yes`, `--no`, or `--default` flags.
 
 This unpacks a `.mod`, `.erf`, or `.hak` file into the source tree. GFF files
 are converted to JSON format. If a file does not exist in the source tree, it
-is placed into the directory `unknown` in the project root.
+is checked against a series of rules in the project config. If a rule is
+matched, it will be placed in that directory. Otherwise, it is placed into the
+directory `unknown` in the project root.
 
 You can initialize a project with the contents of a `.mod`, `.erf`, or `.hak`
 file by running:
