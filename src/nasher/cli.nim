@@ -183,10 +183,9 @@ proc ask*(question: string, default = "", allowBlank = true): string =
         displayCategory("Answer:", Prompt, HighPriority)
         echo default
 
-  debug("Answer:", result)
-
 proc choose*(question: string, choices: openarray[string]): string =
   display("Prompt:", question, Prompt, HighPriority)
+  displayHints()
   display("Select:", "Cycle with Tab, Choose with Enter", Prompt, HighPriority)
 
   var
