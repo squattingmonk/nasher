@@ -3,7 +3,7 @@ import os, osproc
 import cli
 export cli
 
-const nasherVersion* = "nasher 0.1.0"
+const nasherVersion* = "nasher 0.2.1"
 
 template tryOrQuit*(msg: string, statements: untyped) =
   try:
@@ -198,7 +198,7 @@ Usage:
 Description:
   Unpacks <file> into the project source tree.
 
-  Each extracted file is checked against the source tree (as defined in the 
+  Each extracted file is checked against the source tree (as defined in the
   [Package] section of the package config). If the file exists in one location,
   it is copied there, overwriting the existing file. If the file exists in
   multiple folders, you will be prompted to select where it should be copied.
