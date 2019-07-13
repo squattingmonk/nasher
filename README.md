@@ -93,6 +93,10 @@ is checked against a series of rules in the project config. If a rule is
 matched, it will be placed in that directory. Otherwise, it is placed into the
 directory `unknown` in the project root.
 
+If an extracted file would overwrite a newer version, you will be prompted to
+overwrite the file. You can force answer the prompt by passing the `--yes`,
+`--no`, or `--default` flags.
+
 You can initialize a project with the contents of a `.mod`, `.erf`, or `.hak`
 file by running:
 

@@ -21,21 +21,41 @@ proc showHelp(kind: CommandKind) =
   echo help
   echo helpOptions
 
-proc genSrcMap(sources: seq[string]): SourceMap =
-  ## Generates a table mapping unconverted source files to the proper directory
-  debug("Generating", "source map from sources " & $sources)
-  var fileName: string
+proc getSrcFiles(sources: seq[string]): seq[string] =
+  ## Walks all source patterns in sources and returns the matching files
   for source in sources:
     debug("Walking", "pattern " & source)
     for path in glob.walkGlob(source):
       debug("Found", path)
-      let
-        (dir, file, ext) = splitFile(path)
-        fileName = if ext == "json": file else: file.addFileExt(ext)
-      if result.hasKeyOrPut(fileName, @[dir]):
-        result[fileName].add(dir)
+      result.add(path)
+
+proc fileNewer(file: string, time: Time): bool =
+  ## Checks whether file is newer than time. Only checks seconds, since copying
+  ## modification times results in unequal nanoseconds.
+  (file.getLastModificationTime - time).inSeconds > 0
+
+proc getNewerFiles(files: seq[string], time: Time): seq[string] =
+  ## Compares time to the timestamp for each files in files. Displays a warning
+  ## for each file that is newer than time, and returns thennewer files.
+  for file in files:
+    if file.fileNewer(time):
+      warning(file & " has changed and may be overwritten.")
+      result.add(file)
+
+proc genSrcMap(files: seq[string]): SourceMap =
+  ## Generates a table mapping unconverted source files to the proper directory.
+  ## Each file has a sequence of locations (in case it exists in more than one
+  ## directory).
+  for file in files:
+    let
+      (dir, name, ext) = splitFile(file)
+      fileName = if ext == ".json": name else: name.addFileExt(ext)
+    if result.hasKeyOrPut(fileName, @[dir]):
+      result[fileName].add(dir)
 
 proc mapSrc(file, ext: string, srcMap: SourceMap, rules: seq[Rule]): string =
+  ## Maps a file to the proper directory, first searching existing source files
+  ## and then matching it to each pattern in rules. Returns the directory.
   var choices = srcMap.getOrDefault(file)
   case choices.len
   of 1:
@@ -53,6 +73,15 @@ proc mapSrc(file, ext: string, srcMap: SourceMap, rules: seq[Rule]): string =
       choose(fmt"Cannot decide where to extract {file}. Please choose:",
              choices)
 
+template confirmOverwriteNewer(
+  path: string, newerFiles: seq[string], time: Time, statements: untyped) =
+  if path in newerFiles:
+    let fileName = path.extractFilename
+    if not askIf(fmt"Overwrite changed file {fileName} with older version?"):
+      continue
+  statements
+  path.setLastModificationTime(time)
+
 proc unpack(opts: Options) =
   let cacheDir = ".nasher" / "cache" / opts.cmd.file.extractFilename
 
@@ -63,14 +92,23 @@ proc unpack(opts: Options) =
     extractErf(opts.cmd.file, cacheDir)
 
   let
-    srcMap = genSrcMap(opts.cfg.pkg.sources)
+    sourceFiles = getSrcFiles(opts.cfg.pkg.sources)
+    srcMap = genSrcMap(sourceFiles)
+    packTime = opts.cmd.file.getLastModificationTime
+    newerFiles = getNewerFiles(sourceFiles, packTime)
+
+  if newerFiles.len > 0:
+    let shortFile = opts.cmd.file.extractFilename
+    if not askIf(fmt"{$newerFiles.len} files have changed since {shortFile} " &
+                 "was packed. These changes may be overwritten. Continue?"):
+      quit(QuitSuccess)
 
   var warnings = 0
-
   for file in walkFiles(cacheDir / "*"):
     let ext = file.splitFile.ext.strip(chars = {'.'})
     if ext == "ncs":
       continue
+
 
     let
       fileName = file.extractFilename
@@ -83,11 +121,13 @@ proc unpack(opts: Options) =
     createDir(dir)
 
     if ext in GffExtensions:
-      gffConvert(file, dir)
+      confirmOverwriteNewer(dir / fileName & ".json", newerFiles, packTime):
+        gffConvert(file, dir)
     else:
-      display("Copying", relPath & " -> " & dir / fileName,
-              priority = LowPriority)
-      copyFile(file, dir / fileName)
+      confirmOverwriteNewer(dir / fileName, newerFiles, packTime):
+        display("Copying", relPath & " -> " & dir / fileName,
+                priority = LowPriority)
+        copyFile(file, dir / fileName)
 
   if warnings > 0:
     let words =
