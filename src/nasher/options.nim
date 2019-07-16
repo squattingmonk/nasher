@@ -24,6 +24,7 @@ proc dumpOptions(opts: Options) =
   stdout.write("\n")
 
 proc parseCmdLine*(): Options =
+  result = newStringTable(modeStyleInsensitive)
   var args: int
   for kind, key, val in getopt():
     case kind
