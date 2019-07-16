@@ -61,7 +61,7 @@ proc pack*(opts: Options, cfg: var Config) =
     target = opts.get("target")
     cacheDir = opts.get("directory")
     fileTime = getNewestFile(cacheDir).getLastModificationTime
-    packed = getPkgRoot() / file
+    packed = relativePath(getPkgRoot() / file, getCurrentDir())
 
   display("Packing", fmt"files for target {target} into {file}")
   if existsFile(packed):
@@ -70,7 +70,7 @@ proc pack*(opts: Options, cfg: var Config) =
       timeDiff = getTimeDiff(fileTime, installedTime)
       defaultAnswer = if timeDiff > 0: Yes else: No
     
-    hint(getTimeDiffHint(file, packed, timeDiff))
+    hint(getTimeDiffHint("The packed file", timeDiff))
     if not askIf(fmt"{packed} already exists. Overwrite?", defaultAnswer):
       quit(QuitSuccess)
 

@@ -40,7 +40,7 @@ proc install*(opts: Options, cfg: var Config) =
     help(helpInstall)
 
   let
-    file = getPkgRoot() / opts.get("file")
+    file = relativePath(getPkgRoot() / opts.get("file"), getCurrentDir())
     dir = opts.get("install", getNwnInstallDir())
 
   display("Installing", file & " into " & dir)
@@ -67,7 +67,7 @@ proc install*(opts: Options, cfg: var Config) =
       timeDiff = getTimeDiff(fileTime, installedTime)
       defaultAnswer = if timeDiff > 0: Yes else: No
     
-    hint(getTimeDiffHint(fileName, installed, timeDiff))
+    hint(getTimeDiffHint("The packed file", timeDiff))
     if not askIf(fmt"{installed} already exists. Overwrite?", defaultAnswer):
       quit(QuitSuccess)
 

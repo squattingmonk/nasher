@@ -35,12 +35,12 @@ proc getTimeDiff*(a, b: Time): int =
   ## than a.
   (a - b).inSeconds.int
 
-proc getTimeDiffHint*(a, b: string, diff: int): string =
+proc getTimeDiffHint*(file: string, diff: int): string =
   ## Returns a message stating whether file a is newer than, older than, or the
   ## same age as file b, based on the value of diff.
-  if diff > 0: a & " is newer than " & b
-  elif diff < 0: a & " is older than " & b
-  else: a & " is the same age as " & b
+  if diff > 0: file & " is newer than the existing file"
+  elif diff < 0: file & " is older than the existing file"
+  else: file & " is the same age as the existing file"
 
 proc fileOlder*(file: string, time: Time): bool =
   ## Checks whether file is older than a time. Only checks seconds since copying
