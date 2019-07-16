@@ -38,7 +38,7 @@ proc init*(opts: Options, cfg: var Config) =
 
   if not existsFile(pkgFile):
     display("Initializing", "into " & dir)
-    cfg = initConfig(getPkgCfgFile(), pkgFile)
+    cfg = initConfig(getGlobalCfgFile(), pkgFile)
 
     # Check if we should unpack a file
     if opts.get("file") == "":
