@@ -57,7 +57,7 @@ proc parseCmdLine*(): Options =
       of "v", "version":
         result["version"] = "true"
       of "no-color":
-        cli.setShowColor(true)
+        cli.setShowColor(false)
       of "debug":
         cli.setLogLevel(DebugPriority)
       of "verbose":
