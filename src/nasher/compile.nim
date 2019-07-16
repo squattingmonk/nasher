@@ -34,6 +34,7 @@ const
 
 proc getCacheMap(sources: seq[string]): StringTableRef =
   ## Generates a table mapping source files to their proper names in the cache
+  result = newStringTable()
   for file in walkSourceFiles(sources):
     let
       (_, name, ext) = splitFile(file)
@@ -49,19 +50,25 @@ proc updateCacheDir(target: Target, dir: string) =
 
   # Remove deleted files
   for file in walkFiles(dir / "*"):
-    if file notin cacheMap:
+    let fileName = file.extractFileName
+    if fileName notin cacheMap:
+      if fileName.splitFile.ext != ".ncs":
+        display("Removing", fileName, priority = LowPriority)
       removeFile(file)
 
   # Copy newer files
-  for cacheFile, srcFile in cacheMap.pairs:
-    let srcTime = srcFile.getLastModificationTime
+  for fileName, srcFile in cacheMap.pairs:
+    let
+      cacheFile = dir / fileName
+      srcTime = srcFile.getLastModificationTime
     if fileOlder(cacheFile, srcTime):
       if srcFile.splitFile.ext == ".json":
         gffConvert(srcFile, dir)
       else:
+        display("Copying", srcFile & " -> " & fileName, priority = LowPriority)
         copyFile(srcFile, cacheFile)
 
-      cacheFile.setLastModificationTime(srcTime)
+      setLastModificationTime(cacheFile, srcTime)
 
 proc compile*(opts: Options, cfg: var Config) =
   let
@@ -95,12 +102,13 @@ proc compile*(opts: Options, cfg: var Config) =
 
   withDir(cacheDir):
     let
-      scripts = toSeq(walkFiles("*.nss")).join(" ")
+      scripts = toSeq(walkFiles("*.nss"))
       compiler = cfg.compiler.binary
       flags = cfg.compiler.flags.join(" ")
 
+    display("Compiling", $scripts.len & " scripts")
     if scripts.len > 0:
-      let errcode = runCompiler(compiler, [flags, scripts])
+      let errcode = runCompiler(compiler, [flags, "*.nss"])
       if errcode != 0:
         warning("Finished with error code " & $errcode)
     else:
