@@ -34,7 +34,7 @@ proc list*(opts: Options, cfg: var Config) =
   let config = opts.get("config", getPkgCfgFile())
   cfg = initConfig(getGlobalCfgFile(), config)
 
-  if cfg.targets.len == 0:
+  if cfg.targets.len > 0:
     var hasRun = false
     for target in cfg.targets.values:
       if hasRun:
