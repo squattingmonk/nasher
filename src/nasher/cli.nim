@@ -1,4 +1,5 @@
 import sequtils, strutils, terminal
+import std/wordwrap
 
 type
   CLI = ref object
@@ -42,6 +43,9 @@ proc setShowColor*(val: bool) =
 proc setForceAnswer*(val: Answer) =
   cli.forceAnswer = val
 
+proc getForceAnswer*: Answer =
+  cli.forceAnswer
+
 proc displayCategory(category: string, displayType: DisplayType, priority: Priority) =
   let
     offset = max(0, colWidth - category.len)
@@ -74,7 +78,7 @@ proc display*(category, msg: string, displayType = Message, priority = MediumPri
   # Word wrap each line so it fits in the terminal
   let
     width = getMsgWidth(category)
-    lines = msg.splitLines.mapIt(it.wordWrap(width)).join("\n").splitLines
+    lines = msg.splitLines.mapIt(it.wrapWords(width)).join("\n").splitLines
 
   var i = 0
   for line in lines:

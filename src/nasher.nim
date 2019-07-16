@@ -1,329 +1,66 @@
-import os, osproc, sequtils, streams, strformat, strutils, tables, times
+import nasher/[init, list, unpack, compile, pack, install]
+import nasher/[cli, shared]
+from nasher/config import Config
+from nasher/options import parseCmdLine
 
-import glob
+const
+  nasherVersion {.strdefine.} = "devel"
 
-import nasher/options
-import nasher/erf
-import nasher/gff
-import nasher/nwnsc
+  helpAll = """
+  nasher: a build tool for Neverwinter Nights projects
 
-proc showHelp(kind: CommandKind) =
-  let help =
-    case kind
-    of ckInit: helpInit
-    of ckList: helpList
-    of ckCompile: helpCompile
-    of ckPack: helpPack
-    of ckUnpack: helpUnpack
-    of ckInstall: helpInstall
-    else: helpAll
+  Usage:
+    nasher init [options] [<dir> [<file>]]
+    nasher list [options]
+    nasher compile [options] [<target>]
+    nasher pack [options] [<target>]
+    nasher install [options] [<target>]
+    nasher unpack [options] <file> [<dir>]
 
-  echo help
-  echo helpOptions
+  Commands:
+    init           Initializes a nasher repository
+    list           Lists the names and descriptions of all build targets
+    compile        Compiles all nss sources for a build target
+    pack           Converts, compiles, and packs all sources for a build target
+    install        As pack, but installs the target file to the NWN install path
+    unpack         Unpacks a file into the source tree
 
-proc getSrcFiles(sources: seq[string]): seq[string] =
-  ## Walks all source patterns in sources and returns the matching files
-  for source in sources:
-    debug("Walking", "pattern " & source)
-    for path in glob.walkGlob(source):
-      debug("Found", path)
-      result.add(path)
+  Global Options:
+    -h, --help     Display help for nasher or one of its commands
+    -v, --version  Display version information
+    --config FILE  Use FILE rather than the package config file
 
-proc fileNewer(file: string, time: Time): bool =
-  ## Checks whether file is newer than time. Only checks seconds, since copying
-  ## modification times results in unequal nanoseconds.
-  (file.getLastModificationTime - time).inSeconds > 0
-
-proc getNewerFiles(files: seq[string], time: Time): seq[string] =
-  ## Compares time to the timestamp for each files in files. Displays a warning
-  ## for each file that is newer than time, and returns thennewer files.
-  for file in files:
-    if file.fileNewer(time):
-      warning(file & " has changed and may be overwritten.")
-      result.add(file)
-
-proc genSrcMap(files: seq[string]): SourceMap =
-  ## Generates a table mapping unconverted source files to the proper directory.
-  ## Each file has a sequence of locations (in case it exists in more than one
-  ## directory).
-  for file in files:
-    let
-      (dir, name, ext) = splitFile(file)
-      fileName = if ext == ".json": name else: name.addFileExt(ext)
-    if result.hasKeyOrPut(fileName, @[dir]):
-      result[fileName].add(dir)
-
-proc mapSrc(file, ext: string, srcMap: SourceMap, rules: seq[Rule]): string =
-  ## Maps a file to the proper directory, first searching existing source files
-  ## and then matching it to each pattern in rules. Returns the directory.
-  var choices = srcMap.getOrDefault(file)
-  case choices.len
-  of 1:
-    result = choices[0]
-  of 0:
-    result = "unknown"
-    for pattern, dir in rules.items:
-      if glob.matches(file, pattern):
-        result = dir % ["ext", ext]
-        debug("Matched", file & " to pattern " & pattern.escape)
-        break
-  else:
-    choices.add("unknown")
-    result =
-      choose(fmt"Cannot decide where to extract {file}. Please choose:",
-             choices)
-
-template confirmOverwriteNewer(
-  path: string, newerFiles: seq[string], time: Time, statements: untyped) =
-  if path in newerFiles:
-    let fileName = path.extractFilename
-    if not askIf(fmt"Overwrite changed file {fileName} with older version?"):
-      continue
-  statements
-  path.setLastModificationTime(time)
-
-proc unpack(opts: Options) =
-  let cacheDir = ".nasher" / "cache" / opts.cmd.file.extractFilename
-
-  tryOrQuit(fmt"Could not create directory {cacheDir}"):
-    createDir(cacheDir)
-
-  tryOrQuit(fmt"Could not unpack file {opts.cmd.file}"):
-    extractErf(opts.cmd.file, cacheDir)
-
-  let
-    sourceFiles = getSrcFiles(opts.cfg.pkg.sources)
-    srcMap = genSrcMap(sourceFiles)
-    packTime = opts.cmd.file.getLastModificationTime
-    newerFiles = getNewerFiles(sourceFiles, packTime)
-
-  if newerFiles.len > 0:
-    let shortFile = opts.cmd.file.extractFilename
-    if not askIf(fmt"{$newerFiles.len} files have changed since {shortFile} " &
-                 "was packed. These changes may be overwritten. Continue?"):
-      quit(QuitSuccess)
-
-  var warnings = 0
-  for file in walkFiles(cacheDir / "*"):
-    let ext = file.splitFile.ext.strip(chars = {'.'})
-    if ext == "ncs":
-      continue
-
-
-    let
-      fileName = file.extractFilename
-      relPath = file.relativePath(cacheDir)
-      dir = mapSrc(fileName, ext, srcMap, opts.cfg.rules)
-
-    if dir == "unknown":
-      warning("cannot decide where to extract " & fileName)
-      warnings.inc
-    createDir(dir)
-
-    if ext in GffExtensions:
-      confirmOverwriteNewer(dir / fileName & ".json", newerFiles, packTime):
-        gffConvert(file, dir)
-    else:
-      confirmOverwriteNewer(dir / fileName, newerFiles, packTime):
-        display("Copying", relPath & " -> " & dir / fileName,
-                priority = LowPriority)
-        copyFile(file, dir / fileName)
-
-  if warnings > 0:
-    let words =
-      if warnings == 1: ["1", "file", "has", "this", "location"]
-      else: [$warnings, "files", "have", "these", "locations"]
-
-    warning(("$1 $2 could not be automatically extracted and $3 been placed " &
-             "into \"unknown\". You will need to manually copy $4 $2 to the " &
-             "correct $5.") % words)
-
-proc init(opts: var Options) =
-  let
-    pkgCfgFile = opts.cmd.dir / "nasher.cfg"
-
-  if existsFile(pkgCfgFile):
-    fatal(fmt"{opts.cmd.dir} is already a nasher project")
-
-  display("Initializing", "into " & opts.cmd.dir)
-  opts.configs.add(pkgCfgFile)
-  opts.cfg.loadConfig(pkgCfgFile)
-  success("project initialized")
-
-  if opts.cmd.file.len() > 0:
-    setCurrentDir(opts.cmd.dir)
-    unpack(opts)
-
-proc list(opts: Options) =
-  tryOrQuit("No targets found. Please check your nasher.cfg."):
-    if isLogging(LowPriority):
-      var hasRun = false
-      for target in opts.cfg.targets.values:
-        if hasRun:
-          stdout.write("\n")
-        display("Target:", target.name)
-        display("Description:", target.description)
-        display("File:", target.file)
-        display("Sources:", target.sources.join("\n"))
-        hasRun = true
-    else:
-      echo toSeq(opts.cfg.targets.keys).join("\n")
-
-proc getTarget(opts: Options): Target =
-  ## Returns the target specified by the user, or the first target found in the
-  ## parsed config files if the user did not specify a target.
-  try:
-    if opts.cmd.target.len > 0:
-      result = opts.cfg.targets[opts.cmd.target]
-    else:
-      for target in opts.cfg.targets.values:
-        return target
-  except IndexError:
-    fatal("No targets found. Please check your nasher.cfg file.")
-  except KeyError:
-    fatal("Unknown target: " & opts.cmd.target)
-
-proc copySourceFiles(target: Target, dir: string): string =
-  ## Copies all source files for target to dir. Returns the newest source file
-  withDir(getPkgRoot()):
-    for source in target.sources:
-      debug("Copying", "source files from " & source)
-      for file in glob.walkGlob(source):
-        debug("Copying", file)
-        try:
-          if file.fileNewer(result):
-            debug(fmt"{file} is newer than {result}")
-            result = file
-        except OSError:
-          # This is the first source file
-          result = file
-        copyFile(file, dir / file.extractFilename)
-
-proc compile(dir, compiler, flags: string) =
-  withDir(dir):
-    var isScripts = false
-    for file in walkFiles("*.nss"):
-      isScripts = true
-      break
-
-    if isScripts:
-      let errcode = runCompiler(compiler, [flags, "*.nss"])
-      if errcode != 0:
-        warning("Finished with error code " & $errcode)
-    else:
-      info("Skipping", "compilation: nothing to compile")
-
-proc convert(dir: string) =
-  withDir(dir):
-    for file in walkFiles("*.*.json"):
-      file.gffConvert
-      file.removeFile
-
-proc confirmOverwrite(time: Time, file: string): bool =
-  ## Asks the user to confirm overwriting a file to be installed or packed. If
-  ## the file is newer than time, default to no; otherwise, default to yes.
-  ## Returns the user response.
-  if not existsFile(file):
-    return true
-
-  let
-    timeDiff = (time - file.getLastModificationTime).inSeconds
-
-  var
-    defaultAnswer = Yes
-    ageHint: string
-
-  if timeDiff > 0:
-    ageHint = "newer than"
-  elif timeDiff == 0:
-    ageHint = "the same age as"
-  else:
-    ageHint = "older than"
-    defaultAnswer = No
-
-  hint(fmt"The source file is {ageHint} the existing file.")
-  askIf(fmt"{file} already exists. Overwrite?", defaultAnswer)
-
-proc copyModificationTime(target, src: string) =
-  target.setLastModificationTime(src.getLastModificationTime)
-
-proc install (file, dir: string) =
-  display("Installing", file & " into " & dir)
-  if not existsFile(file):
-    fatal(fmt"Cannot install {file}: file does not exist")
-
-  let
-    fileTime = file.getLastModificationTime
-    fileName = file.extractFilename
-    installDir = expandTilde(
-      case fileName.splitFile.ext.strip(chars = {'.'})
-      of "erf": dir / "erf"
-      of "hak": dir / "hak"
-      of "mod": dir / "modules"
-      else: dir)
-
-  if not existsDir(installDir):
-    fatal(fmt"Cannot install to {installDir}: directory does not exist")
-
-  let installed = installDir / fileName
-  if confirmOverwrite(fileTime, installed):
-    copyFile(file, installed)
-    installed.copyModificationTime(file)
-    success("installed " & fileName)
-
-proc pack(opts: Options) =
-  let
-    target = getTarget(opts)
-    buildDir = getBuildDir(target.name)
-
-  removeDir(buildDir)
-  createDir(buildDir)
-  let
-    newestSource = copySourceFiles(target, buildDir)
-    fileTime = newestSource.getLastModificationTime
-
-  if opts.cmd.kind in {ckInstall, ckPack, ckCompile}:
-    compile(buildDir, opts.cfg.compiler.binary, opts.cfg.compiler.flags.join(" "))
-
-  if opts.cmd.kind in {ckInstall, ckPack}:
-    convert(buildDir)
-
-    display("Packing", fmt"files for target {target.name} into {target.file}")
-    if not confirmOverwrite(fileTime, target.file):
-      quit(QuitSuccess)
-
-    let
-      # sourceFiles = toSeq(walkFiles(buildDir / "*"))
-      sourceFiles = @[buildDir / "*"]
-      error = createErf(getPkgRoot() / target.file, sourceFiles)
-
-    if error == 0:
-      success("packed " & target.file)
-      target.file.copyModificationTime(newestSource)
-    else:
-      fatal("Something went wrong!")
-
-  if opts.cmd.kind == ckInstall:
-    install(target.file, opts.cfg.user.install)
+  Logging:
+    --debug        Enable debug logging
+    --verbose      Enable additional messages about normal operation
+    --quiet        Disable all logging except errors
+    --no-color     Disable color output (automatic if not a tty)
+  """
 
 when isMainModule:
-  var opts = parseCmdLine()
+  var
+    opts = parseCmdLine()
+    cfg: Config
 
-  if opts.showHelp:
-    showHelp(opts.cmd.kind)
+  let
+    cmd = opts.get("command")
+    version = opts.getBool("version")
+
+  if version:
+    echo "nasher" & nasherVersion
+    quit(QuitSuccess)
+
+  case cmd
+  of "init":
+    init(opts, cfg)
+    unpack(opts, cfg)
+  of "list":
+    list(opts, cfg)
+  of "compile", "pack", "install":
+    compile(opts, cfg)
+    pack(opts, cfg)
+    install(opts, cfg)
+  of "unpack":
+    unpack(opts, cfg)
   else:
-    if opts.cmd.kind != ckNil:
-      if opts.cmd.kind != ckInit:
-        if not isNasherProject():
-          fatal("This is not a nasher project. Please run nasher init.")
-        else:
-          setCurrentDir(getPkgRoot())
-
-      opts.cfg = loadConfigs(opts.configs)
-
-    case opts.cmd.kind
-    of ckList: list(opts)
-    of ckInit: init(opts)
-    of ckUnpack: unpack(opts)
-    of ckCompile, ckPack, ckInstall: pack(opts)
-    of ckNil: echo nasherVersion
+    help(helpAll, QuitFailure)

@@ -1,168 +1,76 @@
-import os, parseopt, strutils
+from os import commandLineParams
+from strutils import join
+import parseopt, strtabs
 
-import config
-export config
+import shared, cli
 
-type
-  Options* = object
-    cmd*: Command
-    cfg*: Config
-    configs*: seq[string]
-    forceAnswer*: Answer
-    showVersion*: bool
-    showHelp*: bool
-
-  CommandKind* = enum
-    ckNil, ckInit, ckCompile, ckList, ckPack, ckUnpack, ckInstall
-
-  Command* = object
-    case kind*: CommandKind
-    of ckNil, ckList:
-      nil
-    of ckCompile, ckPack, ckInstall:
-      target*: string
-    of ckInit, ckUnpack:
-      file*: string
-      dir*: string
-
-proc initOptions(): Options =
-  result.cmd = Command(kind: ckNil)
-  result.configs = @[getGlobalCfgFile()]
-  result.forceAnswer = None
-
-proc initCommand*(kind: CommandKind): Command =
-  result = Command(kind: kind)
-  case kind
-  of ckInit:
-    result.dir = getCurrentDir()
-    result.file = ""
-  of ckUnpack:
-    result.file = ""
-  of ckCompile, ckPack, ckInstall:
-    result.target = ""
-  else:
-    discard
-
-proc parseCommandKind(cmd: string): CommandKind =
-  case cmd.normalize()
-  of "init": ckInit
-  of "list": ckList
-  of "compile": ckCompile
-  of "pack": ckPack
-  of "unpack": ckUnpack
-  of "install": ckInstall
-  else: ckNil
-
-proc parseCommand(key: string): Command =
-  initCommand(parseCommandKind(key))
-
-proc parseArgument(key: string, result: var Options) =
-  case result.cmd.kind
-  of ckNil:
-    assert(false)
-  of ckInit:
-    if result.cmd.dir != getCurrentDir():
-      if existsFile(key):
-        result.cmd.file = key.expandFilename
-      else:
-        fatal("Cannot unpack " & key & ": file does not exist")
-    else:
-      result.cmd.dir = key
-  of ckCompile, ckPack, ckInstall:
-    result.cmd.target = key.normalize
-  of ckUnpack:
-    if existsFile(key):
-      result.cmd.file = key.expandFilename
-    else:
-      fatal("Cannot unpack " & key & ": file does not exist")
-  else:
-    discard
-
-proc parseFlag(flag, value: string, result: var Options) =
-  case flag
-  of "config":
-    result.configs.add(value.absolutePath)
-  of "yes":
-    result.forceAnswer = Yes
-    setForceAnswer(Yes)
-  of "no":
-    result.forceAnswer = No
-    setForceAnswer(No)
-  of "default":
-    result.forceAnswer = Default
-    setForceAnswer(Default)
-  of "h", "help":
-    result.showHelp = true
-  of "v", "version":
-    result.showVersion = true
-  of "debug":
-    setLogLevel(DebugPriority)
-  of "verbose":
-    setLogLevel(LowPriority)
-  of "quiet":
-    setLogLevel(HighPriority)
-  of "no-color":
-    setShowColor(false)
-  else:
-    warning("Unknown option --" & flag)
+const
+  nasherCommands =
+    ["init", "list", "compile", "pack", "install", "unpack"]
 
 proc dumpOptions(opts: Options) =
   if not isLogging(DebugPriority):
     return
 
   debug("Args:", commandLineParams().join("\n"))
-  debug("Command:", $opts.cmd.kind)
-  case opts.cmd.kind
-  of ckCompile, ckPack, ckInstall:
-    debug("Target:", opts.cmd.target)
-  of ckInit, ckUnpack:
-    debug("File:", opts.cmd.file)
-    debug("Directory:", opts.cmd.dir)
-  else: discard
-
-  debug("Configs:", opts.configs.join("\n"))
-  debug("Force:", $opts.forceAnswer)
-  debug("Help:", $opts.showHelp)
-  debug("Version:", $opts.showVersion)
+  debug("Command:", opts.get("command"))
+  debug("Target:", opts.get("target"))
+  debug("File:", opts.get("file"))
+  debug("Directory:", opts.get("directory"))
+  debug("Config:", opts.get("config"))
+  debug("Help:", $opts.getBool("help"))
+  debug("Version:", $opts.getBool("version"))
+  debug("Force:", $cli.getForceAnswer())
   stdout.write("\n")
 
-const
-  shortOpts = {'h', 'v'}
-  longOpts =
-    @["help", "version", "verbose", "debug", "quiet", "yes", "no", "default",
-      "no-color"]
-
-proc parseCmdLine*(params: seq[string] = @[]): Options =
-  result = initOptions()
-
-  for kind, key, value in getopt(params, shortNoVal = shortOpts, longNoVal = longOpts):
+proc parseCmdLine*(): Options =
+  var args: int
+  for kind, key, val in getopt():
     case kind
     of cmdArgument:
-      if result.cmd.kind == ckNil:
-        result.cmd = parseCommand(key)
+      case result.get("command")
+      of "init":
+        case args
+        of 0: result["directory"] = key
+        of 1: result["file"] = key
+        else: result["help"] = "true"
+        args.inc
+      of "list", "compile", "convert", "pack", "install":
+        case args
+        of 0: result["target"] = key
+        else: result["help"] = "true"
+        args.inc
+      of "unpack":
+        case args
+        of 0: result["file"] = key
+        else: result["help"] = "true"
+        args.inc
       else:
-        parseArgument(key, result)
+        if key in nasherCommands:
+          result["command"] = key
+        else: break
     of cmdLongOption, cmdShortOption:
-      parseFlag(key, value, result)
-    of cmdEnd: # Cannot happen
-      assert(false)
-
-  # If no commands were entered, show the help message
-  if result.cmd.kind == ckNil and not result.showVersion:
-    result.showHelp = true
-
-  # The unpack command must specify a file to operate on
-  if result.cmd.kind == ckUnpack and result.cmd.file.len == 0:
-    result.showHelp = true
-
-  # Load default configs if not overridden by the user
-  if result.configs.len == 1:
-    case result.cmd.kind
-    of ckList, ckPack, ckCompile, ckInstall:
-      result.configs.add(getPkgCfgFile())
-    of ckUnpack:
-      result.configs.add(getPkgCfgFile(result.cmd.dir))
-    else:
-      discard
+      case key
+      of "h", "help":
+        result["help"] = "true"
+      of "v", "version":
+        result["version"] = "true"
+      of "no-color":
+        cli.setShowColor(true)
+      of "debug":
+        cli.setLogLevel(DebugPriority)
+      of "verbose":
+        cli.setLogLevel(LowPriority)
+      of "quiet":
+        cli.setLogLevel(HighPriority)
+      of "n", "no":
+        cli.setForceAnswer(No)
+      of "y", "yes":
+        cli.setForceAnswer(Yes)
+      of "default":
+        cli.setForceAnswer(Default)
+      else:
+        result[key] = val
+    else: discard
 
   result.dumpOptions

@@ -1,7 +1,7 @@
 import os, osproc, parsecfg, streams, strformat, strutils, tables
 
-import common
-export common
+from utils import execCmdOrDefault
+import cli, shared
 
 type
   Config* = object
@@ -193,21 +193,19 @@ proc genPkgCfgText(user: User): string =
       break
 
 proc writeCfgFile(fileName, text: string) =
-  tryOrQuit("Could not create config file at " & fileName):
+  try:
     display("Creating", "configuration file at " & fileName)
     createDir(fileName.splitFile().dir)
     writeFile(fileName, text)
     success("created configuration file")
+  except:
+    fatal("Could not create config file at " & fileName)
 
 proc genCfgFile(file: string, user: User) =
   if file == getGlobalCfgFile():
     writeCfgFile(file, genGlobalCfgText())
   else:
     writeCfgFile(file, genPkgCfgText(user))
-
-proc initConfig*(): Config =
-  result.user.install = getNwnInstallDir()
-  result.compiler.binary = "nwnsc"
 
 proc initTarget(): Target =
   result.name = ""
@@ -239,8 +237,8 @@ proc parsePackage(cfg: var Config, key, value: string) =
   of "name": cfg.pkg.name = value
   of "description": cfg.pkg.description = value
   of "version": cfg.pkg.version = value
-  of "author": cfg.pkg.authors.add(value)
   of "url": cfg.pkg.url = value
+  of "author": cfg.pkg.authors.add(value)
   of "source": cfg.pkg.sources.add(value)
   else:
     error(fmt"Unknown key/value pair '{key}={value}'")
@@ -279,7 +277,7 @@ proc parseConfig*(cfg: var Config, fileName: string) =
     of cfgKeyValuePair, cfgOption:
       key = e.key.normalize
       debug("Option:", fmt"{key}: {e.value}")
-      tryOrQuit(fmt"Error parsing {fileName}: {getCurrentExceptionMsg()}"):
+      try:
         case section
         of "user":
           parseUser(cfg, key, e.value)
@@ -293,10 +291,17 @@ proc parseConfig*(cfg: var Config, fileName: string) =
           parseTarget(target, key, e.value)
         else:
           discard
+      except:
+        fatal(fmt"Error parsing {fileName}: {getCurrentExceptionMsg()}")
     of cfgError:
       fatal(e.msg)
   cfg.addTarget(target)
   p.close()
+
+template sandwich(statements: untyped) =
+  stdout.write("\n")
+  statements
+  stdout.write("\n")
 
 proc dumpConfig(cfg: Config) =
   if not isLogging(DebugPriority):
@@ -333,17 +338,33 @@ proc dumpConfig(cfg: Config) =
   sandwich:
     debug("Ending", "configuration dump")
 
-proc loadConfig*(cfg: var Config, file: string) =
+proc loadConfigFile*(cfg: var Config, file: string) =
   if not existsFile(file):
     genCfgFile(file, cfg.user)
   cfg.parseConfig(file)
 
-proc loadConfigs*(files: seq[string]): Config =
-  result = initConfig()
-  var hasRun = false
+proc initConfig*(files: varargs[string]): Config =
+  var
+    debugging = isLogging(DebugPriority)
+    hasRun = false
   for file in files:
-    doAfterDebug(hasRun):
-      stdout.write("\n")
-    result.loadConfig(file)
+    if debugging:
+      if hasRun: stdout.write("\n")
+      else: hasRun = true
+    result.loadConfigFile(file)
 
   result.dumpConfig()
+
+proc getTarget*(target: string, cfg: Config): Target =
+  ## Returns the target specified by the user, or the first target found in the
+  ## parsed config files if the user did not specify a target.
+  if cfg.targets.len == 0:
+    fatal("No targets found. Please check your nasher.cfg file.")
+
+  if target.len == 0:
+    for value in cfg.targets.values:
+      return value
+  elif target in cfg.targets:
+    result = cfg.targets[target]
+  else:
+    fatal("Unknown target " & target)
