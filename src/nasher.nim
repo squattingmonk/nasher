@@ -4,7 +4,7 @@ from nasher/config import Config
 from nasher/options import parseCmdLine
 
 const
-  nasherVersion {.strdefine.} = "devel"
+  nasherVersion = "0.3.0"
 
   helpAll = """
   nasher: a build tool for Neverwinter Nights projects
@@ -47,7 +47,7 @@ when isMainModule:
     version = opts.getBool("version")
 
   if version:
-    echo "nasher" & nasherVersion
+    echo "nasher " & nasherVersion
     quit(QuitSuccess)
 
   case cmd
