@@ -26,38 +26,57 @@ Run `nasher --help` to see usage information. To get detailed usage information
 on a particular command, run `nasher command --help`, where `command` is the
 command you wish to learn about.
 
-### Initializing a new project
-    # Create a nasher project in the current directory
+### Initializing a new package
+    # Create a nasher package in the current directory
     $ nasher init
 
-    # Create a nasher project in directory foo
+    # Create a nasher package in directory foo
     $ nasher init foo
 
-This will create a `nasher.cfg` file in the project directory. You can alter
+This will create a `nasher.cfg` file in the package directory. You can alter
 the contents of this file to customize the paths to sources, add author
 information, etc.
 
+The package directory will also be initialized as a git repository if it was
+not already one. To avoid this behavior, pass `--vcs:none`.
+
 ### Listing build targets
-    # List target names only
+    # List target names, descriptions, packed file, and source files
     $ nasher list
 
-    # List target names, descriptions, packed file, and source files
-    $ nasher list --verbose
+    # List target names only
+    $ nasher list --quiet
 
-This will list the targets available in the current project. The first target
+This will list the targets available in the current package. The first target
 listed is treated as the default.
 
-### Compiling
+### Building targets
+When building a target, source files are cached into `.nasher/cache/x`, where
+`x` is the name of the target. During later builds of this target, only the
+source files that have changed will be rebuilt.
+
+The `convert`, `compile`, `pack`, and `install` commands are run in sequence.
+If you want to install a target, you can just use the `install` command without
+having to first use `convert`, `compile`, and `pack`.
+
+All of these commands can delete the cache and trigger a clean build if passed
+with `--clean`.
+
+#### Converting JSON to GFF
+    # Convert all sources for the default target
+    $ nasher convert
+
+    # Convert all sources for the target "demo"
+    $ nasher convert demo
+
+#### Compiling
     # Compile all scripts for the default target
     $ nasher compile
 
     # Compile all scripts for the target "demo"
     $ nasher compile demo
 
-The compiled scripts are placed into `.nasher/build/x`, where `x` is the name
-of the target.
-
-### Packing
+#### Packing
     # Packing the default target
     $ nasher pack
 
@@ -65,13 +84,12 @@ of the target.
     $ nasher pack demo
 
 This compiles scripts, converts json sources into their gff counterparts, and
-packs the resources into the target file. The resources are placed into
-`.nasher/build/x`, where `x` is the name of the target. The packed file is
-placed into the project root directory. If the file to be packed already exists
-in the project root, you will be prompted to overwrite it. You can force answer
-the prompt by passing the `--yes`, `--no`, or `--default` flags.
+packs the resources into the target file. The packed file is placed into the
+package root directory. If the file to be packed already exists in the package
+root, you will be prompted to overwrite it. You can force answer the prompt by
+passing the `--yes`, `--no`, or `--default` flags.
 
-### Installing
+#### Installing
     # Install the packed file for the default target
     $ nasher install
 
@@ -89,15 +107,15 @@ answer the prompt by passing the `--yes`, `--no`, or `--default` flags.
 
 This unpacks a `.mod`, `.erf`, or `.hak` file into the source tree. GFF files
 are converted to JSON format. If a file does not exist in the source tree, it
-is checked against a series of rules in the project config. If a rule is
+is checked against a series of rules in the package config. If a rule is
 matched, it will be placed in that directory. Otherwise, it is placed into the
-directory `unknown` in the project root.
+directory `unknown` in the package root.
 
 If an extracted file would overwrite a newer version, you will be prompted to
 overwrite the file. You can force answer the prompt by passing the `--yes`,
 `--no`, or `--default` flags.
 
-You can initialize a project with the contents of a `.mod`, `.erf`, or `.hak`
+You can initialize a package with the contents of a `.mod`, `.erf`, or `.hak`
 file by running:
 
     # Initialize into foo using the contents of bar.mod as source files
