@@ -1,6 +1,6 @@
 import os, strformat
 
-import cli, config, shared
+import utils/[cli, config, shared]
 
 const
   helpInstall* = """
@@ -10,23 +10,22 @@ const
   Description:
     Converts, compiles, and packs all sources for <target>, then installs the
     packed file into the NWN installation directory. If <target> is not supplied,
-    the first target found in the config files will be packed and installed.
-
-    The location of the NWN install can be set in the [User] section of the global
-    nasher configuration file (default '~/Documents/Neverwinter Nights').
+    the first target found in the package will be packed and installed.
 
     If the file to be installed would overwrite an existing file, you will be
     prompted to overwrite it. The default answer is to keep the newer file.
 
+    The default install location is '~/Documents/Neverwinter Nights' for Windows
+    and Mac or `~/.local/share/Neverwinter Nights` on Linux.
+
   Options:
-    --clean        clears the cache directory before packing
+    --clean        Clears the cache directory before packing
     --yes, --no    Automatically answer yes/no to the overwrite prompt
     --default      Automatically accept the default answer to the overwrite prompt
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands
     -v, --version  Display version information
-    --config FILE  Use FILE rather than the package config file
 
   Logging:
     --debug        Enable debug logging
@@ -35,13 +34,13 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc install*(opts: Options, cfg: var Config) =
-  if opts.getBool("help"):
+proc install*(opts: Options, pkg: PackageRef) =
+  if opts.getBoolOrDefault("help"):
     help(helpInstall)
 
   let
-    file = relativePath(getPkgRoot() / opts.get("file"), getCurrentDir())
-    dir = opts.get("install", getNwnInstallDir())
+    file = opts["file"]
+    dir = opts.getOrDefault("installDir", getNwnInstallDir())
 
   display("Installing", file & " into " & dir)
   if not existsFile(file):

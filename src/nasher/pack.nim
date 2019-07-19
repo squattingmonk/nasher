@@ -1,7 +1,7 @@
 import os, strformat
 from sequtils import toSeq
 
-import cli, config, shared, utils
+import utils/[cli, config, shared, nwn]
 
 const
   helpPack = """
@@ -20,14 +20,13 @@ const
     is newer than the existing file, the default is to overwrite the existing file.
 
   Options:
-    --clean        clears the cache directory before packing
+    --clean        Clears the cache directory before packing
     --yes, --no    Automatically answer yes/no to the overwrite prompt
     --default      Automatically accept the default answer to the overwrite prompt
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands
     -v, --version  Display version information
-    --config FILE  Use FILE rather than the package config file
 
   Logging:
     --debug        Enable debug logging
@@ -47,43 +46,42 @@ proc getNewestFile(dir: string): string =
       # This is the first file we've checked
       result = file
 
-proc pack*(opts: Options, cfg: var Config) =
+proc pack*(opts: Options, pkg: PackageRef) =
   let
-    cmd = opts.get("command")
+    cmd = opts["command"]
 
-  if opts.getBool("help"):
+  if opts.getBoolOrDefault("help"):
     # Make sure the correct command handles showing the help text
     if cmd == "pack": help(helpPack)
     else: return
 
   let
-    file = opts.get("file")
-    target = opts.get("target")
-    cacheDir = opts.get("directory")
+    file = opts["file"]
+    target = opts["target"]
+    cacheDir = opts["directory"]
     fileTime = getNewestFile(cacheDir).getLastModificationTime
-    packed = relativePath(getPkgRoot() / file, getCurrentDir())
 
   display("Packing", fmt"files for target {target} into {file}")
-  if existsFile(packed):
+  if existsFile(file):
     let
-      installedTime = packed.getLastModificationTime
-      timeDiff = getTimeDiff(fileTime, installedTime)
+      packTime = file.getLastModificationTime
+      timeDiff = getTimeDiff(fileTime, packTime)
       defaultAnswer = if timeDiff > 0: Yes else: No
     
     hint(getTimeDiffHint("The packed file", timeDiff))
-    if not askIf(fmt"{packed} already exists. Overwrite?", defaultAnswer):
+    if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
       quit(QuitSuccess)
 
   let
     sourceFiles = toSeq(walkFiles(cacheDir / "*"))
-    exitCode = createErf(file, sourceFiles)
+    (output, errCode) = createErf(file, sourceFiles)
 
-  if exitCode == 0:
-    success("packed " & file)
-    setLastModificationTime(packed, fileTime)
+  if errCode != 0:
+    fatal(fmt"Could not pack {file}: {output}")
 
-    # Prevent falling through to the next function if we were called directly
-    if cmd == "pack":
-      quit(QuitSuccess)
-  else:
-    fatal("Something went wrong!")
+  success("packed " & file)
+  setLastModificationTime(file, fileTime)
+
+  # Prevent falling through to the next function if we were called directly
+  if cmd == "pack":
+    quit(QuitSuccess)

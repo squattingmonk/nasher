@@ -1,5 +1,5 @@
 import os
-import cli, config, shared
+import utils/[cli, config, git, shared]
 
 const
   helpInit = """
@@ -19,7 +19,6 @@ const
   Global Options:
     -h, --help     Display help for nasher or one of its commands
     -v, --version  Display version information
-    --config FILE  Use FILE rather than the package config file
 
   Logging:
     --debug        Enable debug logging
@@ -28,21 +27,38 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc init*(opts: Options, cfg: var Config) =
-  if opts.getBool("help"):
+proc init*(opts: Options, pkg: PackageRef) =
+  if opts.getBoolOrDefault("help"):
     help(helpInit)
 
   let
-    dir = opts.get("directory", getCurrentDir())
-    pkgFile = dir / "nasher.cfg"
+    dir = opts.getOrPut("directory", getCurrentDir())
+    file = dir / "nasher.cfg"
 
-  if not existsFile(pkgFile):
-    display("Initializing", "into " & dir)
-    cfg = initConfig(getGlobalCfgFile(), pkgFile)
-
-    # Check if we should unpack a file
-    if opts.get("file") == "":
-      success("project initialized")
-      quit(QuitSuccess)
-  else:
+  if existsFile(file):
     fatal(dir & " is already a nasher project")
+
+  display("Initializing", "into " & dir)
+
+  try:
+    display("Creating", "package file at " & file)
+    createDir(dir)
+    writeFile(file, genPackageText(opts))
+    success("created package file")
+  except:
+    fatal("Could not create package file at " & file)
+
+  # TODO: support hg
+  if opts.getOrPut("vcs", "git") == "git":
+    try:
+      display("Initializing", "git repository")
+      if gitInit(dir):
+        gitIgnore(dir)
+      success("initialized git repository")
+    except:
+      error("Could not initialize git repository: " & getCurrentExceptionMsg())
+
+  # Check if we should unpack a file
+  if opts.getOrDefault("file") == "":
+    success("project initialized")
+    quit(QuitSuccess)

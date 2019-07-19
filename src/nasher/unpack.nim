@@ -1,7 +1,7 @@
 import tables, os, strformat, strutils, times
 from glob import walkGlob
 
-import cli, config, shared, utils
+import utils/[cli, compiler, config, nwn, shared]
 
 const
   helpUnpack = """
@@ -37,7 +37,6 @@ const
   Global Options:
     -h, --help     Display help for nasher or one of its commands
     -v, --version  Display version information
-    --config FILE  Use FILE rather than the package config file
 
   Logging:
     --debug        Enable debug logging
@@ -45,6 +44,9 @@ const
     --quiet        Disable all logging except errors
     --no-color     Disable color output (automatic if not a tty)
   """
+
+type
+  SourceMap = Table[string, seq[string]]
 
 proc getSrcFiles(sources: seq[string]): seq[string] =
   ## Walks all source patterns in sources and returns the matching files
@@ -107,12 +109,12 @@ template confirmOverwriteNewer(
   statements
   path.setLastModificationTime(time)
 
-proc unpack*(opts: Options, cfg: var Config) =
+proc unpack*(opts: Options, pkg: PackageRef) =
   let
-    file = opts.get("file").absolutePath
-    dir = opts.get("dir", getCurrentDir())
+    file = opts.getOrDefault("file").absolutePath
+    dir = opts.getOrDefault("directory", getCurrentDir())
 
-  if opts.getBool("help") or file == "":
+  if opts.getBoolOrDefault("help") or file == "":
     help(helpUnpack)
 
   if not existsFile(file):
@@ -121,19 +123,21 @@ proc unpack*(opts: Options, cfg: var Config) =
   if not existsDir(dir):
     fatal("Cannot unpack to {dir}: directory does not exist.")
 
-  if not isNasherProject(dir):
+  if not loadPackageFile(pkg, getPackageFile(dir)):
     fatal("This is not a nasher project. Please run nasher init.")
 
-  let config = opts.get("config", getPkgCfgFile(dir))
-  cfg = initConfig(getGlobalCfgFile(), config)
+  let
+    tmpDir = ".nasher" / "tmp"
+    fileName = file.extractFilename
 
-  let tmpDir = dir / ".nasher" / "unpack" / file.extractFilename
+  display("Extracting", fmt"{fileName} to {dir}")
+  setCurrentDir(dir)
   removeDir(tmpDir)
   createDir(tmpDir)
   extractErf(file, tmpDir)
 
   let
-    sourceFiles = getSrcFiles(cfg.pkg.sources)
+    sourceFiles = getSrcFiles(pkg.sources)
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
     newerFiles = getNewerFiles(sourceFiles, packTime)
@@ -153,7 +157,7 @@ proc unpack*(opts: Options, cfg: var Config) =
     let
       fileName = file.extractFilename
       relPath = file.relativePath(tmpDir)
-      dir = mapSrc(fileName, ext, srcMap, cfg.rules)
+      dir = mapSrc(fileName, ext, srcMap, pkg.rules)
 
     if dir == "unknown":
       warning("cannot decide where to extract " & fileName)

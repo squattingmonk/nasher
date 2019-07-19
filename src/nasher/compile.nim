@@ -1,7 +1,7 @@
 from sequtils import toSeq
 import os, tables, strtabs, strutils
 
-import cli, config, shared, utils
+import utils/[cli, compiler, config, shared]
 
 const
   helpCompile* = """
@@ -18,12 +18,11 @@ const
     sources and packing the target file.
 
   Options:
-    --clean        clears the cache directory before compiling
+    --clean        Clears the cache directory before compiling
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands
     -v, --version  Display version information
-    --config FILE  Use FILE rather than the package config file
 
   Logging:
     --debug        Enable debug logging
@@ -32,88 +31,36 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc getCacheMap(sources: seq[string]): StringTableRef =
-  ## Generates a table mapping source files to their proper names in the cache
-  result = newStringTable()
-  for file in walkSourceFiles(sources):
-    let
-      (_, name, ext) = splitFile(file)
-      fileName = if ext == ".json": name else: name & ext
-    result[fileName] = file
-
-proc updateCacheDir(target: Target, dir: string) =
-  ## Syncs dir to the source tree for target. Copies new or changed source
-  ## files and removes those that were deleted.
-  display("Updating", "cache for target " & target.name)
+proc compile*(opts: Options, pkg: PackageRef) =
   let
-    cacheMap = getCacheMap(target.sources)
+    cmd = opts["command"]
 
-  # Remove deleted files
-  for file in walkFiles(dir / "*"):
-    let fileName = file.extractFileName
-    if fileName notin cacheMap:
-      if fileName.splitFile.ext != ".ncs":
-        display("Removing", fileName, priority = LowPriority)
-      removeFile(file)
-
-  # Copy newer files
-  for fileName, srcFile in cacheMap.pairs:
-    let
-      cacheFile = dir / fileName
-      srcTime = srcFile.getLastModificationTime
-    if fileOlder(cacheFile, srcTime):
-      if srcFile.splitFile.ext == ".json":
-        gffConvert(srcFile, dir)
-      else:
-        display("Copying", srcFile & " -> " & fileName, priority = LowPriority)
-        copyFile(srcFile, cacheFile)
-
-      setLastModificationTime(cacheFile, srcTime)
-
-proc compile*(opts: Options, cfg: var Config) =
-  let
-    cmd = opts.get("command")
-
-  if opts.getBool("help"):
+  if opts.getBoolOrDefault("help"):
     # Make sure the correct command handles showing the help text
     if cmd == "compile": help(helpCompile)
     else: return
 
-  if not isNasherProject():
-    fatal("This is not a nasher project. Please run nasher init.")
-
-  let config = opts.get("config", getPkgCfgFile())
-  cfg = initConfig(getGlobalCfgFile(), config)
-
   let
-    name = opts.get("target")
-    target = getTarget(name, cfg)
-    cacheDir = getCacheDir(target.name)
-
-  # Set these so they can be gotten easily by the pack and install commands
-  opts["file"] = target.file
-  opts["target"] = target.name
-  opts["directory"] = cacheDir
-
-  if opts.get("clean", false):
-    removeDir(cacheDir)
-
-  createDir(cacheDir)
-  updateCacheDir(target, cacheDir)
+    cacheDir = opts["directory"]
+    target = pkg.getTarget(opts["target"])
+    compiler = opts.getOrDefault("nssCompiler", findExe("nwnsc"))
+    userFlags = opts.getOrDefault("nssFlags", "-lowqey")
+    targetFlags = target.flags.join(" ")
 
   withDir(cacheDir):
     let
       scripts = toSeq(walkFiles("*.nss"))
-      compiler = cfg.compiler.binary
-      flags = cfg.compiler.flags.join(" ")
 
-    display("Compiling", $scripts.len & " scripts")
+    # TODO: async
+    # TODO: Only compile scripts that have not been compiled since update
     if scripts.len > 0:
-      let errcode = runCompiler(compiler, [flags, "*.nss"])
-      if errcode != 0:
-        warning("Finished with error code " & $errcode)
+      display("Compiling", $scripts.len & " scripts")
+      let errCode = runCompiler(compiler, [userFlags, targetFlags, "*.nss"])
+      if errCode != 0 and cmd in ["pack", "install"] and
+        not askIf("Do you want to continue $1ing anyway?" % [cmd]):
+          quit(QuitFailure)
     else:
-      info("Skipping", "compilation: nothing to compile")
+      display("Skipping", "compilation: nothing to compile")
 
   # Prevent falling through to the next function if we were called directly
   if cmd == "compile":

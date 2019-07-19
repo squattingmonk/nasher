@@ -1,6 +1,5 @@
-from tables import len, values
-from strutils import join, split
-import cli, config, shared
+from strutils import join
+import utils/[cli, config, shared]
 
 const
   helpList = """
@@ -8,14 +7,13 @@ const
     nasher list [options]
 
   Description:
-    Lists the names of all build targets. These names can be passed to the compile
-    or pack commands. If called with --verbose, also lists the descriptions,
-    source files, and the filename of the final target.
-
+    For each target, lists the name, description, source files, and final
+    filename of all build targets. These names can be passed to the compile or
+    pack commands.
+    
   Global Options:
     -h, --help     Display help for nasher or one of its commands
     -v, --version  Display version information
-    --config FILE  Use FILE rather than the package config file
 
   Logging:
     --debug        Enable debug logging
@@ -24,22 +22,19 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc list*(opts: Options, cfg: var Config) =
-  if opts.getBool("help"):
+proc list*(opts: Options, pkg: PackageRef) =
+  if opts.getBoolOrDefault("help"):
     help(helpList)
 
-  if not isNasherProject():
+  if not loadPackageFile(pkg, getPackageFile()):
     fatal("This is not a nasher project. Please run nasher init.")
 
-  let config = opts.get("config", getPkgCfgFile())
-  cfg = initConfig(getGlobalCfgFile(), config)
-
-  if cfg.targets.len > 0:
+  if pkg.targets.len > 0:
     var hasRun = false
-    for target in cfg.targets.values:
+    for target in pkg.targets:
       if hasRun:
         stdout.write("\n")
-      display("Target:", target.name)
+      display("Target:", target.name, priority = HighPriority)
       display("Description:", target.description)
       display("File:", target.file)
       display("Sources:", target.sources.join("\n"))

@@ -1,28 +1,14 @@
-import os, strtabs, strutils, times
+import os, strtabs, times
+from strutils import unindent
 
 from glob import walkGlob
 
 type
-  Options* = StringTableRef
   CommandResult* = tuple[output: TaintedString, exitCode: int]
 
-proc get*[T](opts: Options, name: string, default: T = ""): T =
-  ## Returns a value or type T from opts using name as the key. If not present,
-  ## returns default.
-  if opts.contains(name):
-    let value = opts[name]
-    when T is bool: (value == "" or value.parseBool)
-    elif T is int: value.parseInt
-    elif T is string: value
-    else: doAssert(false)
-  else: default
-
-proc getBool*(opts: Options, name: string, default = false): bool =
-  opts.get(name, default)
-
-proc help*(helpMessage: string, errorcode = QuitSuccess) =
-  ## Quits, with a formatted help message
-  quit(helpMessage.unindent(2), errorcode)
+proc help*(helpMessage: string, errorCode = QuitSuccess) =
+  ## Quits with a formatted help message, sending errorCode
+  quit(helpMessage.unindent(2), errorCode)
 
 iterator walkSourceFiles*(sources: seq[string]): string =
   for source in sources:
@@ -54,7 +40,7 @@ proc fileNewer*(file: string, time: Time): bool =
     getTimeDiff(time, file.getLastModificationTime) < 0
   else: false
 
-proc getPkgRoot*(baseDir = getCurrentDir()): string =
+proc getPackageRoot*(baseDir = getCurrentDir()): string =
   ## Returns the first parent of baseDir that contains a nasher config
   result = baseDir.absolutePath()
 
@@ -62,20 +48,20 @@ proc getPkgRoot*(baseDir = getCurrentDir()): string =
     if existsFile(dir / "nasher.cfg"):
       return dir
 
-proc getGlobalCfgFile*: string =
-  getConfigDir() / "nasher" / "nasher.cfg"
+proc getConfigFile*: string =
+  getConfigDir() / "nasher" / "user.cfg"
 
-proc getPkgCfgFile*(baseDir = getCurrentDir()): string =
-  getPkgRoot(baseDir) / "nasher.cfg"
+proc getPackageFile*(baseDir = getCurrentDir()): string =
+  getPackageRoot(baseDir) / "nasher.cfg"
 
-proc getCacheDir*(file: string, baseDir = getCurrentDir()): string =
-  getPkgRoot(baseDir) / ".nasher" / "cache" / file.extractFilename()
+# proc getCacheDir*(file: string, baseDir = getCurrentDir()): string =
+#   getPackageRoot(baseDir) / ".nasher" / "cache" / file.extractFilename()
 
-proc getBuildDir*(build: string, baseDir = getCurrentDir()): string =
-  getPkgRoot(baseDir) / ".nasher" / "build" / build
+# proc getBuildDir*(build: string, baseDir = getCurrentDir()): string =
+#   getPackageRoot(baseDir) / ".nasher" / "build" / build
 
 proc isNasherProject*(dir = getCurrentDir()): bool =
-  existsFile(getPkgCfgFile(dir))
+  existsFile(getPackageFile(dir))
 
 proc getNwnInstallDir*: string =
   when defined(Linux):
@@ -90,4 +76,3 @@ template withDir*(dir: string, body: untyped): untyped =
     body
   finally:
     setCurrentDir(curDir)
-

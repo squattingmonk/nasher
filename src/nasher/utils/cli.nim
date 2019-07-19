@@ -188,6 +188,10 @@ proc ask*(question: string, default = "", allowBlank = true): string =
         echo default
 
 proc choose*(question: string, choices: openarray[string]): string =
+  if cli.forceAnswer == Default:
+    forced(question, "\"" & choices[0] & "\"")
+    return choices[0]
+
   display("Prompt:", question, Prompt, HighPriority)
   displayHints()
   display("Select:", "Cycle with Tab, Choose with Enter", Prompt, HighPriority)
