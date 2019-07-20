@@ -13,17 +13,17 @@ const
     local (package-specific) or global (across all packages). Regardless, they
     override default nasher settings.
 
-    Local (package-level) configuration is stored in .nasher/user.cfg in the
-    package root directory. Any values defined here take precedence over those in
-    the global config file. This file will be ignored by git.
-
     Global configuration is stored %APPDATA%\nasher\user.cfg on Windows or in
     $XDG_CONFIG/nasher/user.cfg on Linux and Mac. These values apply to all
     packages.
 
+    Local (package-level) configuration is stored in .nasher/user.cfg in the
+    package root directory. Any values defined here take precedence over those in
+    the global config file. This file will be ignored by git.
+
   Options:
-    --local        Apply to the current package only (default if in a package)
-    --global       Apply to all packages (default if not in a package)
+    --global       Apply to all packages (default)
+    --local        Apply to the current package only
     --get          Get the value of <key> (default when <value> is not passed)
     --set          Set <key> to <value> (default when <value> is passed)
     --unset        Delete the key/value pair for <key>
@@ -67,14 +67,12 @@ proc config*(opts: Options) =
 
   let
     dir = opts.getOrDefault("directory", getCurrentDir())
-    isPkg = existsPackageFile(dir)
-    level = opts.getOrDefault("level", if isPkg: "local" else: "global")
-    isLocal = level == "local"
+    level = opts.getOrDefault("level", "global")
 
-  if isLocal and not isPkg:
+  if level == "local" and not existsPackageFile(dir):
     fatal("This is not a nasher repository. Please run init")
 
-  let file = getConfigFile(if isLocal: dir else: "")
+  let file = getConfigFile(if level == "local": dir else: "")
   var cfg = newOptions(file)
 
   case cmd
