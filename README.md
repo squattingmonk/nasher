@@ -127,3 +127,25 @@ This is equivalent to:
     $ cd foo
     $ nasher unpack ../bar.mod
 
+## Configuration
+You can configure `nasher` using the `config` command (see `nasher config
+--help` for detailed usage).
+
+    # Set the default NWN installation path
+    $ nasher config installDir "~/Documents/Neverwinter Nights"
+
+    # Variables are case and style insensitive
+    $ nasher config install_dir
+    > ~/Documents/Neverwinter Nights
+
+Currently, the following configuration options are available:
+- `userName`: the default name to add to the author section of new packages
+- `userEmail`: the default email used for the author section
+- `nssCompiler`: the path to the script compiler
+- `nssFlags`: the default flags to use on packages
+- `installDir`: the NWN installation directory
+- `vcs`: the version control system to use when making new packages
+    - supported: `none`, `git` (default)
+
+ These options are meant to be separate from the package file (`nasher.cfg`)
+ since they may depend on the user.
