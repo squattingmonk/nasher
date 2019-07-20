@@ -1,5 +1,5 @@
 import os, strtabs
-import utils/[cli, config, nwn, shared]
+import utils/[cli, nwn, options, shared]
 
 const
   helpConvert* = """

@@ -40,29 +40,6 @@ proc fileNewer*(file: string, time: Time): bool =
     getTimeDiff(time, file.getLastModificationTime) < 0
   else: false
 
-proc getPackageRoot*(baseDir = getCurrentDir()): string =
-  ## Returns the first parent of baseDir that contains a nasher config
-  result = baseDir.absolutePath()
-
-  for dir in parentDirs(result):
-    if existsFile(dir / "nasher.cfg"):
-      return dir
-
-proc getConfigFile*: string =
-  getConfigDir() / "nasher" / "user.cfg"
-
-proc getPackageFile*(baseDir = getCurrentDir()): string =
-  getPackageRoot(baseDir) / "nasher.cfg"
-
-# proc getCacheDir*(file: string, baseDir = getCurrentDir()): string =
-#   getPackageRoot(baseDir) / ".nasher" / "cache" / file.extractFilename()
-
-# proc getBuildDir*(build: string, baseDir = getCurrentDir()): string =
-#   getPackageRoot(baseDir) / ".nasher" / "build" / build
-
-proc isNasherProject*(dir = getCurrentDir()): bool =
-  existsFile(getPackageFile(dir))
-
 proc getNwnInstallDir*: string =
   when defined(Linux):
     getHomeDir() / ".local" / "share" / "Neverwinter Nights"

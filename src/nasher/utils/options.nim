@@ -1,4 +1,6 @@
 import os, parseopt, parsecfg, streams, strformat, strtabs, strutils
+from sequtils import toSeq
+from algorithm import sorted
 export strtabs
 
 import cli, git
@@ -22,7 +24,7 @@ type
 
 const
   nasherCommands =
-    ["init", "list", "convert", "compile", "pack", "install", "unpack"]
+    ["init", "list", "config", "convert", "compile", "pack", "install", "unpack"]
 
 proc `[]=`*[T: int | bool](opts: Options, key: string, value: T) =
   ## Overloaded ``[]=`` operator that converts value to a string before setting
@@ -73,13 +75,36 @@ proc getBoolOrDefault*(opts: Options, key: string, default = false): bool =
     except ValueError:
       discard
 
-proc parseConfigFile(opts: Options) =
+proc getPackageRoot*(baseDir = getCurrentDir()): string =
+  ## Returns the first parent of baseDir that contains a nasher config
+  result = baseDir.absolutePath()
+
+  for dir in parentDirs(result):
+    if existsFile(dir / "nasher.cfg"):
+      return dir
+
+proc getConfigFile*(pkgDir = ""): string =
+  ## Returns the configuration file for the package owning ``pkgDir``, or the
+  ## global configuration file if ``pkgDir`` is blank.
+  if pkgDir.len > 0:
+    getPackageRoot(pkgDir) / ".nasher" / "user.cfg"
+  else:
+    getConfigDir() / "nasher" / "user.cfg"
+
+proc getPackageFile*(baseDir = getCurrentDir()): string =
+  getPackageRoot(baseDir) / "nasher.cfg"
+
+proc existsPackageFile*(dir = getCurrentDir()): bool =
+  existsFile(getPackageFile(dir))
+
+proc parseConfigFile*(opts: Options, file: string) =
   ## Loads all all values from $CONFIG/nasher/user.cfg into opts. This provides
   ## user-defined defaults to options. It runs before the command-line options
   ## are processed, so the user can override these commands as needed.
-  let
-    file = getConfigDir() / "nasher" / "user.cfg"
-    fileStream = newFileStream(file)
+  const prohibited =
+    ["command", "config", "directory", "file", "target", "help", "version"]
+
+  let fileStream = newFileStream(file)
 
   if fileStream.isNil:
     return
@@ -91,9 +116,35 @@ proc parseConfigFile(opts: Options) =
     case e.kind
     of cfgEof: break
     of cfgKeyValuePair, cfgOption:
-      opts[e.key] = e.value
+      if e.key notin prohibited:
+        opts[e.key] = e.value
     else: discard
   close(p)
+
+proc writeConfigFile*(opts: Options, file: string) =
+  ## Converts ``opts`` into a config file named ``file``.
+  let
+    keys = toSeq(opts.keys).sorted
+    dir = file.splitFile.dir
+
+  try:
+    createDir(dir)
+    var s = openFileStream(file, fmWrite)
+    for key in keys:
+      s.writeLine(key & " = " & opts[key].escape)
+    s.close
+  except:
+    fatal(getCurrentExceptionMsg())
+
+proc putKeyOrHelp(opts: Options, keys: varargs[string], value: string) =
+  ## Sets the first key in ``keys`` that does not exist to ``value``. If all
+  ## keys already have a value, sets the help key to true.
+  for key in keys:
+    if key notin opts:
+      opts[key] = value
+      return
+
+  opts["help"] = true
 
 proc parseCmdLine(opts: Options) =
   ## Parses the command line and stores the user input into opts.
@@ -102,22 +153,20 @@ proc parseCmdLine(opts: Options) =
     of cmdArgument:
       case opts.getOrDefault("command")
       of "init":
-        if opts.hasKeyOrPut("directory", key) and
-           opts.hasKeyOrPut("file", key):
-           opts["help"] = true
+        opts.putKeyOrHelp("directory", "file", key)
+      of "config":
+        opts.putKeyOrHelp("key", "value", key)
       of "list", "compile", "convert", "pack", "install":
-        if opts.hasKeyOrPut("target", key):
-           opts["help"] = true
+        opts.putKeyOrHelp("target", key)
       of "unpack":
-        if opts.hasKeyOrPut("file", key):
-           opts["help"] = true
+        opts.putKeyOrHelp("file", key)
       else:
         if key in nasherCommands:
           opts["command"] = key
         else: break
     of cmdLongOption, cmdShortOption:
       case key
-      of "h", "help":
+      of "h", "help", "command":
         opts["help"] = true
       of "v", "version":
         opts["version"] = true
@@ -136,7 +185,18 @@ proc parseCmdLine(opts: Options) =
       of "default":
         cli.setForceAnswer(Default)
       else:
-        opts[key] = val
+        case opts.getOrDefault("command")
+        of "config":
+          case key
+          of "g", "get": opts.putKeyOrHelp("config", "get")
+          of "s", "set": opts.putKeyOrHelp("config", "set")
+          of "u", "unset": opts.putKeyOrHelp("config", "unset")
+          of "l", "list": opts.putKeyOrHelp("config", "list")
+          of "global", "local": opts.putKeyOrHelp("level", key)
+          of "d", "dir", "directory": opts.putKeyOrHelp("directory", val)
+          else: opts["help"] = true
+        else:
+          opts[key] = val
     else: discard
 
 proc dumpOptions(opts: Options) =
@@ -156,12 +216,19 @@ proc dumpOptions(opts: Options) =
   debug("Force:", $cli.getForceAnswer())
   stdout.write("\n")
 
+proc newOptions*(file: string): Options =
+  result = newStringTable(modeStyleInsensitive)
+  result.parseConfigFile(file)
+
 proc getOptions*: Options =
   ## Returns a string table of options obtained from the config file and command
   ## line input. Options are case and style insensitive (i.e., "someValue" ==
   ## "some_value").
+  # result = newStringTable(modeStyleInsensitive)
+  # result.parseConfigFile(getConfigFile())
   result = newStringTable(modeStyleInsensitive)
-  result.parseConfigFile
+  result.parseConfigFile(getConfigFile())
+  result.parseConfigFile(getConfigFile(getCurrentDir()))
   result.parseCmdLine
   result.dumpOptions
 

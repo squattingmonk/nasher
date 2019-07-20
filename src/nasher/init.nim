@@ -1,5 +1,5 @@
 import os
-import utils/[cli, config, git, shared]
+import utils/[cli, git, options, shared]
 
 const
   helpInit = """

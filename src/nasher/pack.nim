@@ -1,7 +1,7 @@
 import os, strformat
 from sequtils import toSeq
 
-import utils/[cli, config, shared, nwn]
+import utils/[cli, nwn, options, shared]
 
 const
   helpPack = """

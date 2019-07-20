@@ -1,6 +1,6 @@
 import os, strformat
 
-import utils/[cli, config, shared]
+import utils/[cli, options, shared]
 
 const
   helpInstall* = """

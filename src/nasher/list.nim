@@ -1,5 +1,5 @@
 from strutils import join
-import utils/[cli, config, shared]
+import utils/[cli, options, shared]
 
 const
   helpList = """

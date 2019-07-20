@@ -1,7 +1,7 @@
 from sequtils import toSeq
 import os, tables, strtabs, strutils
 
-import utils/[cli, compiler, config, shared]
+import utils/[cli, compiler, options, shared]
 
 const
   helpCompile* = """
