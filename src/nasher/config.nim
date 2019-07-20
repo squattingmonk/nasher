@@ -17,7 +17,7 @@ const
     package root directory. Any values defined here take precedence over those in
     the global config file. This file will be ignored by git.
 
-    Global configuration is stored %APPDATA%\\nasher\\user.cfg on Windows or in
+    Global configuration is stored %APPDATA%\nasher\user.cfg on Windows or in
     $XDG_CONFIG/nasher/user.cfg on Linux and Mac. These values apply to all
     packages.
 
