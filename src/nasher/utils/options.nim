@@ -102,7 +102,8 @@ proc parseConfigFile*(opts: Options, file: string) =
   ## user-defined defaults to options. It runs before the command-line options
   ## are processed, so the user can override these commands as needed.
   const prohibited =
-    ["command", "config", "directory", "file", "target", "help", "version"]
+    ["command", "config", "level", "directory", "file", "target",
+     "help", "version"]
 
   let fileStream = newFileStream(file)
 
