@@ -347,7 +347,7 @@ proc getTarget*(pkg: PackageRef, name = ""): Target =
     for target in pkg.targets:
       if target.name == name:
         return target
-      fatal("Unknown target " & name)
+    fatal("Unknown target " & name)
   else:
     result = pkg.targets[0]
 
