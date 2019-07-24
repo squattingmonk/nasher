@@ -10,7 +10,7 @@ type
 
   Package = object
     name*, description*, version*, url*: string
-    authors*, sources*, flags*: seq[string]
+    authors*, includes*, excludes*, flags*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
 
@@ -18,7 +18,7 @@ type
 
   Target = object
     name*, file*, description*: string
-    sources*, flags*: seq[string]
+    includes*, excludes*, flags*: seq[string]
 
   Rule* = tuple[pattern, dir: string]
 
@@ -237,11 +237,13 @@ proc initTarget: Target =
   result.name = ""
 
 proc addTarget(pkg: PackageRef, target: var Target) =
-  ## Adds target to pkg's list of targets. If target has no sources, the sources
-  ## are copied from pkg.
+  ## Adds target to pkg's list of targets. If target has no items in the include
+  ## or exclude list, that list is copied from pkg.
   if target.name.len() > 0:
-    if target.sources.len == 0:
-      target.sources = pkg.sources
+    if target.includes.len == 0:
+      target.includes = pkg.includes
+    if target.excludes.len == 0:
+      target.excludes = pkg.excludes
     pkg.targets.add(target)
   target = initTarget()
 
@@ -277,7 +279,8 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "version": pkg.version = e.value
         of "url": pkg.url = e.value
         of "author": pkg.authors.add(e.value)
-        of "source": pkg.sources.add(e.value)
+        of "source", "include": pkg.includes.add(e.value)
+        of "exclude": pkg.excludes.add(e.value)
         of "flags": pkg.flags.add(e.value)
         else:
           error(fmt"Unknown key/value pair: {key} = {e.value}")
@@ -286,8 +289,9 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "name": target.name = e.value.normalize
         of "description": target.description = e.value
         of "file": target.file = e.value
-        of "source": target.sources.add(e.value)
-        of "flags": pkg.flags.add(e.value)
+        of "source", "include": target.includes.add(e.value)
+        of "exclude": target.excludes.add(e.value)
+        of "flags": target.flags.add(e.value)
         else:
           error(fmt"Unknown key/value pair '{key} = {e.value}'")
       of "rules":
@@ -313,7 +317,8 @@ proc dumpPackage(pkg: PackageRef) =
   debug("Version:", pkg.version)
   debug("URL:", pkg.url)
   debug("Authors:", pkg.authors.join("\n"))
-  debug("Sources:", pkg.sources.join("\n"))
+  debug("Includes:", pkg.includes.join("\n"))
+  debug("Excludes:", pkg.excludes.join("\n"))
   debug("Flags:", pkg.flags.join("\n"))
 
   for pattern, dir in pkg.rules.items:
@@ -324,7 +329,8 @@ proc dumpPackage(pkg: PackageRef) =
     debug("Target:", target.name)
     debug("Description:", target.description)
     debug("File:", target.file)
-    debug("Sources:", target.sources.join("\n"))
+    debug("Includes:", target.includes.join("\n"))
+    debug("Excludes:", target.excludes.join("\n"))
     debug("Flags:", target.flags.join("\n"))
 
   stdout.write("\n")
@@ -359,17 +365,29 @@ proc addLine(s: var string, line = "") =
 proc addPair(s: var string, key, value: string) =
   s.addLine(key & " = " & value.escape)
 
-proc genSrcText: string =
+proc genSrcText(pattern = ""): string =
   hint("Add individual source files or use a glob to match multiple files. " &
        "For instance, you can match all nss and json files in subdirectories " &
        "of src/ with the pattern \"src/**/*.{nss,json}\".")
   var
-    defaultSrc = "src/**/*.{nss,json}"
+    defaultSrc = pattern
   while true:
-    result.addPair("source", ask("Source pattern:", defaultSrc, allowBlank = false))
-    defaultSrc = ""
-    if not askIf("Do you wish to add another source pattern?", allowed = NotYes):
+    let answer = ask("Include pattern:", defaultSrc)
+    if answer.isNilOrWhitespace:
       break
+    result.addPair("include", answer)
+    defaultSrc = ""
+    if not askIf("Include another source pattern?", allowed = NotYes):
+      break
+
+  if askIf("Do you wish to exclude any files matching the include patterns?"):
+    while true:
+      let answer = ask("Exclude pattern:", allowBlank = false)
+      if answer.isNilOrWhitespace:
+        break
+      result.addPair("exclude", answer)
+      if not askIf("Exclude another source pattern?", allowed = NotYes):
+        break
 
 proc genRuleText: string =
   const
@@ -425,7 +443,7 @@ proc genTargetText(defaultName: string): string =
   hint("Adding a list of sources for this target will limit the target " &
        "to those sources. If you don't add sources to this target, it will " &
        "default to using the sources defined for the whole package.")
-  if askIf("Do you wish to add source files specific to this target?"):
+  if askIf("Do you wish to list source files specific to this target?"):
     result.add(genSrcText())
 
 proc genPackageText*(opts: Options): string =
@@ -470,7 +488,7 @@ proc genPackageText*(opts: Options): string =
        "nasher might not be able to properly update files when unpacking.")
   result.addLine
   result.addLine("[Sources]")
-  result.add(genSrcText())
+  result.add(genSrcText("src/**/*.{nss,json}"))
 
   result.addLine
   result.add(genRuleText())

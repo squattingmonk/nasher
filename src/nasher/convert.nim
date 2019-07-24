@@ -29,10 +29,10 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc getCacheMap(sources: seq[string]): StringTableRef =
+proc getCacheMap(includes, excludes: seq[string]): StringTableRef =
   ## Generates a table mapping source files to their proper names in the cache
   result = newStringTable()
-  for file in walkSourceFiles(sources):
+  for file in walkSourceFiles(includes, excludes):
     let
       (_, name, ext) = splitFile(file)
       fileName = if ext == ".json": name else: name & ext
@@ -55,7 +55,7 @@ proc convert*(opts: Options, pkg: PackageRef) =
   let
     target = pkg.getTarget(opts.getOrDefault("target"))
     cacheDir = ".nasher" / "cache" / target.name
-    cacheMap = getCacheMap(target.sources)
+    cacheMap = getCacheMap(target.includes, target.excludes)
 
   # Set these so they can be gotten easily by the pack and install commands
   opts["file"] = target.file

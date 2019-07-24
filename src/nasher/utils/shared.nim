@@ -1,4 +1,5 @@
 import os, strtabs, times
+from sequtils import toSeq
 from strutils import unindent
 
 from glob import walkGlob
@@ -10,10 +11,24 @@ proc help*(helpMessage: string, errorCode = QuitSuccess) =
   ## Quits with a formatted help message, sending errorCode
   quit(helpMessage.unindent(2), errorCode)
 
-iterator walkSourceFiles*(sources: seq[string]): string =
-  for source in sources:
-    for file in glob.walkGlob(source):
-      yield file
+proc matchesAny*(s: string, patterns: seq[string]): bool =
+  ## Returns whether ``s`` matches any glob pattern in ``patterns``.
+  for pattern in patterns:
+    if glob.matches(s, pattern):
+      return true
+
+iterator walkSourceFiles*(includes, excludes: seq[string]): string =
+  ## Yields all files in the source tree matching include patterns while not
+  ## matching exclude patterns.
+  for pattern in includes:
+    for file in glob.walkGlob(pattern):
+      if not file.matchesAny(excludes):
+        yield file
+
+proc getSourceFiles*(includes, excludes: seq[string]): seq[string] =
+  ## Returns all files in the source tree matching include patterns while not
+  ## matching exclude patterns.
+  toSeq(walkSourceFiles(includes, excludes))
 
 proc getTimeDiff*(a, b: Time): int =
   ## Compares two times and returns the difference in seconds. If 0, the files

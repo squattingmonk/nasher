@@ -48,14 +48,6 @@ const
 type
   SourceMap = Table[string, seq[string]]
 
-proc getSrcFiles(sources: seq[string]): seq[string] =
-  ## Walks all source patterns in sources and returns the matching files
-  for source in sources:
-    debug("Walking", "pattern " & source)
-    for path in glob.walkGlob(source):
-      debug("Found", path)
-      result.add(path)
-
 proc fileNewer(file: string, time: Time): bool =
   ## Checks whether file is newer than time. Only checks seconds, since copying
   ## modification times results in unequal nanoseconds.
@@ -137,7 +129,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   extractErf(file, tmpDir)
 
   let
-    sourceFiles = getSrcFiles(pkg.sources)
+    sourceFiles = getSourceFiles(pkg.includes, pkg.excludes)
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
     newerFiles = getNewerFiles(sourceFiles, packTime)

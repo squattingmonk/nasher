@@ -37,7 +37,8 @@ proc list*(opts: Options, pkg: PackageRef) =
       display("Target:", target.name, priority = HighPriority)
       display("Description:", target.description)
       display("File:", target.file)
-      display("Sources:", target.sources.join("\n"))
+      display("Includes:", target.includes.join("\n"))
+      display("Excludes:", target.excludes.join("\n"))
       hasRun = true
   else:
     fatal("No targets found. Please check your nasher.cfg.")
