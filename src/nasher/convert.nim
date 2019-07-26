@@ -86,12 +86,13 @@ proc convert*(opts: Options, pkg: PackageRef) =
       srcTime = srcFile.getLastModificationTime
     if fileOlder(cacheFile, srcTime):
       if srcFile.splitFile.ext == ".json":
-        gffConvert(srcFile, cacheDir)
-      else:
+        if cmd != "compile":
+          gffConvert(srcFile, cacheDir)
+          setLastModificationTime(cacheFile, srcTime)
+      elif cmd != "convert":
         display("Copying", srcFile & " -> " & fileName, priority = LowPriority)
         copyFile(srcFile, cacheFile)
-
-      setLastModificationTime(cacheFile, srcTime)
+        setLastModificationTime(cacheFile, srcTime)
 
   # Prevent falling through to the next function if we were called directly
   if cmd == "convert":
