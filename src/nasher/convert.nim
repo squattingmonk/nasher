@@ -71,9 +71,12 @@ proc convert*(opts: Options, pkg: PackageRef) =
 
   # Remove deleted files
   for file in walkFiles(cacheDir / "*"):
-    let fileName = file.extractFileName
-    if fileName notin cacheMap and fileName.splitFile.ext != ".ncs":
-      display("Removing", fileName, priority = LowPriority)
+    let
+      (_, name, ext) = file.splitFile
+      fileName = if ext == ".ncs": name & ".nss" else: name & ext
+
+    if fileName notin cacheMap:
+      display("Removing", name & ext, priority = LowPriority)
       removeFile(file)
 
   # Copy newer files
