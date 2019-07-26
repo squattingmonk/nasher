@@ -58,6 +58,7 @@ proc convert*(opts: Options, pkg: PackageRef) =
     cacheMap = getCacheMap(target.includes, target.excludes)
 
   # Set these so they can be gotten easily by the pack and install commands
+  pkg.cache = cacheMap
   opts["file"] = target.file
   opts["target"] = target.name
   opts["directory"] = cacheDir

@@ -13,6 +13,7 @@ type
     authors*, includes*, excludes*, flags*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
+    cache*: StringTableRef
 
   PackageRef* = ref Package
 
@@ -33,7 +34,7 @@ proc `[]=`*[T: int | bool](opts: Options, key: string, value: T) =
 
 proc hasKeyOrPut*[T: string|int|bool](
   opts: Options, key: string, value: T): bool =
-  ## Returns true if ``key`` in in ``opts``. Otherwise, sets ``opts[key]`` to
+  ## Returns true if ``key`` is in ``opts``. Otherwise, sets ``opts[key]`` to
   ## ``value`` and returns false. If ``value`` is not a string, it will be
   ## converted to one.
   if hasKey(opts, key):
