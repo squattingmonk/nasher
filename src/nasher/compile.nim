@@ -67,34 +67,29 @@ proc compile*(opts: Options, pkg: PackageRef) =
     if cmd == "compile": help(helpCompile)
     else: return
 
-  let
-    cacheDir = opts["directory"]
-    target = pkg.getTarget(opts["target"])
-    compiler = opts.getOrDefault("nssCompiler", findExe("nwnsc"))
-    userFlags = opts.getOrDefault("nssFlags", "-lowqey")
-    targetFlags = target.flags.join(" ")
-
-  withDir(cacheDir):
+  withDir(opts["directory"]):
     # Only compile scripts that have not been compiled since update
-    let scripts = toSeq(walkFiles("*.nss"))
     var
       processed: Table[string, bool]
-      included = getIncludedBy(scripts)
+      included = getIncludedBy(toSeq(walkFiles("*.nss")))
       toCompile = pkg.updated
 
     for script in pkg.updated:
       let included = script.getAllIncludedBy(included, processed)
       toCompile = toCompile.concat(included).deduplicate
 
-    # TODO: async
-    if toCompile.len > 0:
-      display("Compiling", $toCompile.len & " scripts")
-      for script in toCompile:
-        let errCode =
-          runCompiler(compiler, [userFlags, targetFlags, script])
-        if errCode != 0 and cmd in ["pack", "install"] and
-          not askIf("Do you want to continue $1ing anyway?" % [cmd]):
-            quit(QuitFailure)
+    let
+      scripts = toCompile.len
+      target = pkg.getTarget(opts["target"])
+      compiler = opts.getOrDefault("nssCompiler", findExe("nwnsc"))
+      userFlags = @[opts.getOrDefault("nssFlags", "-lowqey")]
+      args = userFlags & target.flags & toCompile
+
+    if scripts > 0:
+      display("Compiling", $scripts  & " scripts")
+      if runCompiler(compiler, args) != 0 and cmd in ["pack", "install"]:
+        if not askIf("Do you want to continue $#ing?" % [cmd]):
+          quit(QuitFailure)
     else:
       display("Skipping", "compilation: nothing to compile")
 
