@@ -1,7 +1,9 @@
-from sequtils import toSeq
+from sequtils import toSeq, concat, deduplicate
 import os, tables, strtabs, strutils
 
 import utils/[cli, compiler, options, shared]
+
+import regex
 
 const
   helpCompile* = """
@@ -31,6 +33,31 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
+proc getIncludedBy(scripts: seq[string]): Table[string, seq[string]] =
+  ## Returns a table listing scripts that include a file in ``scripts``.
+  for script in scripts:
+    let text = readFile(script)
+    for match in text.findAll(re"""(?m:^\s*#include\s+"(.*)"\s*$)"""):
+      let dependency = text[match.group(0)[0]] & ".nss"
+      if result.hasKeyOrPut(dependency, @[script]) and
+         script notin result[dependency]:
+           result[dependency].add(script)
+
+proc getAllIncludedBy(file: string,
+                      scripts: Table[string, seq[string]],
+                      processed: var Table[string, bool]): seq[string] =
+  ## Lists all scripts in ``scripts`` that include ``file``, even through
+  ## intermediates. ``processed`` is used to track whether a script has already
+  ## been checked.
+  if not scripts.hasKey(file):
+    return @[]
+
+  result = scripts[file]
+  for script in scripts[file]:
+    if not processed.hasKeyOrPut(script, true):
+      result = result.concat(script.getAllIncludedBy(scripts, processed))
+  result = result.deduplicate
+
 proc compile*(opts: Options, pkg: PackageRef) =
   let
     cmd = opts["command"]
@@ -48,17 +75,26 @@ proc compile*(opts: Options, pkg: PackageRef) =
     targetFlags = target.flags.join(" ")
 
   withDir(cacheDir):
-    let
-      scripts = toSeq(walkFiles("*.nss"))
+    # Only compile scripts that have not been compiled since update
+    let scripts = toSeq(walkFiles("*.nss"))
+    var
+      processed: Table[string, bool]
+      included = getIncludedBy(scripts)
+      toCompile = pkg.updated
+
+    for script in pkg.updated:
+      let included = script.getAllIncludedBy(included, processed)
+      toCompile = toCompile.concat(included).deduplicate
 
     # TODO: async
-    # TODO: Only compile scripts that have not been compiled since update
-    if scripts.len > 0:
-      display("Compiling", $scripts.len & " scripts")
-      let errCode = runCompiler(compiler, [userFlags, targetFlags, "*.nss"])
-      if errCode != 0 and cmd in ["pack", "install"] and
-        not askIf("Do you want to continue $1ing anyway?" % [cmd]):
-          quit(QuitFailure)
+    if toCompile.len > 0:
+      display("Compiling", $toCompile.len & " scripts")
+      for script in toCompile:
+        let errCode =
+          runCompiler(compiler, [userFlags, targetFlags, script])
+        if errCode != 0 and cmd in ["pack", "install"] and
+          not askIf("Do you want to continue $1ing anyway?" % [cmd]):
+            quit(QuitFailure)
     else:
       display("Skipping", "compilation: nothing to compile")
 

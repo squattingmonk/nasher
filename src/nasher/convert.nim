@@ -58,7 +58,6 @@ proc convert*(opts: Options, pkg: PackageRef) =
     cacheMap = getCacheMap(target.includes, target.excludes)
 
   # Set these so they can be gotten easily by the pack and install commands
-  pkg.cache = cacheMap
   opts["file"] = target.file
   opts["target"] = target.name
   opts["directory"] = cacheDir
@@ -84,8 +83,10 @@ proc convert*(opts: Options, pkg: PackageRef) =
     let
       cacheFile = cacheDir / fileName
       srcTime = srcFile.getLastModificationTime
+      ext = srcFile.splitFile.ext
+
     if fileOlder(cacheFile, srcTime):
-      if srcFile.splitFile.ext == ".json":
+      if ext == ".json":
         if cmd != "compile":
           gffConvert(srcFile, cacheDir)
           setLastModificationTime(cacheFile, srcTime)
@@ -93,6 +94,10 @@ proc convert*(opts: Options, pkg: PackageRef) =
         display("Copying", srcFile & " -> " & fileName, priority = LowPriority)
         copyFile(srcFile, cacheFile)
         setLastModificationTime(cacheFile, srcTime)
+
+        # Let compile() know this is a new or updated script
+        if ext == ".nss":
+          pkg.updated.add(fileName)
 
   # Prevent falling through to the next function if we were called directly
   if cmd == "convert":

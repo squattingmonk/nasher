@@ -10,10 +10,9 @@ type
 
   Package = object
     name*, description*, version*, url*: string
-    authors*, includes*, excludes*, flags*: seq[string]
+    authors*, includes*, excludes*, flags*, updated*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
-    cache*: StringTableRef
 
   PackageRef* = ref Package
 
