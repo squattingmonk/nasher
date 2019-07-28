@@ -15,9 +15,7 @@ proc parseCompilerOutput(line: var string) =
     error(line[parsed..^1])
   else:
     if token == line:
-      # if token.endsWith("see above for context."):
-      if token != "Compilation aborted with errors.":
-        warning(token, priority = HighPriority)
+      discard
     else:
       var lines = line.split(':').mapIt(it.strip)
       if lines.contains("Error"):

@@ -88,6 +88,7 @@ proc compile*(opts: Options, pkg: PackageRef) =
     if scripts > 0:
       display("Compiling", $scripts  & " scripts")
       if runCompiler(compiler, args) != 0 and cmd in ["pack", "install"]:
+        warning("Errors encountered during compilation; see above")
         if not askIf("Do you want to continue $#ing?" % [cmd]):
           quit(QuitFailure)
     else:
