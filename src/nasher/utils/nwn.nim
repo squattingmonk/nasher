@@ -1,78 +1,81 @@
-import json, os, osproc, streams, strformat, strutils, tables
-import neverwinter/[erf, resman, gff, gffjson]
-
+import json, os, osproc, streams, strformat, strutils
 import cli
 
 const
+  Options = {poUsePath, poStdErrToStdOut}
+
   GffExtensions* = @[
     "utc", "utd", "ute", "uti", "utm", "utp", "uts", "utt", "utw",
     "git", "are", "gic", "mod", "ifo", "fac", "dlg", "itp", "bic",
     "jrl", "gff", "gui"
   ]
 
-proc extractErf*(fileName, destDir: string) =
-  ## Extracts a .mod, .erf, or .hak file into destDir.
-  ## May throw an IO Exception
-  var f = openFileStream(fileName)
-  let erf = erf.readErf(f, fileName)
+proc gffToJson(file, bin, args: string): JsonNode =
+  ## Converts ``file`` to json, stripping the module ID if ``file`` is
+  ## module.ifo.
+  let
+    cmd = join([bin, args, "-i", file, "-k json -p"], " ")
+    (output, errCode) = execCmdEx(cmd, Options)
 
-  for c in erf.contents:
-    writeFile(destDir / $c, erf.demand(c).readAll())
+  if errCode != 0:
+    fatal(fmt"Could not parse {file}: {output}")
 
-  close(f)
+  result = output.parseJson
 
-proc createErf*(fileName: string, files: seq[string]): (string, int) =
-  ## Creates a .mod, .erf, or .hak file named fileName from the given files.
-  ## TODO: create the file here instead of calling out to nwn_erf
-  execCmdEx("nwn_erf --quiet -c -f " & fileName & " " & files.join(" "))
+  ## TODO: truncate floats
+  if file.extractFilename == "module.ifo" and result.hasKey("Mod_ID"):
+    result.delete("Mod_ID")
 
-proc getFormat(file: string): string =
-  let ext = splitFile(file).ext.strip(chars = {'.'})
 
-  if ext == "json":
-    result = "json"
-  elif GffExtensions.contains(ext):
-    result = "gff"
+proc jsonToGff(inFile, outFile, bin, args: string) =
+  ## Converts a json ``inFile`` to an erf ``outFile``.
+  let
+    cmd = join([bin, args, "-i", inFile, "-o", outFile], " ")
+    (output, errCode) = execCmdEx(cmd, Options)
+
+  if errCode != 0:
+    fatal(fmt"Could not convert {inFile}: {output}")
+
+proc gffConvert*(inFile, outFile, bin, args: string) =
+  ## Converts ``inFile`` to ``outFile``
+  let
+    (dir, name, ext) = outFile.splitFile
+    fileType = ext.strip(chars = {'.'})
+    outFormat = if fileType in GffExtensions: "gff" else: fileType
+
+  try:
+    createDir(dir)
+  except OSError:
+    let msg = osErrorMsg(osLastError())
+    fatal(fmt"Could not create {dir}: {msg}")
+
+  let category = if outFormat in ["json", "gff"]: "Converting" else: "Copying"
+  info(category, "$1 -> $2" % [inFile.extractFilename, name & ext])
+
+  ## TODO: Add gron and yaml support
+  case outFormat
+  of "json":
+    let text = gffToJson(inFile, bin, args).pretty
+    writeFile(outFile, text)
+  of "gff":
+    jsonToGff(inFile, outFile, bin, args)
   else:
-    raiseAssert(fmt"Could not convert {file}: format {ext} not supported")
+    copyFile(inFile, outFile)
 
-proc postProcessJson(j: JsonNode) =
-  ## Post-process json before emitting: We make sure to re-sort.
-  ## SM: This comes from nwn_gff.nim. I think the sorting is to ensure a
-  ## re-produceable build.
-  if j.kind == JObject:
-    for k, v in j.fields: postProcessJson(v)
-    j.fields.sort do (a, b: auto) -> int: cmpIgnoreCase(a[0], b[0])
-  elif j.kind == JArray:
-    for e in j.elems: postProcessJson(e)
+proc extractErf*(file, bin, args: string) =
+  ## Extracts the erf ``file`` into the current directory.
+  let
+    cmd = join([bin, args, "-x -f", file], " ")
+    (output, errCode) = execCmdEx(cmd, Options)
 
-proc gffConvert*(inFile, destDir = getCurrentDir()) =
-  ## Converts inFile from GFF to JSON or vice versa, renaming the file
-  ## according to the pattern: module.ifo <-> module.ifo.json.
-  let inFormat = inFile.getFormat()
-  let inStream = inFile.openFileStream()
-  let (_, file, ext) = inFile.splitFile()
+  if errCode != 0:
+    fatal(fmt"Could not extract {file}: {output}")
 
-  var
-    state: GffRoot
-    outFile: string
+proc createErf*(files: seq[string], outFile, bin, args: string) =
+  ## Creates an file at ``outFile`` from ``files``.
+  let
+    cmd = join([bin, args, "-c -f", outFile, files.join(" ")], " ")
+    (output, errCode) = execCmdEx(cmd, Options)
 
-  if inFormat == "gff":
-    state = gff.readGffRoot(inStream, false)
-    outFile = (destDir / file.addFileExt(ext.addFileExt("json")))
-    let
-      outStream = openFileStream(outFile, fmWrite)
-      j = state.toJson()
-    postProcessJson(j)
-    outStream.write(j.pretty())
-    outStream.write("\c\L")
-    outStream.close()
-  else:
-    outFile = destDir / file
-    let outStream = openFileStream(outFile, fmWrite)
-    state = inStream.parseJson(inFile).gffRootFromJson()
-    outStream.write(state)
-    outStream.close()
-
-  let msg = inFile.extractFilename & " -> " & destDir / outFile.extractFilename
-  display("Converting", msg, priority = LowPriority)
+  if errCode != 0:
+    fatal(fmt"Could not pack {outFile}: {output}")

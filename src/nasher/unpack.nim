@@ -92,15 +92,6 @@ proc mapSrc(file, ext: string, srcMap: SourceMap, rules: seq[Rule]): string =
       choose(fmt"Cannot decide where to extract {file}. Please choose:",
              choices)
 
-template confirmOverwriteNewer(
-  path: string, newerFiles: seq[string], time: Time, statements: untyped) =
-  if path in newerFiles:
-    let fileName = path.extractFilename
-    if not askIf(fmt"Overwrite changed file {fileName} with older version?"):
-      continue
-  statements
-  path.setLastModificationTime(time)
-
 proc unpack*(opts: Options, pkg: PackageRef) =
   let
     file = opts.getOrDefault("file").absolutePath
@@ -121,12 +112,16 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   let
     tmpDir = ".nasher" / "tmp"
     fileName = file.extractFilename
+    erfUtil = opts.getOrDefault("erfUtil", "nwn_erf")
+    erfFlags = opts.getOrDefault("erfFlags")
 
   display("Extracting", fmt"{fileName} to {dir}")
   setCurrentDir(dir)
   removeDir(tmpDir)
   createDir(tmpDir)
-  extractErf(file, tmpDir)
+
+  withDir(tmpDir):
+    extractErf(file, erfUtil, erfFlags)
 
   let
     sourceFiles = getSourceFiles(pkg.includes, pkg.excludes)
@@ -140,6 +135,11 @@ proc unpack*(opts: Options, pkg: PackageRef) =
                  "was packed. These changes may be overwritten. Continue?"):
       quit(QuitSuccess)
 
+  let
+    gffUtil = opts.getOrDefault("gffUtil", "nwn_gff")
+    gffFlags = opts.getOrDefault("gffFlags")
+    gffFormat = opts.getOrDefault("gffFormat", "json")
+
   var warnings = 0
   for file in walkFiles(tmpDir / "*"):
     let ext = file.splitFile.ext.strip(chars = {'.'})
@@ -148,22 +148,23 @@ proc unpack*(opts: Options, pkg: PackageRef) =
 
     let
       fileName = file.extractFilename
-      relPath = file.relativePath(tmpDir)
       dir = mapSrc(fileName, ext, srcMap, pkg.rules)
 
     if dir == "unknown":
       warning("cannot decide where to extract " & fileName)
       warnings.inc
-    createDir(dir)
 
+    var outFile = dir / fileName
     if ext in GffExtensions:
-      confirmOverwriteNewer(dir / fileName & ".json", newerFiles, packTime):
-        gffConvert(file, dir)
-    else:
-      confirmOverwriteNewer(dir / fileName, newerFiles, packTime):
-        display("Copying", relPath & " -> " & dir / fileName,
-                priority = LowPriority)
-        copyFile(file, dir / fileName)
+      outFile.add("." & gffFormat)
+
+    let outName = outFile.extractFilename
+    if outFile in newerFiles and not
+      askIf(fmt"Overwrite changed file {outName} with older version?"):
+        continue
+
+    gffConvert(file, outFile, gffUtil, gffFlags)
+    outFile.setLastModificationTime(packTime)
 
   if warnings > 0:
     let words =

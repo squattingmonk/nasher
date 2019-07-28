@@ -1,4 +1,4 @@
-import os, strtabs
+import os, strtabs, strutils
 import utils/[cli, nwn, options, shared]
 
 const
@@ -56,6 +56,9 @@ proc convert*(opts: Options, pkg: PackageRef) =
     target = pkg.getTarget(opts.getOrDefault("target"))
     cacheDir = ".nasher" / "cache" / target.name
     cacheMap = getCacheMap(target.includes, target.excludes)
+    gffUtil = opts.getOrDefault("gffUtil", "nwn_gff")
+    gffFlags = opts.getOrDefault("gffFlags")
+    gffFormat = opts.getOrDefault("gffFormat", "json")
 
   # Set these so they can be gotten easily by the pack and install commands
   opts["file"] = target.file
@@ -83,12 +86,12 @@ proc convert*(opts: Options, pkg: PackageRef) =
     let
       cacheFile = cacheDir / fileName
       srcTime = srcFile.getLastModificationTime
-      ext = srcFile.splitFile.ext
+      ext = srcFile.splitFile.ext.strip(chars = {'.'})
 
     if fileOlder(cacheFile, srcTime):
-      if ext == ".json":
+      if ext == gffFormat:
         if cmd != "compile":
-          gffConvert(srcFile, cacheDir)
+          gffConvert(srcFile, cacheFile, gffUtil, gffFlags)
           setLastModificationTime(cacheFile, srcTime)
       elif cmd != "convert":
         display("Copying", srcFile & " -> " & fileName, priority = LowPriority)
@@ -96,7 +99,7 @@ proc convert*(opts: Options, pkg: PackageRef) =
         setLastModificationTime(cacheFile, srcTime)
 
         # Let compile() know this is a new or updated script
-        if ext == ".nss":
+        if ext == "nss":
           pkg.updated.add(fileName)
 
   # Prevent falling through to the next function if we were called directly

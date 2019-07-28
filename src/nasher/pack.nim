@@ -74,11 +74,10 @@ proc pack*(opts: Options, pkg: PackageRef) =
 
   let
     sourceFiles = toSeq(walkFiles(cacheDir / "*"))
-    (output, errCode) = createErf(file, sourceFiles)
+    bin = opts.getOrDefault("erfUtil", "nwn_erf")
+    args = opts.getOrDefault("erfFlags")
 
-  if errCode != 0:
-    fatal(fmt"Could not pack {file}: {output}")
-
+  createErf(sourceFiles, file, bin, args)
   success("packed " & file)
   setLastModificationTime(file, fileTime)
 
