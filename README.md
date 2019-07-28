@@ -134,18 +134,33 @@ You can configure `nasher` using the `config` command (see `nasher config
     # Set the default NWN installation path
     $ nasher config installDir "~/Documents/Neverwinter Nights"
 
-    # Variables are case and style insensitive
-    $ nasher config install_dir
-    > ~/Documents/Neverwinter Nights
+Configuration options can also be passed to the commands directly using the
+format `--option:value` or `--option:"value with spaces"`:
+
+    # Compile with warnings on:
+    $ nasher compile --nssFlags:"-loqey"
 
 Currently, the following configuration options are available:
 - `userName`: the default name to add to the author section of new packages
+    - default: git user.name
 - `userEmail`: the default email used for the author section
+    - default: git user.email
 - `nssCompiler`: the path to the script compiler
+    - default `nwnsc` on Posix, `nwnsc.exe` on Windows
 - `nssFlags`: the default flags to use on packages
+    - default: `-lowqey`
+- `erfUtil`: the path to the erf pack/unpack utility
+    - default (Posix): `nwn_erf`
+    - default (Windows): `nwn_erf.exe`
+- `gffUtil`: the path to the gff conversion utility
+    - default (Posix): `nwn_gff`
+    - default (Windows): `nwn_gff.exe`
 - `installDir`: the NWN installation directory
+    - default (Linux): `~/.local/share/Neverwinter Nights`
+    - default (Windows and Mac): `~/Documents/Neverwinter Nights`
 - `vcs`: the version control system to use when making new packages
-    - supported: `none`, `git` (default)
+    - default: `git`
+    - supported: `none`, `git`
 
  These options are meant to be separate from the package file (`nasher.cfg`)
  since they may depend on the user.
