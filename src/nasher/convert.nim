@@ -50,13 +50,14 @@ proc convert*(opts: Options, pkg: PackageRef) =
   if not loadPackageFile(pkg, getPackageFile()):
     fatal("This is not a nasher project. Please run nasher init.")
 
-  setCurrentDir(getPackageRoot())
+  let root = getPackageRoot()
+  setCurrentDir(root)
   
   let
     target = pkg.getTarget(opts.getOrDefault("target"))
     cacheDir = ".nasher" / "cache" / target.name
     cacheMap = getCacheMap(target.includes, target.excludes)
-    gffUtil = opts.getOrDefault("gffUtil", "nwn_gff")
+    gffUtil = opts.getOrDefault("gffUtil", findExe("nwn_gff", root))
     gffFlags = opts.getOrDefault("gffFlags")
     gffFormat = opts.getOrDefault("gffFormat", "json")
 

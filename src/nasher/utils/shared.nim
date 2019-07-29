@@ -4,9 +4,6 @@ from strutils import unindent
 
 from glob import walkGlob
 
-type
-  CommandResult* = tuple[output: TaintedString, exitCode: int]
-
 proc help*(helpMessage: string, errorCode = QuitSuccess) =
   ## Quits with a formatted help message, sending errorCode
   quit(helpMessage.unindent(2), errorCode)
@@ -68,3 +65,8 @@ template withDir*(dir: string, body: untyped): untyped =
     body
   finally:
     setCurrentDir(curDir)
+
+proc findExe*(exe, baseDir: string): string =
+  ## As findExe, but uses baseDir as the current directory.
+  withDir(baseDir):
+    findExe(exe)

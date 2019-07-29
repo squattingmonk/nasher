@@ -74,7 +74,8 @@ proc pack*(opts: Options, pkg: PackageRef) =
 
   let
     sourceFiles = toSeq(walkFiles(cacheDir / "*"))
-    bin = opts.getOrDefault("erfUtil", "nwn_erf")
+    root = getPackageRoot(cacheDir)
+    bin = opts.getOrDefault("erfUtil", findExe("nwn_erf", root))
     args = opts.getOrDefault("erfFlags")
 
   createErf(sourceFiles, file, bin, args)

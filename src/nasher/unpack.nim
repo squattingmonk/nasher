@@ -110,9 +110,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     fatal("This is not a nasher project. Please run nasher init.")
 
   let
+    root = getPackageRoot(dir)
     tmpDir = ".nasher" / "tmp"
     fileName = file.extractFilename
-    erfUtil = opts.getOrDefault("erfUtil", "nwn_erf")
+    erfUtil = opts.getOrDefault("erfUtil", findExe("nwn_erf", root))
     erfFlags = opts.getOrDefault("erfFlags")
 
   display("Extracting", fmt"{fileName} to {dir}")
@@ -136,7 +137,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       quit(QuitSuccess)
 
   let
-    gffUtil = opts.getOrDefault("gffUtil", "nwn_gff")
+    gffUtil = opts.getOrDefault("gffUtil", findExe("nwn_gff", root))
     gffFlags = opts.getOrDefault("gffFlags")
     gffFormat = opts.getOrDefault("gffFormat", "json")
 

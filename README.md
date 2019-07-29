@@ -146,7 +146,8 @@ Currently, the following configuration options are available:
 - `userEmail`: the default email used for the author section
     - default: git user.email
 - `nssCompiler`: the path to the script compiler
-    - default `nwnsc` on Posix, `nwnsc.exe` on Windows
+    - default (Posix): `nwnsc`
+    - default (Windows): `nwnsc.exe`
 - `nssFlags`: the default flags to use on packages
     - default: `-lowqey`
 - `erfUtil`: the path to the erf pack/unpack utility
