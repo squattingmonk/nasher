@@ -55,6 +55,15 @@ When building a target, source files are cached into `.nasher/cache/x`, where
 `x` is the name of the target. During later builds of this target, only the
 source files that have changed will be rebuilt.
 
+All of these commands accept multiple targets as parameters. In addition, you
+can use the dummy target `all` to build all targets in the package.
+
+    # Compile the "erf" and "demo" targets
+    nasher compile erf demo
+
+    # Compile all of the package's targets
+    nasher compile all
+
 The `convert`, `compile`, `pack`, and `install` commands are run in sequence.
 If you want to install a target, you can just use the `install` command without
 having to first use `convert`, `compile`, and `pack`.
@@ -62,44 +71,25 @@ having to first use `convert`, `compile`, and `pack`.
 All of these commands can delete the cache and trigger a clean build if passed
 with `--clean`.
 
-#### Converting JSON to GFF
-    # Convert all sources for the default target
-    $ nasher convert
+#### convert
+Converts all json sources for the target to gff format. It also caches non-json
+source files for later packaging (useful for non-erf or non-module targets).
 
-    # Convert all sources for the target "demo"
-    $ nasher convert demo
+#### compile
+Compiles all script sources for the target.
 
-#### Compiling
-    # Compile all scripts for the default target
-    $ nasher compile
+#### pack
+Packs the converted and compiled resources into the target file. The packed
+file is placed into the package root directory. If the file to be packed
+already exists in the package root, you will be prompted to overwrite it. You
+can force answer the prompt by passing the `--yes`, `--no`, or `--default`
+flags.
 
-    # Compile all scripts for the target "demo"
-    $ nasher compile demo
-
-#### Packing
-    # Packing the default target
-    $ nasher pack
-
-    # Pack "demo"
-    $ nasher pack demo
-
-This compiles scripts, converts json sources into their gff counterparts, and
-packs the resources into the target file. The packed file is placed into the
-package root directory. If the file to be packed already exists in the package
-root, you will be prompted to overwrite it. You can force answer the prompt by
-passing the `--yes`, `--no`, or `--default` flags.
-
-#### Installing
-    # Install the packed file for the default target
-    $ nasher install
-
-    # Install the packed file for "demo"
-    $ nasher install demo
-
-This command packs the target file and then installs it to the appropriate
-folder in the NWN installation path. If the file to be installed already exists
-at the target location, you will be prompted to overwrite it. You can force
-answer the prompt by passing the `--yes`, `--no`, or `--default` flags.
+#### install
+Installs the packed file into the appropriate folder in the NWN installation
+path. If the file to be installed already exists at the target location, you
+will be prompted to overwrite it. You can force answer the prompt by passing
+the `--yes`, `--no`, or `--default` flags.
 
 ### Unpacking a file
     # Unpack "demo.mod" into src/
