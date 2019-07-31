@@ -34,13 +34,10 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc install*(opts: Options, pkg: PackageRef) =
-  if opts.getBoolOrDefault("help"):
-    help(helpInstall)
-
+proc install*(opts: Options, pkg: PackageRef): bool =
   let
     file = opts["file"]
-    dir = opts.getOrDefault("installDir", getNwnInstallDir())
+    dir = opts.getOrPut("installDir", getNwnInstallDir())
 
   display("Installing", file & " into " & dir)
   if not existsFile(file):
@@ -68,8 +65,9 @@ proc install*(opts: Options, pkg: PackageRef) =
     
     hint(getTimeDiffHint("The packed file", timeDiff))
     if not askIf(fmt"{installed} already exists. Overwrite?", defaultAnswer):
-      quit(QuitSuccess)
+      return false
 
   copyFile(file, installed)
   setLastModificationTime(installed, fileTime)
   success("installed " & fileName)
+  return true

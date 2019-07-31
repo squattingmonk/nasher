@@ -4,7 +4,7 @@ from sequtils import toSeq
 import utils/[cli, nwn, options, shared]
 
 const
-  helpPack = """
+  helpPack* = """
   Usage:
     nasher pack [options] [<target>]
 
@@ -46,15 +46,7 @@ proc getNewestFile(dir: string): string =
       # This is the first file we've checked
       result = file
 
-proc pack*(opts: Options, pkg: PackageRef) =
-  let
-    cmd = opts["command"]
-
-  if opts.getBoolOrDefault("help"):
-    # Make sure the correct command handles showing the help text
-    if cmd == "pack": help(helpPack)
-    else: return
-
+proc pack*(opts: Options, pkg: PackageRef): bool =
   let
     file = opts["file"]
     target = opts["target"]
@@ -70,18 +62,17 @@ proc pack*(opts: Options, pkg: PackageRef) =
     
     hint(getTimeDiffHint("The packed file", timeDiff))
     if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
-      quit(QuitSuccess)
+      return false
 
   let
     sourceFiles = toSeq(walkFiles(cacheDir / "*"))
     root = getPackageRoot(cacheDir)
-    bin = opts.getOrDefault("erfUtil", findExe("nwn_erf", root))
-    args = opts.getOrDefault("erfFlags")
+    bin = opts.get("erfUtil", findExe("nwn_erf", root))
+    args = opts.get("erfFlags")
 
   createErf(sourceFiles, file, bin, args)
   success("packed " & file)
   setLastModificationTime(file, fileTime)
 
   # Prevent falling through to the next function if we were called directly
-  if cmd == "pack":
-    quit(QuitSuccess)
+  return opts["command"] != "pack"

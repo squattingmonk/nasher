@@ -58,14 +58,9 @@ proc getAllIncludedBy(file: string,
       result = result.concat(script.getAllIncludedBy(scripts, processed))
   result = result.deduplicate
 
-proc compile*(opts: Options, pkg: PackageRef) =
+proc compile*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
-
-  if opts.getBoolOrDefault("help"):
-    # Make sure the correct command handles showing the help text
-    if cmd == "compile": help(helpCompile)
-    else: return
 
   withDir(opts["directory"]):
     # Only compile scripts that have not been compiled since update
@@ -82,8 +77,8 @@ proc compile*(opts: Options, pkg: PackageRef) =
       root = getPackageRoot()
       scripts = toCompile.len
       target = pkg.getTarget(opts["target"])
-      compiler = opts.getOrDefault("nssCompiler", findExe("nwnsc", root))
-      userFlags = @[opts.getOrDefault("nssFlags", "-lowqey")]
+      compiler = opts.get("nssCompiler", findExe("nwnsc", root))
+      userFlags = @[opts.get("nssFlags", "-lowqey")]
       args = userFlags & target.flags & toCompile
 
     if scripts > 0:
@@ -91,10 +86,9 @@ proc compile*(opts: Options, pkg: PackageRef) =
       if runCompiler(compiler, args) != 0 and cmd in ["pack", "install"]:
         warning("Errors encountered during compilation; see above")
         if not askIf("Do you want to continue $#ing?" % [cmd]):
-          quit(QuitFailure)
+          return false
     else:
       display("Skipping", "compilation: nothing to compile")
 
   # Prevent falling through to the next function if we were called directly
-  if cmd == "compile":
-    quit(QuitSuccess)
+  return cmd != "compile"

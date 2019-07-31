@@ -38,36 +38,27 @@ proc getCacheMap(includes, excludes: seq[string]): StringTableRef =
       fileName = if ext == ".json": name else: name & ext
     result[fileName] = file
 
-proc convert*(opts: Options, pkg: PackageRef) =
-  let
-    cmd = opts["command"]
-
-  if opts.getBoolOrDefault("help"):
-    # Make sure the correct command handles showing the help text.
-    if cmd == "convert": help(helpConvert)
-    else: return
-
-  if not loadPackageFile(pkg, getPackageFile()):
-    fatal("This is not a nasher project. Please run nasher init.")
-
+proc convert*(opts: Options, pkg: PackageRef): bool =
   let root = getPackageRoot()
   setCurrentDir(root)
   
   let
-    target = pkg.getTarget(opts.getOrDefault("target"))
+    target = pkg.getTarget(opts.get("target"))
     cacheDir = ".nasher" / "cache" / target.name
     cacheMap = getCacheMap(target.includes, target.excludes)
-    gffUtil = opts.getOrDefault("gffUtil", findExe("nwn_gff", root))
-    gffFlags = opts.getOrDefault("gffFlags")
-    gffFormat = opts.getOrDefault("gffFormat", "json")
+    gffUtil = opts.get("gffUtil", findExe("nwn_gff", root))
+    gffFlags = opts.get("gffFlags")
+    gffFormat = opts.get("gffFormat", "json")
+    cmd = opts["command"]
+    category = (if cmd == "compile": "compiling" else: cmd & "ing")
 
+  display(category.capitalizeAscii, "target " & target.name)
   # Set these so they can be gotten easily by the pack and install commands
   opts["file"] = target.file
-  opts["target"] = target.name
   opts["directory"] = cacheDir
 
   display("Updating", "cache for target " & target.name)
-  if opts.getBoolOrDefault("clean"):
+  if opts.get("clean", false):
     removeDir(cacheDir)
 
   createDir(cacheDir)
@@ -104,5 +95,4 @@ proc convert*(opts: Options, pkg: PackageRef) =
           pkg.updated.add(fileName)
 
   # Prevent falling through to the next function if we were called directly
-  if cmd == "convert":
-    quit(QuitSuccess)
+  return cmd != "convert"

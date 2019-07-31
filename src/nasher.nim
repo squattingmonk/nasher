@@ -43,12 +43,29 @@ when isMainModule:
     pkg = new(PackageRef)
 
   let
-    cmd = opts.getOrDefault("command")
-    version = opts.getBoolOrDefault("version")
+    cmd = opts.get("command")
+    help = opts.get("help", false)
+    version = opts.get("version", false)
 
   if version:
     echo "nasher " & nasherVersion
     quit(QuitSuccess)
+
+  if help:
+    case cmd
+    of "config": help(helpConfig)
+    of "init": help(helpInit)
+    of "list": help(helpList)
+    of "convert": help(helpConvert)
+    of "compile": help(helpCompile)
+    of "pack": help(helpPack)
+    of "install": help(helpInstall)
+    of "unpack": help(helpUnpack)
+    else: help(helpAll)
+
+  if cmd notin ["init", "config"] and
+     not loadPackageFile(pkg, getPackageFile()):
+       fatal("This is not a nasher project. Please run nasher init.")
 
   case cmd
   of "config":
@@ -56,14 +73,18 @@ when isMainModule:
   of "init":
     init(opts, pkg)
     unpack(opts, pkg)
+  of "unpack":
+    unpack(opts, pkg)
   of "list":
     list(opts, pkg)
   of "convert", "compile", "pack", "install":
-    convert(opts, pkg)
-    compile(opts, pkg)
-    pack(opts, pkg)
-    install(opts, pkg)
-  of "unpack":
-    unpack(opts, pkg)
+    let targets = pkg.getTargets(opts.get("targets"))
+    for target in targets:
+      opts["target"] = target.name
+      discard
+        convert(opts, pkg) and
+        compile(opts, pkg) and
+        pack(opts, pkg) and
+        install(opts, pkg)
   else:
     help(helpAll, QuitFailure)

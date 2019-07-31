@@ -2,7 +2,7 @@ import os
 import utils/[cli, git, options, shared]
 
 const
-  helpInit = """
+  helpInit* = """
   Usage:
     nasher init [options] [<dir> [<file>]]
 
@@ -28,9 +28,6 @@ const
   """
 
 proc init*(opts: Options, pkg: PackageRef) =
-  if opts.getBoolOrDefault("help"):
-    help(helpInit)
-
   let
     dir = opts.getOrPut("directory", getCurrentDir())
     file = dir / "nasher.cfg"
@@ -59,6 +56,6 @@ proc init*(opts: Options, pkg: PackageRef) =
       error("Could not initialize git repository: " & getCurrentExceptionMsg())
 
   # Check if we should unpack a file
-  if opts.getOrDefault("file") == "":
+  if opts.get("file") == "":
     success("project initialized")
     quit(QuitSuccess)

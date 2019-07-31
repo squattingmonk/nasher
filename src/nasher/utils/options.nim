@@ -41,30 +41,23 @@ proc hasKeyOrPut*[T: string|int|bool](
   else:
     opts[key] = value
 
-proc getOrPut*(opts: Options, key, value: string): string =
+proc getOrPut*[T: string|bool](opts: Options, key: string, value: T): T =
   ## Returns the value located at opts[key]. If the key does not exist, it is
   ## set to value, which is returned.
   if opts.contains(key):
-    result = opts[key]
+    when T is bool:
+      try:
+        let tmpValue = opts[key]
+        result = tmpValue == "" or tmpValue.parseBool
+      except ValueError:
+        result = value
+    else:
+      result = opts[key]
   else:
     opts[key] = value
     result = value
 
-proc getBoolOrPut*(opts: Options, key: string, value: bool): bool =
-  ## Returns the value located at opts[key]. If the key does not exist, it is
-  ## set to value, which is returned. If the key exists but cannot be converted
-  ## to a bool, value is returned.
-  if opts.contains(key):
-    try:
-      let tmpValue = opts[key]
-      result = tmpValue == "" or tmpValue.parseBool
-    except ValueError:
-      result = value
-  else:
-    opts[key] = value
-    result = value
-
-proc getBoolOrDefault*(opts: Options, key: string, default = false): bool =
+proc getBoolOrDefault(opts: Options, key: string, default = false): bool =
   ## Returns the boolean value located at opts[key]; "" is treated as true. If
   ## there is no value or it cannot be conveted to a bool, returns default.
   result = default
@@ -74,6 +67,14 @@ proc getBoolOrDefault*(opts: Options, key: string, default = false): bool =
       result = value == "" or value.parseBool
     except ValueError:
       discard
+
+proc get*[T: string|bool](opts: Options, key: string, default: T = ""): T =
+  ## Alias for ``getOrDefault`` and ``getBoolOrDefault``, depending on the type
+  ## of ``default``.
+  when T is bool:
+    opts.getBoolOrDefault(key, default)
+  else:
+    opts.getOrDefault(key, default)
 
 proc getPackageRoot*(baseDir = getCurrentDir()): string =
   ## Returns the first parent of baseDir that contains a nasher config
@@ -98,11 +99,11 @@ proc existsPackageFile*(dir = getCurrentDir()): bool =
   existsFile(getPackageFile(dir))
 
 proc parseConfigFile*(opts: Options, file: string) =
-  ## Loads all all values from $CONFIG/nasher/user.cfg into opts. This provides
-  ## user-defined defaults to options. It runs before the command-line options
-  ## are processed, so the user can override these commands as needed.
+  ## Loads all all values from ``file`` into opts. This provides user-defined
+  ## defaults to options. It runs before the command-line options are processed,
+  ## so the user can override these commands as needed.
   const prohibited =
-    ["command", "config", "level", "directory", "file", "target",
+    ["command", "config", "level", "directory", "file", "target", "targets",
      "help", "version"]
 
   let fileStream = newFileStream(file)
@@ -152,13 +153,16 @@ proc parseCmdLine(opts: Options) =
   for kind, key, val in getopt():
     case kind
     of cmdArgument:
-      case opts.getOrDefault("command")
+      case opts.get("command")
       of "init":
         opts.putKeyOrHelp("directory", "file", key)
       of "config":
         opts.putKeyOrHelp("key", "value", key)
-      of "list", "compile", "convert", "pack", "install":
+      of "list":
         opts.putKeyOrHelp("target", key)
+      of "compile", "convert", "pack", "install":
+        if opts.hasKeyOrPut("targets", key):
+          opts["targets"] = opts["targets"] & ";" & key
       of "unpack":
         opts.putKeyOrHelp("file", key)
       else:
@@ -186,7 +190,7 @@ proc parseCmdLine(opts: Options) =
       of "default":
         cli.setForceAnswer(Default)
       else:
-        case opts.getOrDefault("command")
+        case opts.get("command")
         of "config":
           case key
           of "g", "get": opts.putKeyOrHelp("config", "get")
@@ -207,13 +211,13 @@ proc dumpOptions(opts: Options) =
     return
 
   debug("Args:", commandLineParams().join("\n"))
-  debug("Command:", opts.getOrDefault("command"))
-  debug("Target:", opts.getOrDefault("target"))
-  debug("File:", opts.getOrDefault("file"))
-  debug("Directory:", opts.getOrDefault("directory"))
-  debug("Config:", opts.getOrDefault("config"))
-  debug("Help:", $opts.getBoolOrDefault("help"))
-  debug("Version:", $opts.getBoolOrDefault("version"))
+  debug("Command:", opts.get("command"))
+  debug("Targets:", opts.get("targets"))
+  debug("File:", opts.get("file"))
+  debug("Directory:", opts.get("directory"))
+  debug("Config:", opts.get("config"))
+  debug("Help:", $opts.get("help", false))
+  debug("Version:", $opts.get("version", false))
   debug("Force:", $cli.getForceAnswer())
   stdout.write("\n")
 
@@ -239,7 +243,7 @@ proc initTarget: Target =
 proc addTarget(pkg: PackageRef, target: var Target) =
   ## Adds target to pkg's list of targets. If target has no items in the include
   ## or exclude list, that list is copied from pkg.
-  if target.name.len() > 0:
+  if target.name.len() > 0 and target.name != "all":
     if target.includes.len == 0:
       target.includes = pkg.includes
     if target.excludes.len == 0:
@@ -346,9 +350,6 @@ proc loadPackageFile*(pkg: PackageRef, file: string): bool =
 proc getTarget*(pkg: PackageRef, name = ""): Target =
   ## Returns the target specified by the user, or the first target found in the
   ## package file if the user did not specify a target.
-  if pkg.targets.len == 0:
-    fatal("No targets found. Please check your nasher.cfg file.")
-
   if name.len > 0:
     for target in pkg.targets:
       if target.name == name:
@@ -356,6 +357,25 @@ proc getTarget*(pkg: PackageRef, name = ""): Target =
     fatal("Unknown target " & name)
   else:
     result = pkg.targets[0]
+
+proc getTargets*(pkg: PackageRef, names = ""): seq[Target] =
+  ## Returns a sequence of targets whose names are in the semicolon-separated
+  ## list ``names``. If ``names`` is ``"all"``, will return a list of all
+  ## targets for the package. If ``names`` is empty, will return the first
+  ## target.
+  if pkg.targets.len == 0:
+    fatal("No targets found. Please check your nasher.cfg file.")
+
+  case names
+  of "":
+    result = @[pkg.targets[0]]
+  of "all":
+    result = pkg.targets
+  else:
+    for name in names.split(";"):
+      if name == "all":
+        return pkg.targets
+      result.add(pkg.getTarget(name))
 
 # ----- Package Generation -----------------------------------------------------
 
@@ -450,7 +470,7 @@ proc genPackageText*(opts: Options): string =
   display("Generating", "package config file")
 
   let
-    defaultUrl = opts.getOrDefault("url", gitRemote())
+    defaultUrl = opts.get("url", gitRemote())
 
   result.addLine("[Package]")
   result.addPair("name", ask("Package name:"))
@@ -459,8 +479,8 @@ proc genPackageText*(opts: Options): string =
   result.addPair("url", ask("Package URL:", defaultUrl))
 
   var
-    defaultAuthor = opts.getOrDefault("userName", gitUser())
-    defaultEmail = opts.getOrDefault("userEmail", gitEmail())
+    defaultAuthor = opts.get("userName", gitUser())
+    defaultEmail = opts.get("userEmail", gitEmail())
 
   hint("Add each package author separately. If additional people contribute " &
        "to the project later, you can add separate lines for them in the " &

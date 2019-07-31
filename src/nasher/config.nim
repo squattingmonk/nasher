@@ -4,7 +4,7 @@ from sequtils import toSeq
 import utils/[cli, git, options, shared]
 
 const
-  helpConfig = """
+  helpConfig* = """
   Usage:
     nasher config [options] <key> [<value>]
 
@@ -41,7 +41,7 @@ const
   """
 
 proc parseConfigCmd(opts: Options): string =
-  result = opts.getOrDefault("config")
+  result = opts.get("config")
   case result
   of "list":
     if "key" in opts or "value" in opts:
@@ -62,12 +62,12 @@ proc parseConfigCmd(opts: Options): string =
 
 proc config*(opts: Options) =
   let cmd = opts.parseConfigCmd
-  if opts.getBoolOrDefault("help") or cmd == "":
+  if cmd == "":
     help(helpConfig)
 
   let
-    dir = opts.getOrDefault("directory", getCurrentDir())
-    level = opts.getOrDefault("level", "global")
+    dir = opts.get("directory", getCurrentDir())
+    level = opts.get("level", "global")
 
   if level == "local" and not existsPackageFile(dir):
     fatal("This is not a nasher repository. Please run init")

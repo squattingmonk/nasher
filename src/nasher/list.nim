@@ -2,7 +2,7 @@ from strutils import join
 import utils/[cli, options, shared]
 
 const
-  helpList = """
+  helpList* = """
   Usage:
     nasher list [options]
 
@@ -23,12 +23,6 @@ const
   """
 
 proc list*(opts: Options, pkg: PackageRef) =
-  if opts.getBoolOrDefault("help"):
-    help(helpList)
-
-  if not loadPackageFile(pkg, getPackageFile()):
-    fatal("This is not a nasher project. Please run nasher init.")
-
   if pkg.targets.len > 0:
     var hasRun = false
     for target in pkg.targets:

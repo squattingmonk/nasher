@@ -4,7 +4,7 @@ from glob import walkGlob
 import utils/[cli, compiler, nwn, options, shared]
 
 const
-  helpUnpack = """
+  helpUnpack* = """
   Usage:
     nasher unpack [options] <file>
 
@@ -94,10 +94,10 @@ proc mapSrc(file, ext: string, srcMap: SourceMap, rules: seq[Rule]): string =
 
 proc unpack*(opts: Options, pkg: PackageRef) =
   let
-    file = opts.getOrDefault("file").absolutePath
-    dir = opts.getOrDefault("directory", getCurrentDir())
+    file = opts.get("file").absolutePath
+    dir = opts.get("directory", getCurrentDir())
 
-  if opts.getBoolOrDefault("help") or file == "":
+  if file == "":
     help(helpUnpack)
 
   if not existsFile(file):
@@ -107,14 +107,14 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     fatal("Cannot unpack to {dir}: directory does not exist.")
 
   if not loadPackageFile(pkg, getPackageFile(dir)):
-    fatal("This is not a nasher project. Please run nasher init.")
+    fatal(dir & " is not a nasher project. Please run nasher init.")
 
   let
     root = getPackageRoot(dir)
     tmpDir = ".nasher" / "tmp"
     fileName = file.extractFilename
-    erfUtil = opts.getOrDefault("erfUtil", findExe("nwn_erf", root))
-    erfFlags = opts.getOrDefault("erfFlags")
+    erfUtil = opts.get("erfUtil", findExe("nwn_erf", root))
+    erfFlags = opts.get("erfFlags")
 
   display("Extracting", fmt"{fileName} to {dir}")
   setCurrentDir(dir)
@@ -137,9 +137,9 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       quit(QuitSuccess)
 
   let
-    gffUtil = opts.getOrDefault("gffUtil", findExe("nwn_gff", root))
-    gffFlags = opts.getOrDefault("gffFlags")
-    gffFormat = opts.getOrDefault("gffFormat", "json")
+    gffUtil = opts.get("gffUtil", findExe("nwn_gff", root))
+    gffFlags = opts.get("gffFlags")
+    gffFormat = opts.get("gffFormat", "json")
 
   var warnings = 0
   for file in walkFiles(tmpDir / "*"):
