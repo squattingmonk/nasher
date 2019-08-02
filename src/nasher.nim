@@ -81,10 +81,7 @@ when isMainModule:
     let targets = pkg.getTargets(opts.get("targets"))
     for target in targets:
       opts["target"] = target.name
-      discard
-        convert(opts, pkg) and
-        compile(opts, pkg) and
-        pack(opts, pkg) and
+      if convert(opts, pkg) and compile(opts, pkg) and pack(opts, pkg):
         install(opts, pkg)
   else:
     help(helpAll, QuitFailure)

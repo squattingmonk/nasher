@@ -60,7 +60,7 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
       timeDiff = getTimeDiff(fileTime, packTime)
       defaultAnswer = if timeDiff > 0: Yes else: No
     
-    hint(getTimeDiffHint("The packed file", timeDiff))
+    hint(getTimeDiffHint("The file to be packed", timeDiff))
     if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
       return false
 

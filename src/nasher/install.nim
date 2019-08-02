@@ -34,7 +34,7 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc install*(opts: Options, pkg: PackageRef): bool =
+proc install*(opts: Options, pkg: PackageRef) =
   let
     file = opts["file"]
     dir = opts.getOrPut("installDir", getNwnInstallDir())
@@ -63,11 +63,10 @@ proc install*(opts: Options, pkg: PackageRef): bool =
       timeDiff = getTimeDiff(fileTime, installedTime)
       defaultAnswer = if timeDiff > 0: Yes else: No
     
-    hint(getTimeDiffHint("The packed file", timeDiff))
+    hint(getTimeDiffHint("The file to be installed", timeDiff))
     if not askIf(fmt"{installed} already exists. Overwrite?", defaultAnswer):
-      return false
+      quit(QuitFailure)
 
   copyFile(file, installed)
   setLastModificationTime(installed, fileTime)
   success("installed " & fileName)
-  return true

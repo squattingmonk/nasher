@@ -62,6 +62,9 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
 
+  if opts.get("noCompile", false):
+    return cmd != "compile"
+
   withDir(opts["directory"]):
     # Only compile scripts that have not been compiled since update
     var
