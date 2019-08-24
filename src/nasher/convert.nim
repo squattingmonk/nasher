@@ -41,18 +41,25 @@ proc getCacheMap(includes, excludes: seq[string]): StringTableRef =
 proc convert*(opts: Options, pkg: PackageRef): bool =
   let root = getPackageRoot()
   setCurrentDir(root)
-  
+
   let
+    cmd = opts["command"]
+    category = (if cmd == "compile": "compiling" else: cmd & "ing")
     target = pkg.getTarget(opts.get("target"))
-    cacheDir = ".nasher" / "cache" / target.name
     cacheMap = getCacheMap(target.includes, target.excludes)
+
+  display(category.capitalizeAscii, "target " & target.name)
+
+  if cacheMap.len == 0:
+    error("No source files found for target " & target.name)
+    return false
+
+  let
+    cacheDir = ".nasher" / "cache" / target.name
     gffUtil = opts.get("gffUtil", findExe("nwn_gff", root))
     gffFlags = opts.get("gffFlags")
     gffFormat = opts.get("gffFormat", "json")
-    cmd = opts["command"]
-    category = (if cmd == "compile": "compiling" else: cmd & "ing")
 
-  display(category.capitalizeAscii, "target " & target.name)
   # Set these so they can be gotten easily by the pack and install commands
   opts["file"] = target.file
   opts["directory"] = cacheDir
