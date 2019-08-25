@@ -251,6 +251,8 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       target.includes = pkg.includes
     if target.excludes.len == 0:
       target.excludes = pkg.excludes
+    if target.flags.len == 0:
+      target.flags = pkg.flags
     pkg.targets.add(target)
   target = initTarget()
 
