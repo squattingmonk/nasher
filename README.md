@@ -170,6 +170,16 @@ format `--option:value` or `--option:"value with spaces"`:
     # Compile with warnings on:
     $ nasher compile --nssFlags:"-loqey"
 
+This syntax is also necessary in the `config` command when the value has words
+beginning with a dash; otherwise these words are treated as options (a
+limitation of the Nim parseopt module):
+
+    # Incorrect
+    $ nasher config nssFlags "-n /opts/nwn -owkey"
+
+    # Correct
+    $ nasher config --nssFlags:"-n /opts/nwn -owkey"
+
 Currently, the following configuration options are available:
 
 - `userName`: the default name to add to the author section of new packages

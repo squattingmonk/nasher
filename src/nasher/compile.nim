@@ -81,7 +81,7 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       scripts = toCompile.len
       target = pkg.getTarget(opts["target"])
       compiler = opts.get("nssCompiler", findExe("nwnsc", root))
-      userFlags = @["-" & opts.get("nssFlags", "lowqey")]
+      userFlags = @[opts.get("nssFlags", "-lowqey")]
       args = userFlags & target.flags & toCompile
 
     if scripts > 0:

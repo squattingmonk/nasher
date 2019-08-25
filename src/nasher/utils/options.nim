@@ -199,7 +199,9 @@ proc parseCmdLine(opts: Options) =
           of "l", "list": opts.putKeyOrHelp("config", "list")
           of "global", "local": opts.putKeyOrHelp("level", key)
           of "d", "dir", "directory": opts.putKeyOrHelp("directory", val)
-          else: opts["help"] = true
+          else:
+            opts.putKeyOrHelp("key", key)
+            opts.putKeyOrHelp("value", val)
         else:
           opts[key] = val
     else: discard
