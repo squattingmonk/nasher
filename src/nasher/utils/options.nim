@@ -215,7 +215,10 @@ proc dumpOptions(opts: Options) =
   debug("Targets:", opts.get("targets"))
   debug("File:", opts.get("file"))
   debug("Directory:", opts.get("directory"))
-  debug("Config:", opts.get("config"))
+  if opts.get("command") == "config":
+    debug("Operation:", opts.get("config"))
+    debug("Key:", opts.get("key"))
+    debug("Value:", opts.get("value"))
   debug("Help:", $opts.get("help", false))
   debug("Version:", $opts.get("version", false))
   debug("Force:", $cli.getForceAnswer())
