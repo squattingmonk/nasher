@@ -43,8 +43,8 @@ it has some key differences:
 9. nasher uses json rather than yaml for storing gff files
 
 ## Requirements
-- [nim](https://github.com/dom96/choosenim) >= 0.20.0
-- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.5
+- [nim](https://github.com/dom96/choosenim) >= 0.20.2
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.7
 - [nwnsc](https://gitlab.com/glorwinger/nwnsc)
 
 ## Installation
