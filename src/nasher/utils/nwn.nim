@@ -1,4 +1,5 @@
 import json, os, osproc, streams, strformat, strutils
+from sequtils import mapIt, toSeq
 import cli
 
 const
@@ -61,6 +62,38 @@ proc gffConvert*(inFile, outFile, bin, args: string) =
     jsonToGff(inFile, outFile, bin, args)
   else:
     copyFile(inFile, outFile)
+
+proc removeUnusedAreas*(dir, bin, args: string) =
+  ## Removes any areas not in ``dir`` from the module.ifo file in ``dir``.
+  let
+    fileGff = dir / "module.ifo"
+    fileJson = fileGff & ".json"
+    areas = toSeq(walkFiles(dir / "*.are")).mapIt(it.splitFile.name)
+
+  if not existsFile(fileGff):
+    return
+
+  var
+    ifoJson = gffToJson(fileGff, bin, args)
+    ifoAreas: seq[JsonNode]
+
+  let
+    entryArea = ifoJson["Mod_Entry_Area"]["value"].getStr
+
+  if entryArea notin areas:
+    fatal("This module does not have a valid starting area!")
+
+  for key, value in ifoJson["Mod_Area_list"]["value"].getElems.pairs:
+    let area = value["Area_Name"]["value"].getStr
+    if area in areas:
+      ifoAreas.add(value)
+    else:
+      info("Removing", fmt"unused area {area.escape} from module.ifo")
+
+  ifoJson["Mod_Area_list"]["value"] = %ifoAreas
+  writeFile(fileJson, $ifoJson)
+  jsonToGff(fileJson, fileGff, bin, args)
+  removeFile(fileJson)
 
 proc extractErf*(file, bin, args: string) =
   ## Extracts the erf ``file`` into the current directory.

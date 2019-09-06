@@ -203,6 +203,11 @@ Currently, the following configuration options are available:
 - `vcs`: the version control system to use when making new packages
     - default: `git`
     - supported: `none`, `git`
+- `removeUnusedAreas`: whether to prevent areas not present in the source files
+  from being referenced in `module.ifo`.
+    - default: `true`
+    - note: you will want to disable this if you have some areas that are
+      present in a hak or override and not the module itself.
 
 These options are meant to be separate from the package file (`nasher.cfg`)
 since they may depend on the user.

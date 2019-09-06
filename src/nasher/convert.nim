@@ -101,5 +101,9 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
         if ext == "nss":
           pkg.updated.add(fileName)
 
+  # Trim unused areas from the module.ifo
+  if opts.get("removeUnusedAreas", true):
+    removeUnusedAreas(cacheDir, gffUtil, gffFlags)
+
   # Prevent falling through to the next function if we were called directly
   return cmd != "convert"
