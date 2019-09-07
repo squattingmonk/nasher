@@ -32,6 +32,7 @@ proc runCompiler*(cmd: string, args: openArray[string] = []): int =
     params = args.filterIt(it.len > 0)
     options = {poUsePath, poStdErrToStdOut}
 
+  debug("Executing", "$1 $2" % [cmd, params.join(" ")])
   var
     p = startProcess(cmd, args = params, options = options)
     s = p.outputStream
