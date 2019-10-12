@@ -163,11 +163,11 @@ This is equivalent to:
 
 ### Example Usage
 ```
-# Create a nasher package in the current directory
-docker run SquattingMonk/nashor:latest -v %cd%:/nwn-build init
+# Linux
+docker run -v ./:/nwn-build squattingmonk:nasher:latest init
 
-# Create a nasher package in directory foo
-docker run SquattingMonk/nashor:latest -v %cd%:/nwn-build init foo
+# Windows 
+docker run -v %cd%:/nwn-build squattingmonk:nasher:latest
 ```
 
 
