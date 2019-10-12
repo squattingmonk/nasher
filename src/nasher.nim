@@ -2,7 +2,7 @@ import nasher/[init, list, config, unpack, convert, compile, pack, install]
 import nasher/utils/[cli, options, shared]
 
 const
-  nasherVersion = "0.8.2"
+  nasherVersion = "0.8.3"
 
   helpAll = """
   nasher: a build tool for Neverwinter Nights projects

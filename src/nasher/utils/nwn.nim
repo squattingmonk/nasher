@@ -98,7 +98,7 @@ proc removeUnusedAreas*(dir, bin, args: string) =
 proc extractErf*(file, bin, args: string) =
   ## Extracts the erf ``file`` into the current directory.
   let
-    cmd = join([bin, args, "-x -f", file], " ")
+    cmd = join([bin, args, "-x -f", file.escape], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
