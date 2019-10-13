@@ -12,6 +12,7 @@ module repository.
     - [Listing build targets](#listing-build-targets)
     - [Building targets](#building-targets)
     - [Unpacking a file](#unpacking-a-file)
+    - [Docker](#docker)
 - [Configuration](#configuration)
 - [Package Files](#package-files)
     - [Package Section](#package)
@@ -42,11 +43,6 @@ it has some key differences:
 8. nasher does not provide tools for local testing with Docker
 9. nasher uses json rather than yaml for storing gff files
 
-## Requirements
-- [nim](https://github.com/dom96/choosenim) >= 0.20.2
-- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.7
-- [nwnsc](https://gitlab.com/glorwinger/nwnsc)
-
 ## Installation
 You can install nasher through `nimble`:
 
@@ -60,6 +56,11 @@ Or by building from source:
 
 If `nimble` has been configured correctly, the binary should be available on
 your path.
+
+## Requirements
+- [nim](https://github.com/dom96/choosenim) >= 0.20.2
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.7
+- [nwnsc](https://gitlab.com/glorwinger/nwnsc)
 
 ## Usage
 Run `nasher --help` to see usage information. To get detailed usage information
@@ -156,6 +157,19 @@ This is equivalent to:
     $ nasher init foo
     $ cd foo
     $ nasher unpack ../bar.mod
+
+## Docker
+[Docker](https://www.docker.com/products/docker-desktop)
+
+### Example Usage
+```
+# Linux
+docker run -v ./:/nwn-build squattingmonk:nasher:latest init
+
+# Windows 
+docker run -v %cd%:/nwn-build squattingmonk:nasher:latest
+```
+
 
 ## Configuration
 You can configure `nasher` using the `config` command (see `nasher config
