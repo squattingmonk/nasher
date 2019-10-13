@@ -63,7 +63,7 @@ when isMainModule:
     of "unpack": help(helpUnpack)
     else: help(helpAll)
 
-  if cmd notin ["init", "config"] and
+  if cmd notin ["init", "config", "unpack"] and
      not loadPackageFile(pkg, getPackageFile()):
        fatal("This is not a nasher project. Please run nasher init.")
 
