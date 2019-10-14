@@ -145,6 +145,23 @@ If an extracted file would overwrite a newer version, you will be prompted to
 overwrite the file. You can force answer the prompt by passing the `--yes`,
 `--no`, or `--default` flags.
 
+If a file is present in the source tree but not in the file being extracted,
+you will be asked if you want to remove the file from the source tree. This is
+useful if you have deleted files from a module. You can pass the
+`--removeDeleted` flag to skip this prompt:
+
+    # Unpack "demo.mod", deleting files in src/ not present in "demo.mod"
+    $ nasher unpack demo.mod --removeDeleted
+
+    # Unpack "demo.mod", but do not delete missing files from the source tree
+    $ nasher unpack demo.mod --removeDeleted:false
+
+    # Make this project default to removing deleted files
+    $ nasher config --local removeDeleted true
+
+    # Make this project default to keeping deleted files
+    $ nasher config --local removeDeleted false
+
 You can initialize a package with the contents of a `.mod`, `.erf`, or `.hak`
 file by running:
 
