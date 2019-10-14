@@ -108,7 +108,7 @@ proc createErf*(dir, outFile, bin, args: string) =
   ## Creates an erf file at ``outFile`` from all files in ``dir``, passing
   ## ``args`` to the ``nwn_erf`` utiltity.
   let
-    cmd = join([bin, args, "-c -f", outFile, dir / "*"], " ")
+    cmd = join([bin, args, "-c -f", outFile, dir], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
