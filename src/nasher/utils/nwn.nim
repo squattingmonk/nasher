@@ -15,7 +15,7 @@ proc gffToJson(file, bin, args: string): JsonNode =
   ## Converts ``file`` to json, stripping the module ID if ``file`` is
   ## module.ifo.
   let
-    cmd = join([bin, args, "-i", file, "-k json -p"], " ")
+    cmd = join([bin, args, "-i", file.escape, "-k json -p"], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
@@ -31,7 +31,7 @@ proc gffToJson(file, bin, args: string): JsonNode =
 proc jsonToGff(inFile, outFile, bin, args: string) =
   ## Converts a json ``inFile`` to an erf ``outFile``.
   let
-    cmd = join([bin, args, "-i", inFile, "-o", outFile], " ")
+    cmd = join([bin, args, "-i", inFile.escape, "-o", outFile.escape], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
@@ -108,7 +108,7 @@ proc createErf*(dir, outFile, bin, args: string) =
   ## Creates an erf file at ``outFile`` from all files in ``dir``, passing
   ## ``args`` to the ``nwn_erf`` utiltity.
   let
-    cmd = join([bin, args, "-c -f", outFile, dir], " ")
+    cmd = join([bin, args, "-c -f", outFile.escape, dir], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
