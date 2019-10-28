@@ -164,10 +164,10 @@ This is equivalent to:
 ### Example Usage
 ```
 # Linux
-docker run -v ./:/nwn-build squattingmonk:nasher:latest
+docker run --rm -v ./:/nasher squattingmonk:nasher:latest
 
 # Windows 
-docker run --rm -v %cd%:/nasher nasher:latest
+docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest
 ```
 
 ### Init example
@@ -176,10 +176,10 @@ Example below:
 
 ```
 # Linux
-docker run -v ./:/nwn-build squattingmonk:nasher:latest init --default
+docker run --rm -v ./:/nasher squattingmonk:nasher:latest init --default
 
 # Windows 
-docker run --rm -v %cd%:/nasher nasher:latest init --default
+docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest init --default
 ```
 
 ## Configuration
