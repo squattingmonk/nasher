@@ -48,7 +48,7 @@ it has some key differences:
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.8
 - [nwnsc](https://gitlab.com/glorwinger/nwnsc)
 
-Alternatively, you can use [Docker](https://www.docker.com).
+Alternatively, you can use [Docker](#docker).
 
 ## Installation
 You can install nasher through `nimble`:
@@ -178,14 +178,29 @@ This is equivalent to:
     $ nasher unpack ../bar.mod
 
 ## Docker
-[Docker](https://www.docker.com/products/docker-desktop)
+If you don't want to install Nim, you can instead use
+[Docker](https://www.docker.com/products/docker-desktop).
 
 ### Example Usage
-    # Linux
-    docker run -v ./:/nwn-build squattingmonk:nasher:latest init
+```
+# Linux
+docker run --rm -v ./:/nasher squattingmonk:nasher:latest
 
-    # Windows
-    docker run -v %cd%:/nwn-build squattingmonk:nasher:latest
+# Windows 
+docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest
+```
+
+### Init example
+Because of docker limitations, we have to init the config file with default settings.
+Example below:
+
+```
+# Linux
+docker run --rm -v ./:/nasher squattingmonk:nasher:latest init --default
+
+# Windows 
+docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest init --default
+```
 
 ## Configuration
 You can configure `nasher` using the `config` command (see `nasher config
