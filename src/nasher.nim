@@ -2,7 +2,7 @@ import nasher/[init, list, config, unpack, convert, compile, pack, install]
 import nasher/utils/[cli, options, shared]
 
 const
-  nasherVersion = "0.8.3"
+  nasherVersion = "0.9.3"
 
   helpAll = """
   nasher: a build tool for Neverwinter Nights projects
@@ -63,7 +63,7 @@ when isMainModule:
     of "unpack": help(helpUnpack)
     else: help(helpAll)
 
-  if cmd notin ["init", "config"] and
+  if cmd notin ["init", "config", "unpack"] and
      not loadPackageFile(pkg, getPackageFile()):
        fatal("This is not a nasher project. Please run nasher init.")
 

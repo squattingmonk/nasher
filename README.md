@@ -44,8 +44,8 @@ it has some key differences:
 9. nasher uses json rather than yaml for storing gff files
 
 ## Requirements
-- [nim](https://github.com/dom96/choosenim) >= 0.20.2
-- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.7
+- [nim](https://github.com/dom96/choosenim) >= 1.0.2
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.8
 - [nwnsc](https://gitlab.com/glorwinger/nwnsc)
 
 Alternatively, you can use [Docker](https://www.docker.com).
@@ -147,6 +147,23 @@ directory `unknown` in the package root.
 If an extracted file would overwrite a newer version, you will be prompted to
 overwrite the file. You can force answer the prompt by passing the `--yes`,
 `--no`, or `--default` flags.
+
+If a file is present in the source tree but not in the file being extracted,
+you will be asked if you want to remove the file from the source tree. This is
+useful if you have deleted files from a module. You can pass the
+`--removeDeleted` flag to skip this prompt:
+
+    # Unpack "demo.mod", deleting files in src/ not present in "demo.mod"
+    $ nasher unpack demo.mod --removeDeleted
+
+    # Unpack "demo.mod", but do not delete missing files from the source tree
+    $ nasher unpack demo.mod --removeDeleted:false
+
+    # Make this project default to removing deleted files
+    $ nasher config --local removeDeleted true
+
+    # Make this project default to keeping deleted files
+    $ nasher config --local removeDeleted false
 
 You can initialize a package with the contents of a `.mod`, `.erf`, or `.hak`
 file by running:
