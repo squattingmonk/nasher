@@ -476,48 +476,50 @@ proc genTargetText(defaultName: string): string =
 proc genPackageText*(opts: Options): string =
   display("Generating", "package config file")
 
-  let
-    defaultUrl = opts.get("url", gitRemote())
-
-  result.addLine("[Package]")
-  result.addPair("name", ask("Package name:"))
-  result.addPair("description", ask("Package description:"))
-  result.addPair("version", ask("Package version:"))
-  result.addPair("url", ask("Package URL:", defaultUrl))
-
-  var
-    defaultAuthor = opts.get("userName", gitUser())
-    defaultEmail = opts.get("userEmail", gitEmail())
-
-  hint("Add each package author separately. If additional people contribute " &
-       "to the project later, you can add separate lines for them in the " &
-       "package config file.")
-  while true:
-    let authorName = ask("Author name:", defaultAuthor)
-
-    if authorName.isNilOrWhitespace:
-      break
-
+  if not opts.get("skipPkgInfo", false):
     let
-      authorEmail = ask("Author email:",
-                        if authorName == defaultAuthor: defaultEmail else: "")
+      defaultUrl = opts.get("url", gitRemote())
 
-    if authorEmail.isNilOrWhitespace:
-      result.addPair("author", authorName)
-    else:
-      result.addPair("author", "$1 <$2>" % [authorName, authorEmail])
+    result.addLine("[Package]")
+    result.addPair("name", ask("Package name:"))
+    result.addPair("description", ask("Package description:"))
+    result.addPair("version", ask("Package version:"))
+    result.addPair("url", ask("Package URL:", defaultUrl))
 
-    if not askIf("Do you wish to add another author?", allowed = NotYes):
-      break
+    var
+      defaultAuthor = opts.get("userName", gitUser())
+      defaultEmail = opts.get("userEmail", gitEmail())
 
-    defaultAuthor = ""
-    defaultEmail = ""
+    hint("Add each package author separately. If additional people contribute " &
+         "to the project later, you can add separate lines for them in the " &
+         "package config file.")
+    while true:
+      let authorName = ask("Author name:", defaultAuthor)
+
+      if authorName.isNilOrWhitespace:
+        break
+
+      let
+        authorEmail = ask("Author email:",
+                          if authorName == defaultAuthor: defaultEmail else: "")
+
+      if authorEmail.isNilOrWhitespace:
+        result.addPair("author", authorName)
+      else:
+        result.addPair("author", "$1 <$2>" % [authorName, authorEmail])
+
+      if not askIf("Do you wish to add another author?", allowed = NotYes):
+        break
+
+      defaultAuthor = ""
+      defaultEmail = ""
+
+    result.addLine
 
   hint("Adding sources tells nasher where to look when packing and " &
        "unpacking files. When adding sources, you should be sure to add " &
        "patterns that match every source file in your project. Otherwise, " &
        "nasher might not be able to properly update files when unpacking.")
-  result.addLine
   result.addLine("[Sources]")
   result.add(genSrcText("src/**/*.{nss,json}"))
 
