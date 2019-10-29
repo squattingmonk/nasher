@@ -493,8 +493,12 @@ proc genPackageText*(opts: Options): string =
        "to the project later, you can add separate lines for them in the " &
        "package config file.")
   while true:
+    let authorName = ask("Author name:", defaultAuthor)
+
+    if authorName.isNilOrWhitespace:
+      break
+
     let
-      authorName = ask("Author name:", defaultAuthor, allowBlank = false)
       authorEmail = ask("Author email:",
                         if authorName == defaultAuthor: defaultEmail else: "")
 
