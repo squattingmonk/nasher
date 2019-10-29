@@ -129,12 +129,27 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
     newerFiles = getNewerFiles(sourceFiles, packTime)
+    shortFile = file.extractFilename
+    removeDeleted = opts.get("removeDeleted", false)
+    askRemove = not opts.hasKey("removeDeleted")
 
-  if newerFiles.len > 0:
-    let shortFile = file.extractFilename
-    if not askIf(fmt"{$newerFiles.len} files have changed since {shortFile} " &
-                 "was packed. These changes may be overwritten. Continue?"):
+  if newerFiles.len > 0 and not
+    askIf(fmt"{$newerFiles.len} files have changed since {shortFile} " &
+          "was packed. These changes may be overwritten. Continue?"):
       quit(QuitSuccess)
+
+  for file in sourceFiles:
+    let
+      (_, name, ext) = splitFile(file)
+      fileName = if ext == ".json": name else: name.addFileExt(ext)
+
+    if not existsFile(tmpDir / fileName) and
+      (removeDeleted or
+        (askRemove and
+         askIf(fmt"{fileName} was not found in {shortFile}. " &
+               fmt"Remove source file {file}?"))):
+        info("Removing", "deleted file " & file)
+        file.removeFile
 
   let
     gffUtil = opts.get("gffUtil", findExe("nwn_gff", root))

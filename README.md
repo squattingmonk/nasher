@@ -5,8 +5,8 @@ module repository.
 ## Contents
 
 - [Description](#description)
-- [Installation](#installation)
 - [Requirements](#requirements)
+- [Installation](#installation)
 - [Usage](#usage)
     - [Initializing a new package](#initializing-a-new-package)
     - [Listing build targets](#listing-build-targets)
@@ -43,6 +43,13 @@ it has some key differences:
 8. nasher does not provide tools for local testing with Docker
 9. nasher uses json rather than yaml for storing gff files
 
+## Requirements
+- [nim](https://github.com/dom96/choosenim) >= 1.0.2
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.8
+- [nwnsc](https://gitlab.com/glorwinger/nwnsc)
+
+Alternatively, you can use [Docker](#docker).
+
 ## Installation
 You can install nasher through `nimble`:
 
@@ -56,11 +63,6 @@ Or by building from source:
 
 If `nimble` has been configured correctly, the binary should be available on
 your path.
-
-## Requirements
-- [nim](https://github.com/dom96/choosenim) >= 0.20.2
-- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.7
-- [nwnsc](https://gitlab.com/glorwinger/nwnsc)
 
 ## Usage
 Run `nasher --help` to see usage information. To get detailed usage information
@@ -146,6 +148,23 @@ If an extracted file would overwrite a newer version, you will be prompted to
 overwrite the file. You can force answer the prompt by passing the `--yes`,
 `--no`, or `--default` flags.
 
+If a file is present in the source tree but not in the file being extracted,
+you will be asked if you want to remove the file from the source tree. This is
+useful if you have deleted files from a module. You can pass the
+`--removeDeleted` flag to skip this prompt:
+
+    # Unpack "demo.mod", deleting files in src/ not present in "demo.mod"
+    $ nasher unpack demo.mod --removeDeleted
+
+    # Unpack "demo.mod", but do not delete missing files from the source tree
+    $ nasher unpack demo.mod --removeDeleted:false
+
+    # Make this project default to removing deleted files
+    $ nasher config --local removeDeleted true
+
+    # Make this project default to keeping deleted files
+    $ nasher config --local removeDeleted false
+
 You can initialize a package with the contents of a `.mod`, `.erf`, or `.hak`
 file by running:
 
@@ -159,7 +178,8 @@ This is equivalent to:
     $ nasher unpack ../bar.mod
 
 ## Docker
-[Docker](https://www.docker.com/products/docker-desktop)
+If you don't want to install Nim, you can instead use
+[Docker](https://www.docker.com/products/docker-desktop).
 
 ### Example Usage
 ```

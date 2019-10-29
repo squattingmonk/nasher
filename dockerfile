@@ -1,7 +1,7 @@
 # nwnsc compiler
 FROM jakkn/nwnsc as nwnsc
 # nim image
-FROM nimlang/choosenim:latest as nashor
+FROM nimlang/choosenim:latest as nasher
 COPY --from=nwnsc usr/local/bin/nwnsc usr/local/bin/nwnsc
 COPY --from=nwnsc /nwn /nwn
 RUN apt update \
