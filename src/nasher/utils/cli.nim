@@ -187,11 +187,7 @@ proc ask*(question: string, default = "", allowBlank = true): string =
         displayCategory("Answer:", Prompt, HighPriority)
         echo default
 
-proc choose*(question: string, choices: openarray[string]): string =
-  if cli.forceAnswer == Default:
-    forced(question, "\"" & choices[0] & "\"")
-    return choices[0]
-
+proc chooseInteractive(question: string, choices: openarray[string]): string =
   display("Prompt:", question, Prompt, HighPriority)
   displayHints()
   display("Select:", "Cycle with Tab, Choose with Enter", Prompt, HighPriority)
@@ -259,3 +255,24 @@ proc choose*(question: string, choices: openarray[string]): string =
   stdout.showCursor
   display("Answer:", choices[current], Prompt, HighPriority)
   return choices[current]
+
+proc chooseFallback(question: string, choices: openarray[string]): string =
+  display("Prompt:", question & " [" & choices.join(", ") & "]",
+          Prompt, HighPriority)
+  displayHints()
+  displayCategory("Answer:", Prompt, HighPriority)
+  result = stdin.readLine
+  echo result
+  for choice in choices:
+    if choice.cmpIgnoreCase(result) == 0:
+      return choice
+
+proc choose*(question: string, choices: openarray[string]): string =
+  if cli.forceAnswer == Default:
+    forced(question, "\"" & choices[0] & "\"")
+    return choices[0]
+
+  if stdout.isatty:
+    return chooseInteractive(question, choices)
+  else:
+    return chooseFallback(question, choices)
