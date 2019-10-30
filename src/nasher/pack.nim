@@ -1,5 +1,4 @@
 import os, strformat
-from sequtils import toSeq
 
 import utils/[cli, nwn, options, shared]
 
@@ -59,7 +58,7 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
       packTime = file.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, packTime)
       defaultAnswer = if timeDiff > 0: Yes else: No
-    
+
     hint(getTimeDiffHint("The file to be packed", timeDiff))
     if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
       return false
