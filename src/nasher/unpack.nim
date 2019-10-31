@@ -148,8 +148,6 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   var warnings = 0
   for file in changedFiles:
     let ext = file.fileName.splitFile.ext.strip(chars = {'.'})
-    if ext == "ncs":
-      continue
 
     let
       filePath = tmpDir / file.filename

@@ -40,12 +40,15 @@ proc parsedbTime(sqlTime: string): Time =
 
 proc getChangedFiles*(db: DbConn, tmpDir: string): seq[tuple[fileName: string, fileSha1: string, sqlSha1: string, sqlTime: Time]] =
   for file in walkFiles(tmpDir / "*"):
+
     let
       fileDetail = file.getFileDetail()
       row = db.getRow(sql"SELECT * FROM tmp WHERE fileName = ?", fileDetail.fileName)
       sqlDetail: tuple[fileName: string, sqlSha1: string, sqlTime: Time] = (row[0],row[1], row[2].parsedbTime())
 
-    if fileDetail.fileSha1 == sqlDetail.sqlSha1:
+    if fileDetail.fileName.splitFile.ext == ".ncs":
+      continue
+    elif fileDetail.fileSha1 == sqlDetail.sqlSha1:
       continue
     else:
       result.add((fileDetail.fileName, fileDetail.fileSha1, sqlDetail.sqlSha1, sqlDetail.sqlTime))
