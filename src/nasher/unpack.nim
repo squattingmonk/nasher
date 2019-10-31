@@ -1,7 +1,7 @@
-import tables, os, strformat, strutils, times
+import tables, os, strformat, strutils, db_sqlite, times
 from glob import walkGlob
 
-import utils/[cli, compiler, nwn, options, shared]
+import utils/[cli, sql, nwn, options, shared]
 
 const
   helpUnpack* = """
@@ -47,19 +47,6 @@ const
 
 type
   SourceMap = Table[string, seq[string]]
-
-proc fileNewer(file: string, time: Time): bool =
-  ## Checks whether file is newer than time. Only checks seconds, since copying
-  ## modification times results in unequal nanoseconds.
-  (file.getLastModificationTime - time).inSeconds > 0
-
-proc getNewerFiles(files: seq[string], time: Time): seq[string] =
-  ## Compares time to the timestamp for each files in files. Displays a warning
-  ## for each file that is newer than time, and returns thennewer files.
-  for file in files:
-    if file.fileNewer(time):
-      warning(file & " has changed and may be overwritten.")
-      result.add(file)
 
 proc genSrcMap(files: seq[string]): SourceMap =
   ## Generates a table mapping unconverted source files to the proper directory.
@@ -125,16 +112,17 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     extractErf(file, erfUtil, erfFlags)
 
   let
+    db = fileName.getDB()
     sourceFiles = getSourceFiles(pkg.includes, pkg.excludes)
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
-    newerFiles = getNewerFiles(sourceFiles, packTime)
+    changedFiles = db.getChangedFiles(tmpDir)
     shortFile = file.extractFilename
     removeDeleted = opts.get("removeDeleted", false)
     askRemove = not opts.hasKey("removeDeleted")
 
-  if newerFiles.len > 0 and not
-    askIf(fmt"{$newerFiles.len} files have changed since {shortFile} " &
+  if changedFiles.len > 0 and not
+    askIf(fmt"{$changedFiles.len} files have changed since {shortFile} " &
           "was packed. These changes may be overwritten. Continue?"):
       quit(QuitSuccess)
 
@@ -149,6 +137,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
          askIf(fmt"{fileName} was not found in {shortFile}. " &
                fmt"Remove source file {file}?"))):
         info("Removing", "deleted file " & file)
+        db.sqlDelete(fileName)
         file.removeFile
 
   let
@@ -157,30 +146,41 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     gffFormat = opts.get("gffFormat", "json")
 
   var warnings = 0
-  for file in walkFiles(tmpDir / "*"):
-    let ext = file.splitFile.ext.strip(chars = {'.'})
+  for file in changedFiles:
+    let ext = file.fileName.splitFile.ext.strip(chars = {'.'})
     if ext == "ncs":
       continue
 
     let
-      fileName = file.extractFilename
-      dir = mapSrc(fileName, ext, srcMap, pkg.rules)
+      filePath = tmpDir / file.filename
+      dir = mapSrc(file.fileName, ext, srcMap, pkg.rules)
 
     if dir == "unknown":
-      warning("cannot decide where to extract " & fileName)
+      warning("cannot decide where to extract " & file.fileName)
       warnings.inc
 
-    var outFile = dir / fileName
+    var outFile = dir / file.fileName
     if ext in GffExtensions:
       outFile.add("." & gffFormat)
 
     let outName = outFile.extractFilename
-    if outFile in newerFiles and not
-      askIf(fmt"Overwrite changed file {outName} with older version?"):
-        continue
 
-    gffConvert(file, outFile, gffUtil, gffFlags)
+    if file.sqlSha1 != "":
+      echo "sqlSha1 is" & file.sqlSha1
+      if outFile notin sourceFiles:
+        echo "Deleting " & file.fileName
+        db.sqlDelete(file.fileName)
+        continue
+      elif (outFile.getLastModificationTime - file.sqlTime).inSeconds > 0 and not
+        askIf(fmt"{outName} source file updated since last unpack. Overwrite?"):
+          db.sqlUpdate(file.fileName, file.fileSha1, packTime)
+          continue
+
+
+
+    gffConvert(filePath, outFile, gffUtil, gffFlags)
     outFile.setLastModificationTime(packTime)
+    db.sqlUpsert(file.fileName, file.fileSha1, packTime, file.sqlSha1)
 
   if warnings > 0:
     let words =
@@ -190,3 +190,5 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     warning(("$1 $2 could not be automatically extracted and $3 been placed " &
              "into \"unknown\". You will need to manually copy $4 $2 to the " &
              "correct $5.") % words)
+
+  db.close()
