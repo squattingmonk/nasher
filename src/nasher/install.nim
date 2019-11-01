@@ -62,7 +62,7 @@ proc install*(opts: Options, pkg: PackageRef) =
       installedTime = installed.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, installedTime)
       defaultAnswer = if timeDiff > 0: Yes else: No
-    
+
     hint(getTimeDiffHint("The file to be installed", timeDiff))
     if not askIf(fmt"{installed} already exists. Overwrite?", defaultAnswer):
       quit(QuitFailure)

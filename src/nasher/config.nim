@@ -1,7 +1,7 @@
-import os, strutils
+import os
 from algorithm import sorted
 from sequtils import toSeq
-import utils/[cli, git, options, shared]
+import utils/[cli, options, shared]
 
 const
   helpConfig* = """

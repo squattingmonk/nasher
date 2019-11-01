@@ -1,5 +1,5 @@
 from strutils import join
-import utils/[cli, options, shared]
+import utils/[cli, options]
 
 const
   helpList* = """
@@ -10,7 +10,7 @@ const
     For each target, lists the name, description, source files, and final
     filename of all build targets. These names can be passed to the compile or
     pack commands.
-    
+
   Global Options:
     -h, --help     Display help for nasher or one of its commands
     -v, --version  Display version information
