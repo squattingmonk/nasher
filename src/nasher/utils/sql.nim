@@ -38,6 +38,14 @@ proc parsedbTime(sqlTime: string): Time =
   else:
     result = sqlTime.parseTime("yyyy-MM-dd\'T\'HH:mm:sszzz",now().timezone)
 
+proc sqlRetrieveAllNames*(db: DbConn): seq[string] =
+  let fullDB= db.getAllRows(sql"SELECT filename FROM tmp")
+
+  ##to avoid returning seq[seq[]] with internal seq length = 1
+  for x in fullDB:
+    result.add(x[0])
+
+
 proc getChangedFiles*(db: DbConn, tmpDir: string): seq[tuple[fileName: string, fileSha1: string, sqlSha1: string, sqlTime: Time]] =
   for file in walkFiles(tmpDir / "*"):
 
@@ -52,4 +60,3 @@ proc getChangedFiles*(db: DbConn, tmpDir: string): seq[tuple[fileName: string, f
       continue
     else:
       result.add((fileDetail.fileName, fileDetail.fileSha1, sqlDetail.sqlSha1, sqlDetail.sqlTime))
-

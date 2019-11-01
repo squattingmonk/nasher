@@ -113,19 +113,46 @@ proc unpack*(opts: Options, pkg: PackageRef) =
 
   let
     db = fileName.getDB()
+    fullDB = db.sqlRetrieveAllNames()
     sourceFiles = getSourceFiles(pkg.includes, pkg.excludes)
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
-    changedFiles = db.getChangedFiles(tmpDir)
     shortFile = file.extractFilename
     removeDeleted = opts.get("removeDeleted", false)
     askRemove = not opts.hasKey("removeDeleted")
 
+  let
+    gffUtil = opts.get("gffUtil", findExe("nwn_gff", root))
+    gffFlags = opts.get("gffFlags")
+    gffFormat = opts.get("gffFormat", "json")
+
+  ## Scans database and compares to sourceFiles. If file removed from
+  ## Source, ask-remove from package before scanning.
+  for fileName in fullDB:
+    let
+      ext = fileName.splitFile.ext.strip(chars = {'.'})
+      dir = mapSrc(fileName, ext, srcMap, pkg.rules)
+
+    var sourceName = dir / filename
+    if ext in GffExtensions:
+      sourceName.add("." & gffFormat)
+
+    if sourceName notin sourceFiles and existsFile(tmpDir/fileName):
+      if not askIf(fmt"{fileName} not found in source Directory. Should it be re-added?"):
+        removeFile(tmpDir/fileName)
+      ## Delete from sql whether yes or no, because if no we want it
+      ## found and re-added via changedFiles
+      db.sqlDelete(fileName)
+
+  let changedFiles = db.getChangedFiles(tmpDir)
+
   if changedFiles.len > 0 and not
-    askIf(fmt"{$changedFiles.len} files have changed since {shortFile} " &
-          "was packed. These changes may be overwritten. Continue?"):
+    askIf(fmt"{$changedFiles.len} new or updated files since {shortFile} " &
+          "was packed. Continue?"):
       quit(QuitSuccess)
 
+  ## Scans sourceFiles and removes if not in fresh mod unpack (I.E
+  ## deleted in toolset)
   for file in sourceFiles:
     let
       (_, name, ext) = splitFile(file)
@@ -140,16 +167,12 @@ proc unpack*(opts: Options, pkg: PackageRef) =
         db.sqlDelete(fileName)
         file.removeFile
 
-  let
-    gffUtil = opts.get("gffUtil", findExe("nwn_gff", root))
-    gffFlags = opts.get("gffFlags")
-    gffFormat = opts.get("gffFormat", "json")
-
   var warnings = 0
-  for file in changedFiles:
-    let ext = file.fileName.splitFile.ext.strip(chars = {'.'})
 
+  display("Converting", fmt"new or updated files")
+  for file in changedFiles:
     let
+      ext = file.fileName.splitFile.ext.strip(chars = {'.'})
       filePath = tmpDir / file.filename
       dir = mapSrc(file.fileName, ext, srcMap, pkg.rules)
 
@@ -164,17 +187,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     let outName = outFile.extractFilename
 
     if file.sqlSha1 != "":
-      echo "sqlSha1 is" & file.sqlSha1
-      if outFile notin sourceFiles:
-        echo "Deleting " & file.fileName
-        db.sqlDelete(file.fileName)
+      if (outFile.getLastModificationTime - file.sqlTime).inSeconds > 0 and not
+          askIf(fmt"{outName} source file updated since last unpack. Overwrite?"):
+        db.sqlUpdate(file.fileName, file.fileSha1, packTime)
         continue
-      elif (outFile.getLastModificationTime - file.sqlTime).inSeconds > 0 and not
-        askIf(fmt"{outName} source file updated since last unpack. Overwrite?"):
-          db.sqlUpdate(file.fileName, file.fileSha1, packTime)
-          continue
-
-
 
     gffConvert(filePath, outFile, gffUtil, gffFlags)
     outFile.setLastModificationTime(packTime)
