@@ -122,15 +122,22 @@ proc hint*(msg: string) =
   cli.hints.add(msg)
 
 proc displayHints =
-  for hint in cli.hints:
-    display("Hint:", hint)
+  if stdin.isatty:
+    for hint in cli.hints:
+      display("Hint:", hint)
   cli.hints = @[]
 
 proc prompt(msg: string): string =
   display("Prompt:", msg, Prompt, HighPriority)
   displayHints()
   displayCategory("Answer:", Prompt, HighPriority)
-  result = stdin.readLine
+  try:
+    result = stdin.readLine
+    if not stdin.isatty:
+      echo result
+  except:
+    stdout.write("\n")
+    result = ""
 
 proc forced(msg, answer: string) =
   display("Prompt:", "$1 -> [forced $2]" % [msg, answer], Prompt)
@@ -177,7 +184,13 @@ proc ask*(question: string, default = "", allowBlank = true): string =
     if default == "":
       result = prompt(question)
       if result.isNilOrWhitespace:
-        result = if allowBlank: "" else: ask(question)
+        if allowBlank:
+          result = ""
+        elif stdin.isatty:
+          result = ask(question)
+        else:
+          stdout.write("\n")
+          fatal("this answer cannot be blank. Aborting...")
     else:
       result = prompt("$1 (default: $2)" % [question, default])
       if result.isNilOrWhitespace:
