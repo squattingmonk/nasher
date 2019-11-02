@@ -4,7 +4,8 @@ FROM jakkn/nwnsc as nwnsc
 FROM nimlang/choosenim:latest as nasher
 COPY --from=nwnsc usr/local/bin/nwnsc usr/local/bin/nwnsc
 COPY --from=nwnsc /nwn /nwn
-RUN apt update \
+RUN dpkg --add-architecture i386 \
+    && apt update \
     && apt upgrade -y \
     && apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 -y \
     && choosenim update stable \
