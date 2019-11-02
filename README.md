@@ -7,12 +7,12 @@ module repository.
 - [Description](#description)
 - [Requirements](#requirements)
 - [Installation](#installation)
+    - [Docker](#docker)
 - [Usage](#usage)
     - [Initializing a new package](#initializing-a-new-package)
     - [Listing build targets](#listing-build-targets)
     - [Building targets](#building-targets)
     - [Unpacking a file](#unpacking-a-file)
-    - [Docker](#docker)
 - [Configuration](#configuration)
 - [Package Files](#package-files)
     - [Package Section](#package)
@@ -38,10 +38,8 @@ it has some key differences:
 4. nasher supports custom source tree layouts (e.g., dividing scripts into
    directories based on category)
 5. nasher can install built targets into the NWN installation directory
-6. nasher has not (yet) been tested on Windows (help wanted)
-7. nasher does not (yet) provide a containerized Docker build
-8. nasher does not provide tools for local testing with Docker
-9. nasher uses json rather than yaml for storing gff files
+6. nasher uses json rather than yaml for storing gff files
+7. nasher is known to run on Windows, but has not been thoroughly tested there
 
 ## Requirements
 - [nim](https://github.com/dom96/choosenim) >= 1.0.2
@@ -53,7 +51,11 @@ Alternatively, you can use [Docker](#docker).
 ## Installation
 You can install nasher through `nimble`:
 
-    nimble install nasher
+    # Install latest tagged version
+    $ nimble install nasher
+
+    # Install from master branch
+    $ nimble install nasher@#head
 
 Or by building from source:
 
@@ -61,8 +63,32 @@ Or by building from source:
     $ cd nasher
     $ nimble install
 
-If `nimble` has been configured correctly, the binary should be available on
-your path.
+Nasher should now be on your nimble path (~/.nimble/bin on Linux). To make it
+easier to run nasher and other nim binaries, add this directory to your PATH.
+The examples below assume you have done so.
+
+### Docker
+If you don't want to install Nim, you can instead use
+[Docker](https://www.docker.com/products/docker-desktop). Note that running
+nasher through docker currently comes with some significant limitations (such
+as not being able to answer command prompts).
+
+#### Example Usage
+    # Linux
+    $ docker run --rm -v $(pwd):/nasher squattingmonk/nasher:latest
+
+    # Windows
+    $ docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest
+
+#### Init example
+Because of docker limitations, we have to initialize the config file with
+default settings:
+
+    # Linux
+    $ docker run --rm -v $(pwd):/nasher squattingmonk/nasher:latest init --default
+
+    # Windows
+    $ docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest init --default
 
 ## Usage
 Run `nasher --help` to see usage information. To get detailed usage information
@@ -176,31 +202,6 @@ This is equivalent to:
     $ nasher init foo
     $ cd foo
     $ nasher unpack ../bar.mod
-
-## Docker
-If you don't want to install Nim, you can instead use
-[Docker](https://www.docker.com/products/docker-desktop).
-
-### Example Usage
-```
-# Linux
-docker run --rm -v ./:/nasher squattingmonk:nasher:latest
-
-# Windows 
-docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest
-```
-
-### Init example
-Because of docker limitations, we have to init the config file with default settings.
-Example below:
-
-```
-# Linux
-docker run --rm -v ./:/nasher squattingmonk:nasher:latest init --default
-
-# Windows 
-docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest init --default
-```
 
 ## Configuration
 You can configure `nasher` using the `config` command (see `nasher config
