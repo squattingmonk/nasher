@@ -1,7 +1,7 @@
 import tables, os, strformat, strutils, db_sqlite, times
 from glob import walkGlob
 
-import utils/[cli, sql, nwn, options, shared]
+import utils/[cli, nwn, options, shared]
 
 const
   helpUnpack* = """

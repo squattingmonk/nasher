@@ -358,10 +358,11 @@ proc getTarget*(pkg: PackageRef, name = ""): Target =
   ## Returns the target specified by the user, or the first target found in the
   ## package file if the user did not specify a target.
   if name.len > 0:
+    let wanted = name.toLower
     for target in pkg.targets:
-      if target.name == name:
+      if target.name == wanted:
         return target
-    fatal("Unknown target " & name)
+    fatal("Unknown target " & wanted)
   else:
     result = pkg.targets[0]
 
