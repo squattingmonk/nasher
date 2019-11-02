@@ -5,13 +5,14 @@ module repository.
 ## Contents
 
 - [Description](#description)
-- [Installation](#installation)
 - [Requirements](#requirements)
+- [Installation](#installation)
 - [Usage](#usage)
     - [Initializing a new package](#initializing-a-new-package)
     - [Listing build targets](#listing-build-targets)
     - [Building targets](#building-targets)
     - [Unpacking a file](#unpacking-a-file)
+    - [Docker](#docker)
 - [Configuration](#configuration)
 - [Package Files](#package-files)
     - [Package Section](#package)
@@ -46,6 +47,8 @@ it has some key differences:
 - [nim](https://github.com/dom96/choosenim) >= 1.0.2
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.8
 - [nwnsc](https://gitlab.com/glorwinger/nwnsc)
+
+Alternatively, you can use [Docker](#docker).
 
 ## Installation
 You can install nasher through `nimble`:
@@ -173,6 +176,31 @@ This is equivalent to:
     $ nasher init foo
     $ cd foo
     $ nasher unpack ../bar.mod
+
+## Docker
+If you don't want to install Nim, you can instead use
+[Docker](https://www.docker.com/products/docker-desktop).
+
+### Example Usage
+```
+# Linux
+docker run --rm -v ./:/nasher squattingmonk:nasher:latest
+
+# Windows 
+docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest
+```
+
+### Init example
+Because of docker limitations, we have to init the config file with default settings.
+Example below:
+
+```
+# Linux
+docker run --rm -v ./:/nasher squattingmonk:nasher:latest init --default
+
+# Windows 
+docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest init --default
+```
 
 ## Configuration
 You can configure `nasher` using the `config` command (see `nasher config
