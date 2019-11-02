@@ -38,7 +38,7 @@ proc runCompiler*(cmd: string, args: openArray[string] = []): int =
     s = p.outputStream
     line = ""
 
-  while true:
+  while p.running:
     if s.readLine(line):
       line.parseCompilerOutput
     else:
@@ -46,4 +46,4 @@ proc runCompiler*(cmd: string, args: openArray[string] = []): int =
       if result != -1:
         break
 
-  p.close()
+  p.close
