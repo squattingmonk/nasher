@@ -2,8 +2,11 @@ import osproc, parseutils, sequtils, streams, strutils
 
 import cli
 
-proc parseCompilerOutput(line: var string) =
-  ## Intercepts nwnsc's output and converts it into nasher's cli format
+
+proc parseCompilerOutput(line: var string): bool =
+  ## Intercepts nwnsc's output and converts it into nasher's cli format. Returns
+  ## whether any errors were detected. We have to do this here because nwnsc
+  ## does not return consistent exit codes.
   var
     token: string
     parsed = line.parseUntil(token, ':') + 2
@@ -20,6 +23,7 @@ proc parseCompilerOutput(line: var string) =
       var lines = line.split(':').mapIt(it.strip)
       if lines.contains("Error"):
         error(lines.filterIt(it != "Error").join("\n"))
+        result = true
       elif lines.contains("Warning"):
         warning(lines.filterIt(it != "Warning").join("\n"))
       else:
@@ -27,7 +31,6 @@ proc parseCompilerOutput(line: var string) =
 
 proc runCompiler*(cmd: string, args: openArray[string] = []): int =
   ## Runs the nwnsc compiler and returns its error code
-  result = -1
   let
     params = args.filterIt(it.len > 0)
     options = {poUsePath, poStdErrToStdOut}
@@ -40,10 +43,7 @@ proc runCompiler*(cmd: string, args: openArray[string] = []): int =
 
   while p.running:
     if s.readLine(line):
-      line.parseCompilerOutput
-    else:
-      result = p.peekExitCode
-      if result != -1:
-        break
+      if line.parseCompilerOutput:
+        result = 1
 
   p.close
