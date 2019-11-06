@@ -39,8 +39,7 @@ proc getCacheMap(includes, excludes: seq[string]): StringTableRef =
     result[fileName] = file
 
 proc convert*(opts: Options, pkg: PackageRef): bool =
-  let root = getPackageRoot()
-  setCurrentDir(root)
+  setCurrentDir(getPackageRoot())
 
   let
     cmd = opts["command"]
@@ -56,7 +55,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
 
   let
     cacheDir = ".nasher" / "cache" / target.name
-    gffUtil = opts.get("gffUtil", findExe("nwn_gff", root))
+    gffUtil = opts.get("gffUtil")
     gffFlags = opts.get("gffFlags")
     gffFormat = opts.get("gffFormat", "json")
 

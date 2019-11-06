@@ -33,6 +33,10 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
+proc executable(script: string): bool =
+  let text = readFile(script)
+  text.contains(re"(void[\t ]+main|int[\t ]+StartingConditional)")
+
 proc getIncludedBy(scripts: seq[string]): Table[string, seq[string]] =
   ## Returns a table listing scripts that include a file in ``scripts``.
   for script in scripts:
@@ -67,9 +71,18 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
 
   withDir(opts["directory"]):
     # Only compile scripts that have not been compiled since update
+    let
+      files = toSeq(walkFiles("*.nss"))
+
+    for file in files:
+      if file notin pkg.updated and file.executable:
+        let compiled = file.changeFileExt("ncs")
+        if not existsFile(compiled) or file.fileNewer(compiled):
+          pkg.updated.add(file)
+
     var
       processed: Table[string, bool]
-      included = getIncludedBy(toSeq(walkFiles("*.nss")))
+      included = getIncludedBy(files)
       toCompile = pkg.updated
 
     for script in pkg.updated:
@@ -77,10 +90,9 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       toCompile = toCompile.concat(included).deduplicate
 
     let
-      root = getPackageRoot()
       scripts = toCompile.len
       target = pkg.getTarget(opts["target"])
-      compiler = opts.get("nssCompiler", findExe("nwnsc", root))
+      compiler = opts.get("nssCompiler")
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
       args = userFlags & target.flags & toCompile
 

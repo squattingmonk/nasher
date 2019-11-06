@@ -2,7 +2,7 @@ import nasher/[init, list, config, unpack, convert, compile, pack, install]
 import nasher/utils/[cli, options, shared]
 
 const
-  nasherVersion = "0.9.3"
+  NimblePkgVersion {.strdefine.} = "devel"
 
   helpAll = """
   nasher: a build tool for Neverwinter Nights projects
@@ -48,7 +48,7 @@ when isMainModule:
     version = opts.get("version", false)
 
   if version:
-    echo "nasher " & nasherVersion
+    echo "nasher " & NimblePkgVersion
     quit(QuitSuccess)
 
   if help:
@@ -62,6 +62,9 @@ when isMainModule:
     of "install": help(helpInstall)
     of "unpack": help(helpUnpack)
     else: help(helpAll)
+
+  if not opts.verifyBinaries:
+    fatal("Could not locate required binaries. Aborting...")
 
   if cmd notin ["init", "config", "unpack"] and
      not loadPackageFile(pkg, getPackageFile()):
