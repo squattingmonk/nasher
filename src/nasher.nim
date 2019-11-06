@@ -63,6 +63,9 @@ when isMainModule:
     of "unpack": help(helpUnpack)
     else: help(helpAll)
 
+  if not opts.verifyBinaries:
+    fatal("Could not locate required binaries. Aborting...")
+
   if cmd notin ["init", "config", "unpack"] and
      not loadPackageFile(pkg, getPackageFile()):
        fatal("This is not a nasher project. Please run nasher init.")

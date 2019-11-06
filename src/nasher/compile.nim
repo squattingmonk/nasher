@@ -90,10 +90,9 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       toCompile = toCompile.concat(included).deduplicate
 
     let
-      root = getPackageRoot()
       scripts = toCompile.len
       target = pkg.getTarget(opts["target"])
-      compiler = opts.get("nssCompiler", findExe("nwnsc", root))
+      compiler = opts.get("nssCompiler")
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
       args = userFlags & target.flags & toCompile
 

@@ -3,7 +3,7 @@ from sequtils import toSeq
 from algorithm import sorted
 export strtabs
 
-import cli, git
+import cli, git, shared
 
 type
   Options* = StringTableRef
@@ -241,6 +241,32 @@ proc getOptions*: Options =
   result.parseConfigFile(getConfigFile(getCurrentDir()))
   result.parseCmdLine
   result.dumpOptions
+
+proc verifyBinaries*(opts: Options): bool =
+  ## Verifies that the required binaries are available to nasher
+  debug("Verifying", "binaries...")
+  result = true
+  let
+    root = getPackageRoot()
+    bins = [("nssCompiler", "nwnsc", "script compiler"),
+            ("erfUtil", "nwn_erf", "erf utility"),
+            ("gffUtil", "nwn_gff", "gff utility")]
+
+  for bin in bins:
+    let path = opts.getOrPut(bin[0], findExe(bin[1], root))
+
+    if not existsFile(path):
+      let
+        file = path.extractFilename
+        msg =
+          if file.len == 0:
+            "is " & bin[1] & " installed?"
+          elif file == path:
+            file & " not found in $PATH."
+          else:
+            path & " does not exist."
+      error("Could not locate " & bin[2] & ": " & msg)
+      result = false
 
 proc initTarget: Target =
   result.name = ""

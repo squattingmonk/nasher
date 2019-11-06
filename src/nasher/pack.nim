@@ -64,8 +64,7 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
       return false
 
   let
-    root = getPackageRoot(cacheDir)
-    bin = opts.get("erfUtil", findExe("nwn_erf", root))
+    bin = opts.get("erfUtil")
     args = opts.get("erfFlags")
 
   createErf(cacheDir, file, bin, args)
