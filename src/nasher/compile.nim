@@ -1,4 +1,4 @@
-from sequtils import toSeq, concat, deduplicate
+from sequtils import toSeq
 import os, tables, strtabs, strutils
 
 import utils/[cli, compiler, options, shared]
@@ -37,30 +37,40 @@ proc executable(script: string): bool =
   let text = readFile(script)
   text.contains(re"(void[\t ]+main|int[\t ]+StartingConditional)")
 
-proc getIncludedBy(scripts: seq[string]): Table[string, seq[string]] =
-  ## Returns a table listing scripts that include a file in ``scripts``.
+proc getIncludes(scripts: seq[string]): Table[string, seq[string]] =
+  ## Returns a table listing scripts included by each script in ``scripts``.
   for script in scripts:
     let text = readFile(script)
     for match in text.findAll(re"""(?m:^\s*#include\s+"(.*)"\s*$)"""):
-      let dependency = text[match.group(0)[0]] & ".nss"
-      if result.hasKeyOrPut(dependency, @[script]) and
-         script notin result[dependency]:
-           result[dependency].add(script)
+      let included = text[match.group(0)[0]] & ".nss"
+      if result.hasKeyOrPut(script, @[included]) and
+        included notin result[script]:
+          result[script].add(included)
 
-proc getAllIncludedBy(file: string,
-                      scripts: Table[string, seq[string]],
-                      processed: var Table[string, bool]): seq[string] =
-  ## Lists all scripts in ``scripts`` that include ``file``, even through
-  ## intermediates. ``processed`` is used to track whether a script has already
-  ## been checked.
-  if not scripts.hasKey(file):
-    return @[]
+proc getIncludesUpdated(file: string,
+                        scripts: Table[string, seq[string]],
+                        updated: var Table[string, bool]): bool =
+  if updated.hasKeyOrPut(file, false):
+    return updated[file]
 
-  result = scripts[file]
-  for script in scripts[file]:
-    if not processed.hasKeyOrPut(script, true):
-      result = result.concat(script.getAllIncludedBy(scripts, processed))
-  result = result.deduplicate
+  if scripts.hasKey(file):
+    for script in scripts[file]:
+      if script.getIncludesUpdated(scripts, updated):
+        updated[file] = true
+        return true
+
+proc getUpdated(pkg: PackageRef, files: seq[string]): seq[string] =
+  let included = files.getIncludes
+  var updated: Table[string, bool]
+
+  for file in pkg.updated:
+    updated[file] = true
+
+  for file in files:
+    if file.getIncludesUpdated(included, updated):
+      result.add(file)
+
+  pkg.updated = result
 
 proc compile*(opts: Options, pkg: PackageRef): bool =
   let
@@ -80,24 +90,15 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
         if not existsFile(compiled) or file.fileNewer(compiled):
           pkg.updated.add(file)
 
-    var
-      processed: Table[string, bool]
-      included = getIncludedBy(files)
-      toCompile = pkg.updated
-
-    for script in pkg.updated:
-      let included = script.getAllIncludedBy(included, processed)
-      toCompile = toCompile.concat(included).deduplicate
-
     let
-      scripts = toCompile.len
+      scripts = pkg.getUpdated(files)
       target = pkg.getTarget(opts["target"])
       compiler = opts.get("nssCompiler")
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
-      args = userFlags & target.flags & toCompile
+      args = userFlags & target.flags & scripts
 
-    if scripts > 0:
-      display("Compiling", $scripts  & " scripts")
+    if scripts.len > 0:
+      display("Compiling", $scripts.len  & " scripts")
       if runCompiler(compiler, args) != 0:
         warning("Errors encountered during compilation (see above)")
         if cmd in ["pack", "install"] and not
