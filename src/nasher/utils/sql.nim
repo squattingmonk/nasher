@@ -14,6 +14,12 @@ proc getDB*(fileName: string): DbConn =
 proc sqlDelete*(db:DbConn, fileName: string) =
   db.exec(sql"DELETE FROM tmp WHERE filename = ?", filename)
 
+proc sqlBegin*(db:DBConn) =
+  db.exec(sql"BEGIN")
+
+proc sqlCommit*(db:DBConn) =
+  db.exec(sql"COMMIT")
+
 proc sqlUpsert*(db:DbConn, fileName: string, fileSha1: string, packTime: Time, sqlSha1: string) =
   #Can't use true sqlite 'upsert' due to nim library not wrapping it.
   if sqlsha1 == "":

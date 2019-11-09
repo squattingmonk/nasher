@@ -169,6 +169,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   var warnings = 0
 
   display("Converting", fmt"new or updated files")
+  db.sqlBegin()
   for file in changedFiles:
     let
       ext = file.fileName.splitFile.ext.strip(chars = {'.'})
@@ -194,6 +195,8 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     gffConvert(filePath, outFile, gffUtil, gffFlags)
     outFile.setLastModificationTime(packTime)
     db.sqlUpsert(file.fileName, file.fileSha1, packTime, file.sqlSha1)
+
+  db.sqlCommit()
 
   if warnings > 0:
     let words =
