@@ -137,18 +137,13 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       sourceName.add("." & gffFormat)
 
     if sourceName notin sourceFiles and existsFile(tmpDir/fileName):
-      if not askIf(fmt"{fileName} not found in source Directory. Should it be re-added?"):
+      if not askIf(fmt"{fileName} not found in source directory. Should it be re-added?"):
         removeFile(tmpDir/fileName)
       ## Delete from sql whether yes or no, because if no we want it
       ## found and re-added via changedFiles
       db.sqlDelete(fileName)
 
   let changedFiles = db.getChangedFiles(tmpDir)
-
-  if changedFiles.len > 0 and not
-    askIf(fmt"{$changedFiles.len} new or updated files since {shortFile} " &
-          "was packed. Continue?"):
-      quit(QuitSuccess)
 
   ## Scans sourceFiles and removes if not in fresh mod unpack (I.E
   ## deleted in toolset)
