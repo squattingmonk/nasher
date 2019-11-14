@@ -9,7 +9,8 @@ RUN dpkg --add-architecture i386 \
     && apt upgrade -y \
     && apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 -y \
     && choosenim update stable \
-    && nimble install nasher -y
+    && nimble install nasher -y \
+    && nasher config --nssFlags:"-n /nwn/data -o"
 RUN nasher config --userName:"nasher"  
 ENV PATH="/root/.nimble/bin:${PATH}"
 WORKDIR /nasher
