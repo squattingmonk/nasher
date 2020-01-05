@@ -69,26 +69,24 @@ The examples below assume you have done so.
 
 ### Docker
 If you don't want to install Nim, you can instead use
-[Docker](https://www.docker.com/products/docker-desktop). Note that running
-nasher through docker currently comes with some significant limitations (such
-as not being able to answer command prompts).
+[Docker](https://www.docker.com/products/docker-desktop).
 
 #### Example Usage
     # Linux
-    $ docker run --rm -v $(pwd):/nasher squattingmonk/nasher:latest
+    $ docker run --rm -it -v $(pwd):/nasher squattingmonk/nasher:latest
 
     # Windows
-    $ docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest
+    $ docker run --rm -it -v %cd%:/nasher squattingmonk:nasher:latest
 
 #### Init example
-Because of docker limitations, we have to initialize the config file with
+If you are feeling particularly lazy, hyou can initialize the config file with
 default settings:
 
     # Linux
-    $ docker run --rm -v $(pwd):/nasher squattingmonk/nasher:latest init --default
+    $ docker run --rm -it -v $(pwd):/nasher squattingmonk/nasher:latest init --default
 
     # Windows
-    $ docker run --rm -v %cd%:/nasher squattingmonk:nasher:latest init --default
+    $ docker run --rm -it -v %cd%:/nasher squattingmonk:nasher:latest init --default
 
 ## Usage
 Run `nasher --help` to see usage information. To get detailed usage information
