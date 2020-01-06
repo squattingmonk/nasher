@@ -56,7 +56,7 @@ proc gffConvert*(inFile, outFile, bin, args: string) =
   ## TODO: Add gron and yaml support
   case outFormat
   of "json":
-    let text = gffToJson(inFile, bin, args).pretty
+    let text = gffToJson(inFile, bin, args).pretty & "\c\L"
     writeFile(outFile, text)
   of "gff":
     jsonToGff(inFile, outFile, bin, args)
