@@ -26,7 +26,8 @@ proc gffToJson(file, bin, args: string): JsonNode =
   ## TODO: truncate floats
   if file.extractFilename == "module.ifo" and result.hasKey("Mod_ID"):
     result.delete("Mod_ID")
-
+  elif file.splitFile.ext == ".are" and result.hasKey("Version"):
+    result.delete("Version")
 
 proc jsonToGff(inFile, outFile, bin, args: string) =
   ## Converts a json ``inFile`` to an erf ``outFile``.
