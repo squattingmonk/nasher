@@ -174,6 +174,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     if dir == "unknown":
       warning("cannot decide where to extract " & file.fileName)
       warnings.inc
+    elif dir == "/dev/null":
+      info("Removing", file.fileName)
+      filePath.removeFile
+      continue
 
     var outFile = dir / file.fileName
     if ext in GffExtensions:
