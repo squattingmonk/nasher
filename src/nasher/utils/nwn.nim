@@ -50,19 +50,24 @@ proc gffConvert*(inFile, outFile, bin, args: string) =
   except OSError:
     let msg = osErrorMsg(osLastError())
     fatal(fmt"Could not create {dir}: {msg}")
+  except:
+    fatal(getCurrentExceptionMsg())
 
   let category = if outFormat in ["json", "gff"]: "Converting" else: "Copying"
   info(category, "$1 -> $2" % [inFile.extractFilename, name & ext])
 
   ## TODO: Add gron and yaml support
-  case outFormat
-  of "json":
-    let text = gffToJson(inFile, bin, args).pretty & "\c\L"
-    writeFile(outFile, text)
-  of "gff":
-    jsonToGff(inFile, outFile, bin, args)
-  else:
-    copyFile(inFile, outFile)
+  try:
+    case outFormat
+    of "json":
+      let text = gffToJson(inFile, bin, args).pretty & "\c\L"
+      writeFile(outFile, text)
+    of "gff":
+      jsonToGff(inFile, outFile, bin, args)
+    else:
+      copyFile(inFile, outFile)
+  except:
+    fatal(fmt"Could not create {outFile}. Is the destination writeable?")
 
 proc removeUnusedAreas*(dir, bin, args: string) =
   ## Removes any areas not in ``dir`` from the module.ifo file in ``dir``.
