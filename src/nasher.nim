@@ -1,4 +1,4 @@
-import nasher/[init, list, config, unpack, convert, compile, pack, install]
+import nasher/[init, list, config, unpack, convert, compile, pack, install, launch]
 import nasher/utils/[cli, options, shared]
 
 const
@@ -61,6 +61,7 @@ when isMainModule:
     of "pack": help(helpPack)
     of "install": help(helpInstall)
     of "unpack": help(helpUnpack)
+    of "play", "test", "serve": help(helpLaunch)
     else: help(helpAll)
 
   if not opts.verifyBinaries:
@@ -80,11 +81,14 @@ when isMainModule:
     unpack(opts, pkg)
   of "list":
     list(opts, pkg)
-  of "convert", "compile", "pack", "install":
+  of "convert", "compile", "pack", "install", "play", "test", "serve":
     let targets = pkg.getTargets(opts.get("targets"))
     for target in targets:
       opts["target"] = target.name
-      if convert(opts, pkg) and compile(opts, pkg) and pack(opts, pkg):
-        install(opts, pkg)
+      if convert(opts, pkg) and
+         compile(opts, pkg) and
+         pack(opts, pkg) and
+         install(opts, pkg):
+           launch(opts)
   else:
     help(helpAll, QuitFailure)

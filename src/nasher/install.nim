@@ -34,8 +34,9 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc install*(opts: Options, pkg: PackageRef) =
+proc install*(opts: Options, pkg: PackageRef): bool =
   let
+    cmd = opts["command"]
     file = opts["file"]
     dir = opts.getOrPut("installDir", getNwnInstallDir())
 
@@ -70,3 +71,6 @@ proc install*(opts: Options, pkg: PackageRef) =
   copyFile(file, installed)
   setLastModificationTime(installed, fileTime)
   success("installed " & fileName)
+
+  # Prevent falling through to the next function if we were called directly
+  return cmd != "install"

@@ -158,6 +158,21 @@ path. If the file to be installed already exists at the target location, you
 will be prompted to overwrite it. You can force answer the prompt by passing
 the `--yes`, `--no`, or `--default` flags.
 
+### Launching a module
+After installing a module target, you can launch the module to play. These
+commands will first run the `convert->compile->pack->install` sequence, so
+options that work for those will work here as well.
+
+     # Play the module defined in the default target
+     nasher play
+
+     # Test the module defined in the "demo" target. This chooses the first PC
+     # in the local vault, like launching from the toolset.
+     nasher test demo
+
+     # Load the file in nwserver for use in a multiplayer game
+     nasher serve demo
+
 ### Unpacking a file
     # Unpack "demo.mod" into src/
     $ nasher unpack demo.mod
@@ -244,6 +259,8 @@ Currently, the following configuration options are available:
 - `installDir`: the NWN installation directory
     - default (Linux): `~/.local/share/Neverwinter Nights`
     - default (Windows and Mac): `~/Documents/Neverwinter Nights`
+- `gameBin`: the path to the nwmain binary (if not using default Steam path)
+- `serverBin`: the path to the nwserver binary (if not using default Steam path)
 - `vcs`: the version control system to use when making new packages
     - default: `git`
     - supported: `none`, `git`
