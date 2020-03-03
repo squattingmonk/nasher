@@ -135,8 +135,15 @@ The `convert`, `compile`, `pack`, and `install` commands are run in sequence.
 If you want to install a target, you can just use the `install` command without
 having to first use `convert`, `compile`, and `pack`.
 
+You can skip particular steps of this sequence using the `--noConvert`,
+`--noCompile`, `--noPack` or `--noInstall` commands. `--noPack` and
+`--noInstall` imply `--noConvert` and `--noCompile`.
+
+    # Install a previously packed file without rebuilding
+    nasher install --noPack
+
 All of these commands can delete the cache and trigger a clean build if passed
-with `--clean`.
+with `--clean`. `--clean` overrides `--noPack` and `--noInstall`.
 
 #### convert
 Converts all json sources for the target to gff format. It also caches non-json

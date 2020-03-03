@@ -47,6 +47,12 @@ proc getNewestFile(dir: string): string =
 
 proc pack*(opts: Options, pkg: PackageRef): bool =
   let
+    cmd = opts["command"]
+
+  if opts.get("noPack", false):
+    return cmd != "pack"
+
+  let
     file = opts["file"]
     target = opts["target"]
     cacheDir = opts["directory"]
@@ -72,4 +78,4 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
   setLastModificationTime(file, fileTime)
 
   # Prevent falling through to the next function if we were called directly
-  return opts["command"] != "pack"
+  return cmd != "pack"

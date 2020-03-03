@@ -43,25 +43,28 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
 
   let
     cmd = opts["command"]
-    category = (if cmd == "compile": "compiling" else: cmd & "ing")
     target = pkg.getTarget(opts.get("target"))
+    cacheDir = ".nasher" / "cache" / target.name
+
+  # Set these so they can be gotten easily by the pack and install commands
+  opts["file"] = target.file
+  opts["directory"] = cacheDir
+
+  if opts.get("noConvert", false):
+    return cmd != "convert"
+
+  let
+    category = (if cmd == "compile": "compiling" else: cmd & "ing")
     cacheMap = getCacheMap(target.includes, target.excludes)
+    gffUtil = opts.get("gffUtil")
+    gffFlags = opts.get("gffFlags")
+    gffFormat = opts.get("gffFormat", "json")
 
   display(category.capitalizeAscii, "target " & target.name)
 
   if cacheMap.len == 0:
     error("No source files found for target " & target.name)
     return false
-
-  let
-    cacheDir = ".nasher" / "cache" / target.name
-    gffUtil = opts.get("gffUtil")
-    gffFlags = opts.get("gffFlags")
-    gffFormat = opts.get("gffFormat", "json")
-
-  # Set these so they can be gotten easily by the pack and install commands
-  opts["file"] = target.file
-  opts["directory"] = cacheDir
 
   display("Updating", "cache for target " & target.name)
   if opts.get("clean", false):

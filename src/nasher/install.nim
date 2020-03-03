@@ -40,6 +40,9 @@ proc install*(opts: Options, pkg: PackageRef): bool =
     file = opts["file"]
     dir = opts.getOrPut("installDir", getNwnInstallDir())
 
+  if opts.get("noInstall", false):
+    return cmd != "install"
+
   display("Installing", file & " into " & dir)
   if not existsFile(file):
     fatal(fmt"Cannot install {file}: file does not exist")

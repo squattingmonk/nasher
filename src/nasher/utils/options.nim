@@ -24,7 +24,8 @@ type
 
 const
   nasherCommands =
-    ["init", "list", "config", "convert", "compile", "pack", "install", "unpack"]
+    ["init", "list", "config", "convert", "compile", "pack", "install", "play",
+     "test", "serve", "unpack"]
 
 proc `[]=`*[T: int | bool](opts: Options, key: string, value: T) =
   ## Overloaded ``[]=`` operator that converts value to a string before setting
@@ -160,7 +161,7 @@ proc parseCmdLine(opts: Options) =
         opts.putKeyOrHelp("key", "value", key)
       of "list":
         opts.putKeyOrHelp("target", key)
-      of "compile", "convert", "pack", "install":
+      of "compile", "convert", "pack", "install", "play", "test", "serve":
         if opts.hasKeyOrPut("targets", key):
           opts["targets"] = opts["targets"] & ";" & key
       of "unpack":
@@ -234,12 +235,23 @@ proc getOptions*: Options =
   ## Returns a string table of options obtained from the config file and command
   ## line input. Options are case and style insensitive (i.e., "someValue" ==
   ## "some_value").
-  # result = newStringTable(modeStyleInsensitive)
-  # result.parseConfigFile(getConfigFile())
   result = newStringTable(modeStyleInsensitive)
   result.parseConfigFile(getConfigFile())
   result.parseConfigFile(getConfigFile(getCurrentDir()))
   result.parseCmdLine
+
+  # Some options imply others
+  if result.getOrPut("clean", false):
+    result["noInstall"] = false
+    result["noPack"] = false
+
+  if result.getOrPut("noInstall", false):
+    result["noPack"] = true
+
+  if result.getOrPut("noPack", false):
+    result["noCompile"] = true
+    result["noConvert"] = true
+
   result.dumpOptions
 
 proc verifyBinaries*(opts: Options): bool =
