@@ -1,7 +1,7 @@
-import tables, os, strformat, strutils, db_sqlite, times
+import json, tables, os, strformat, strutils, times
 from glob import walkGlob
 
-import utils/[cli, sql, nwn, options, shared]
+import utils/[cli, manifest, nwn, options, shared]
 
 const
   helpUnpack* = """
@@ -110,9 +110,11 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   withDir(tmpDir):
     extractErf(file, erfUtil, erfFlags)
 
+  var
+    manifest = parseManifest(fileName)
+    deleted: seq[string] = @[]
+
   let
-    db = fileName.getDB()
-    fullDB = db.sqlRetrieveAllNames()
     sourceFiles = getSourceFiles(pkg.includes, pkg.excludes)
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
@@ -125,9 +127,9 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     gffFlags = opts.get("gffFlags")
     gffFormat = opts.get("gffFormat", "json")
 
-  ## Scans database and compares to sourceFiles. If file removed from
-  ## Source, ask-remove from package before scanning.
-  for fileName in fullDB:
+  # Scan manifest and compare to sourceFiles. If a file was removed from the
+  # source tree, ask-remove from package before scanning.
+  for fileName in manifest.keys:
     let
       ext = fileName.splitFile.ext.strip(chars = {'.'})
       dir = mapSrc(fileName, ext, srcMap, pkg.rules)
@@ -139,14 +141,17 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     if sourceName notin sourceFiles and existsFile(tmpDir/fileName):
       if not askIf(fmt"{fileName} not found in source directory. Should it be re-added?"):
         removeFile(tmpDir/fileName)
-      ## Delete from sql whether yes or no, because if no we want it
-      ## found and re-added via changedFiles
-      db.sqlDelete(fileName)
 
-  let changedFiles = db.getChangedFiles(tmpDir)
+      # Delete from manifest whether yes or no, because if no we want it found
+      # and re-added via changedFiles
+      deleted.add(fileName)
 
-  ## Scans sourceFiles and removes if not in fresh mod unpack (I.E
-  ## deleted in toolset)
+  for fileName in deleted:
+    manifest.delete(fileName)
+
+  # Scan sourceFiles and remove if not in fresh mod unpack (i.e., deleted
+  # deleted in toolset)
+  info("Checking", "for deleted files")
   for file in sourceFiles:
     let
       (_, name, ext) = splitFile(file)
@@ -157,18 +162,22 @@ proc unpack*(opts: Options, pkg: PackageRef) =
         (askRemove and
          askIf(fmt"{fileName} was not found in {shortFile}. " &
                fmt"Remove source file {file}?"))):
-        info("Removing", "deleted file " & file)
-        db.sqlDelete(fileName)
-        file.removeFile
+           info("Removing", "deleted file " & file)
+           manifest.delete(fileName)
+           file.removeFile
 
   var warnings = 0
 
-  display("Converting", fmt"new or updated files")
-  db.sqlBegin()
+  let
+    changedFiles = manifest.getChangedFiles(tmpDir)
+
+  display("Converting", fmt"{changedFiles.len} new or updated files")
   for file in changedFiles:
+    debug("Checking", file.fileName)
+
     let
       ext = file.fileName.splitFile.ext.strip(chars = {'.'})
-      filePath = tmpDir / file.filename
+      filePath = tmpDir / file.fileName
       dir = mapSrc(file.fileName, ext, srcMap, pkg.rules)
 
     if dir == "unknown":
@@ -185,17 +194,15 @@ proc unpack*(opts: Options, pkg: PackageRef) =
 
     let outName = outFile.extractFilename
 
-    if file.sqlSha1 != "":
-      if (outFile.getLastModificationTime - file.sqlTime).inSeconds > 0 and not
+    if file.savedSum != "":
+      if (outFile.getLastModificationTime - file.savedTime).inSeconds > 0 and not
           askIf(fmt"{outName} source file updated since last unpack. Overwrite?"):
-        db.sqlUpdate(file.fileName, file.fileSha1, packTime)
-        continue
+            manifest.update(file.fileName, file.savedSum, packTime)
+            continue
 
     gffConvert(filePath, outFile, gffUtil, gffFlags)
     outFile.setLastModificationTime(packTime)
-    db.sqlUpsert(file.fileName, file.fileSha1, packTime, file.sqlSha1)
-
-  db.sqlCommit()
+    manifest.update(file.fileName, file.fileSum, packTime)
 
   if warnings > 0:
     let words =
@@ -206,4 +213,4 @@ proc unpack*(opts: Options, pkg: PackageRef) =
              "into \"unknown\". You will need to manually copy $4 $2 to the " &
              "correct $5.") % words)
 
-  db.close()
+  manifest.write

@@ -1,6 +1,6 @@
-import os, strformat
+import os, strformat, times
 
-import utils/[cli, nwn, options, shared]
+import utils/[cli, manifest, nwn, options, shared]
 
 const
   helpPack* = """
@@ -34,6 +34,7 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
+
 proc getNewestFile(dir: string): string =
   for file in walkFiles(dir / "*"):
     if file.splitFile.ext == ".ncs":
@@ -59,6 +60,7 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     fileTime = getNewestFile(cacheDir).getLastModificationTime
 
   display("Packing", fmt"files for target {target} into {file}")
+
   if existsFile(file):
     let
       packTime = file.getLastModificationTime
@@ -73,7 +75,19 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     bin = opts.get("erfUtil")
     args = opts.get("erfFlags")
 
+  var
+    manifest = newManifest(file)
+
   createErf(cacheDir, file, bin, args)
+
+  for file in walkFiles(cacheDir / "*"):
+    if file.splitFile.ext == ".ncs":
+      continue
+  
+    manifest.add(file, fileTime)
+
+  manifest.write
+      
   success("packed " & file)
   setLastModificationTime(file, fileTime)
 
