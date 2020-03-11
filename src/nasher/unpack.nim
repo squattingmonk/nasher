@@ -1,4 +1,4 @@
-import json, tables, os, strformat, strutils, times
+import tables, os, strformat, strutils, times
 from glob import walkGlob
 
 import utils/[cli, manifest, nwn, options, shared]
@@ -6,15 +6,20 @@ import utils/[cli, manifest, nwn, options, shared]
 const
   helpUnpack* = """
   Usage:
-    nasher unpack [options] <file>
+    nasher unpack [options] [<target> [<file>]]
 
   Description:
-    Unpacks <file> into the project source tree.
+    Unpacks a file into the project source tree for the given target.
 
-    Each extracted file is checked against the source tree (as defined in the
-    [Package] section of the package config). If the file exists in one location,
-    it is copied there, overwriting the existing file. If the file exists in
-    multiple folders, you will be prompted to select where it should be copied.
+    If a target is not specified, the first target found in nasher.cfg is used. If
+    a file is not specified, will search for the target's file in the NWN install
+    directory.
+
+    Each extracted file is checked against the target's source tree (as defined in
+    the [Target] section of the package config). If the file only exists in one
+    location, it is copied there, overwriting the existing file. If the file
+    exists in multiple folders, you will be prompted to select where it should be
+    copied.
 
     If the extracted file does not exist in the source tree already, it is checked
     against each pattern listed in the [Rules] section of the package config. If
@@ -24,13 +29,17 @@ const
     found, the file is copied into a folder in the project root called "unknown"
     so you can manually move it later.
 
-    If an unpacked source would overwrite an existing source, you will be prompted
-    to overwrite the file. The newly unpacked file will have a modification time
-    less than or equal to the modification time of the file being unpacked. If the
-    source file is newer than the existing file, the default is to overwrite the
-    existing file.
+    If an unpacked source would overwrite an existing source, its sha1 checksum is
+    against that from the last pack/unpack operation. If the sum is different, the
+    file has changed. If the source file has not been updated since the last pack
+    or unpack, the source file will be overwritten by the unpacked file. Otherwise
+    you will be prompted to overwrite the source file. The default answer is to
+    keep the existing source file.
 
   Options:
+    --file:<file>  A file to unpack into the target's source tree. Only needed if
+                   not specifying the target and not using the default target's
+                   output file.
     --yes, --no    Automatically answer yes/no to the overwrite prompt
     --default      Automatically accept the default answer to the overwrite prompt
 
@@ -81,14 +90,7 @@ proc mapSrc(file, ext: string, srcMap: SourceMap, rules: seq[Rule]): string =
 
 proc unpack*(opts: Options, pkg: PackageRef) =
   let
-    file = opts.get("file").absolutePath
     dir = opts.get("directory", getCurrentDir())
-
-  if file == "":
-    help(helpUnpack)
-
-  if not existsFile(file):
-    fatal(fmt"Cannot unpack {file}: file does not exist")
 
   if not existsDir(dir):
     fatal("Cannot unpack to {dir}: directory does not exist.")
@@ -96,13 +98,33 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   if not loadPackageFile(pkg, getPackageFile(dir)):
     fatal(dir & " is not a nasher project. Please run nasher init.")
 
+  # If the user has specified a file to unpack, use that. Otherwise, look for
+  # the installed target file.
+  let
+    installDir = opts.get("installDir", getNwnInstallDir())
+    target = pkg.getTarget(opts.get("target"))
+    file =
+      if opts.hasKey("file"): opts.get("file").absolutePath
+      else:
+        case target.file.splitFile.ext
+        of ".mod": installDir / "modules" / target.file
+        of ".erf": installDir / "erf" / target.file
+        of ".hak": installDir / "hak" / target.file
+        else: dir / target.file
+
+  if file == "":
+    help(helpUnpack)
+
+  if not existsFile(file):
+    fatal(fmt"Cannot unpack {file}: file does not exist")
+
   let
     tmpDir = ".nasher" / "tmp"
     fileName = file.extractFilename
     erfUtil = opts.get("erfUtil")
     erfFlags = opts.get("erfFlags")
 
-  display("Extracting", fmt"{fileName} to {dir}")
+  display("Extracting", fmt"{fileName} to {dir} using target {target.name}")
   setCurrentDir(dir)
   removeDir(tmpDir)
   createDir(tmpDir)
@@ -111,11 +133,11 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     extractErf(file, erfUtil, erfFlags)
 
   var
-    manifest = parseManifest(fileName)
+    manifest = parseManifest(target.name)
     deleted: seq[string] = @[]
 
   let
-    sourceFiles = getSourceFiles(pkg.includes, pkg.excludes)
+    sourceFiles = getSourceFiles(target.includes, target.excludes)
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
     shortFile = file.extractFilename

@@ -1,4 +1,4 @@
-import os, strformat, times
+import os, strformat
 
 import utils/[cli, manifest, nwn, options, shared]
 
@@ -76,7 +76,7 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     args = opts.get("erfFlags")
 
   var
-    manifest = newManifest(file)
+    manifest = newManifest(target)
 
   createErf(cacheDir, file, bin, args)
 

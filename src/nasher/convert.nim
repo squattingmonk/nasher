@@ -43,7 +43,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
 
   let
     cmd = opts["command"]
-    target = pkg.getTarget(opts.get("target"))
+    target = pkg.getTarget(opts["target"])
     cacheDir = ".nasher" / "cache" / target.name
 
   # Set these so they can be gotten easily by the pack and install commands

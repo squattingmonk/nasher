@@ -165,7 +165,7 @@ proc parseCmdLine(opts: Options) =
         if opts.hasKeyOrPut("targets", key):
           opts["targets"] = opts["targets"] & ";" & key
       of "unpack":
-        opts.putKeyOrHelp("file", key)
+        opts.putKeyOrHelp("target", "file", key)
       else:
         if key in nasherCommands:
           opts["command"] = key
@@ -402,7 +402,10 @@ proc getTarget*(pkg: PackageRef, name = ""): Target =
         return target
     fatal("Unknown target " & wanted)
   else:
-    result = pkg.targets[0]
+    try:
+      result = pkg.targets[0]
+    except IndexError:
+      fatal("No targets found. Please check your nasher.cfg file.")
 
 proc getTargets*(pkg: PackageRef, names = ""): seq[Target] =
   ## Returns a sequence of targets whose names are in the semicolon-separated

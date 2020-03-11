@@ -181,8 +181,17 @@ options that work for those will work here as well.
      nasher serve demo
 
 ### Unpacking a file
-    # Unpack "demo.mod" into src/
-    $ nasher unpack demo.mod
+    # Unpack the default targets's installed file into the source tree
+    $ nasher unpack
+
+    # Unpack the demo target's installed file into the source tree
+    $ nasher unpack demo
+
+    # Unpack "demo.mod" into the demo target's source tree
+    $ nasher unpack demo demo.mod
+
+    # Unpack "demo.mod" into the default target's source tree
+    $ nasher unpack --file:demo.mod
 
 This unpacks a `.mod`, `.erf`, or `.hak` file into the source tree. GFF files
 are converted to JSON format. If a file does not exist in the source tree, it
@@ -200,10 +209,10 @@ useful if you have deleted files from a module. You can pass the
 `--removeDeleted` flag to skip this prompt:
 
     # Unpack "demo.mod", deleting files in src/ not present in "demo.mod"
-    $ nasher unpack demo.mod --removeDeleted
+    $ nasher unpack --file:demo.mod --removeDeleted
 
     # Unpack "demo.mod", but do not delete missing files from the source tree
-    $ nasher unpack demo.mod --removeDeleted:false
+    $ nasher unpack --file:demo.mod --removeDeleted:false
 
     # Make this project default to removing deleted files
     $ nasher config --local removeDeleted true
@@ -221,7 +230,7 @@ This is equivalent to:
 
     $ nasher init foo
     $ cd foo
-    $ nasher unpack ../bar.mod
+    $ nasher unpack --file:../bar.mod
 
 ## Configuration
 You can configure `nasher` using the `config` command (see `nasher config
