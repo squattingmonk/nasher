@@ -18,7 +18,7 @@ proc parseCompilerOutput(line: var string): bool =
     error(line[parsed..^1])
   else:
     if token == line:
-      discard
+      debug("Compiler:", line)
     else:
       var lines = line.split(':').mapIt(it.strip)
       if lines.contains("Error"):
