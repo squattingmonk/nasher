@@ -13,7 +13,8 @@ const
     nasher compile [options] [<target>]
     nasher pack [options] [<target>]
     nasher install [options] [<target>]
-    nasher unpack [options] <file> [<dir>]
+    nasher (play|test|serve) [options] [<target>]
+    nasher unpack [options] [<target> [<file>]]
     nasher config [options] <key> [<value>]
 
   Commands:
@@ -23,7 +24,10 @@ const
     compile        Compiles all nss sources for a build target
     pack           Converts, compiles, and packs all sources for a build target
     install        As pack, but installs the target file to the NWN install path
-    unpack         Unpacks a file into the source tree
+    serve          As install, but starts the module with nwserver after installing
+    play           As install, but starts the module with nwmain after installing
+    test           As play, but automatically selects the first localvault PC
+    unpack         Unpacks a target's installed file into the source tree
     config         Gets, sets, or unsets user-defined configuration options
 
   Global Options:
