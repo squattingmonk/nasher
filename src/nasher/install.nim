@@ -1,6 +1,6 @@
 import os, strformat
 
-import utils/[cli, options, shared]
+import utils/[cli, nwn, options, shared]
 
 const
   helpInstall* = """
@@ -47,18 +47,22 @@ proc install*(opts: Options, pkg: PackageRef): bool =
   if not existsFile(file):
     fatal(fmt"Cannot install {file}: file does not exist")
 
+  if not existsDir(dir):
+    fatal(fmt"Cannot install to {dir}: directory does not exist")
+
   let
+    (_, name, ext) = file.splitFile
     fileTime = file.getLastModificationTime
-    fileName = file.extractFilename
+    fileName = name & ext
     installDir = expandTilde(
-      case fileName.splitFile.ext
+      case ext
       of ".erf": dir / "erf"
       of ".hak": dir / "hak"
       of ".mod": dir / "modules"
       else: dir)
 
   if not existsDir(installDir):
-    fatal(fmt"Cannot install to {installDir}: directory does not exist")
+    createDir(installDir)
 
   let installed = installDir / fileName
   if existsFile(installed):
@@ -73,6 +77,19 @@ proc install*(opts: Options, pkg: PackageRef): bool =
 
   copyFile(file, installed)
   setLastModificationTime(installed, fileTime)
+
+  if (ext == ".mod" and opts.get("useModuleFolder", true)):
+    let
+      modFolder = installDir / name
+      erfUtil = opts.get("erfUtil")
+      erfFlags = opts.get("erfFlags")
+
+    removeDir(modFolder)
+    createDir(modFolder)
+    withDir(modFolder):
+      display("Extracting", fmt"module to {modFolder}")
+      extractErf(installed, erfUtil, erfFlags)
+
   success("installed " & fileName)
 
   # Prevent falling through to the next function if we were called directly

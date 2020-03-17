@@ -79,7 +79,7 @@ If you don't want to install Nim, you can instead use
     $ docker run --rm -it -v %cd%:/nasher squattingmonk:nasher:latest
 
 #### Init example
-If you are feeling particularly lazy, hyou can initialize the config file with
+If you are feeling particularly lazy, you can initialize the config file with
 default settings:
 
     # Linux
@@ -285,6 +285,10 @@ Currently, the following configuration options are available:
     - default: `true`
     - note: you will want to disable this if you have some areas that are
       present in a hak or override and not the module itself.
+- `useModuleFolder`: whether to use a subdirectory of the `modules` folder to 
+  store unpacked module files. This feature is useful only for NWN:EE users.
+    - default: `true` during install; `true` during unpacking unless explicitly 
+      specifying a file to unpack
 
 These options are meant to be separate from the package file (`nasher.cfg`)
 since they may depend on the user.

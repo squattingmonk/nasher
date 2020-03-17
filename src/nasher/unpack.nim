@@ -119,18 +119,33 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     fatal(fmt"Cannot unpack {file}: file does not exist")
 
   let
-    tmpDir = ".nasher" / "tmp"
-    fileName = file.extractFilename
+    (_, name, ext) = file.splitFile
+    shortFile = file.extractFilename
     erfUtil = opts.get("erfUtil")
     erfFlags = opts.get("erfFlags")
+    useFolder =
+      ext == ".mod" and
+      opts.get("useModuleFolder", not opts.hasKey("file"))
 
-  display("Extracting", fmt"{fileName} to {dir} using target {target.name}")
+  var
+    tmpDir = ".nasher" / "tmp"
+
+  display("Extracting", fmt"{shortFile} to {dir} using target {target.name}")
   setCurrentDir(dir)
-  removeDir(tmpDir)
-  createDir(tmpDir)
 
-  withDir(tmpDir):
-    extractErf(file, erfUtil, erfFlags)
+  if useFolder:
+    tmpDir = installDir / "modules" / name
+
+    info("Using", "module folder at " & tmpDir)
+    if not existsDir(tmpDir):
+      createDir(tmpDir)
+      withDir(tmpDir):
+        extractErf(file, erfUtil, erfFlags)
+  else:
+    removeDir(tmpDir)
+    createDir(tmpDir)
+    withDir(tmpDir):
+      extractErf(file, erfUtil, erfFlags)
 
   var
     manifest = parseManifest(target.name)
@@ -140,7 +155,6 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     sourceFiles = getSourceFiles(target.includes, target.excludes)
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
-    shortFile = file.extractFilename
     removeDeleted = opts.get("removeDeleted", false)
     askRemove = not opts.hasKey("removeDeleted")
 
@@ -160,9 +174,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     if ext in GffExtensions:
       sourceName.add("." & gffFormat)
 
-    if sourceName notin sourceFiles and existsFile(tmpDir/fileName):
+    if sourceName notin sourceFiles and existsFile(tmpDir / fileName):
       if not askIf(fmt"{fileName} not found in source directory. Should it be re-added?"):
-        removeFile(tmpDir/fileName)
+        if not useFolder:
+          removeFile(tmpDir / fileName)
 
       # Delete from manifest whether yes or no, because if no we want it found
       # and re-added via changedFiles
