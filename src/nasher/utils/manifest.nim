@@ -70,7 +70,8 @@ proc add*(manifest: var Manifest, file: string, fileTime: Time) =
   manifest.update(file.extractFilename, $file.secureHashFile, fileTime)
 
 proc delete*(manifest: var Manifest, file: string) =
-  manifest.data.delete(file)
+  if manifest.data.hasKey(file):
+    manifest.data.delete(file)
 
 iterator keys*(manifest: Manifest): string =
   for key in manifest.data.keys:
