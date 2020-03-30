@@ -1,5 +1,5 @@
 # nwnsc compiler
-FROM jakkn/nwnsc as nwnsc
+FROM nwneetools/nwnsc-docker-builder:latest as nwnsc
 # nim image
 FROM nimlang/choosenim:latest as nasher
 COPY --from=nwnsc usr/local/bin/nwnsc usr/local/bin/nwnsc
