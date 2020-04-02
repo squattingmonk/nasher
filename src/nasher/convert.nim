@@ -1,4 +1,4 @@
-import os, strtabs, strutils
+import os, strtabs, strutils, strformat
 import utils/[cli, nwn, options, shared]
 
 const
@@ -33,10 +33,16 @@ proc getCacheMap(includes, excludes: seq[string]): StringTableRef =
   ## Generates a table mapping source files to their proper names in the cache
   result = newStringTable()
   for file in walkSourceFiles(includes, excludes):
+    # Ensure filenames are lowercase before converting to avoid collisions
+    let fileLower = file.normalizeFilename
+    if file != fileLower:
+      info("Renaming", fmt"{file.extractFilename} to {fileLower.extractFilename}")
+      file.moveFile(fileLower)
+
     let
-      (_, name, ext) = splitFile(file)
+      (_, name, ext) = fileLower.splitFile
       fileName = if ext == ".json": name else: name & ext
-    result[fileName] = file
+    result[fileName] = fileLower
 
 proc convert*(opts: Options, pkg: PackageRef): bool =
   setCurrentDir(getPackageRoot())

@@ -1,6 +1,7 @@
 import os, times
 from sequtils import toSeq
-from strutils import unindent
+from strutils import unindent, strip
+from unicode import toLower
 
 from glob import walkGlob
 
@@ -70,3 +71,12 @@ proc findExe*(exe, baseDir: string): string =
   ## As findExe, but uses baseDir as the current directory.
   withDir(baseDir):
     findExe(exe)
+
+proc getFileExt*(file: string): string =
+  ## Returns the file extension without the leading "."
+  file.splitFile.ext.strip(chars = {ExtSep})
+
+proc normalizeFilename*(file: string): string =
+  ## Converts ``file``'s filename to lowercase
+  let (dir, fileName) = file.splitPath
+  dir / fileName.toLower

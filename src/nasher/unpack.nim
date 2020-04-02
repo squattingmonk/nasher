@@ -147,6 +147,14 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     withDir(tmpDir):
       extractErf(file, erfUtil, erfFlags)
 
+  # Ensure all files are converted to lowercase to avoid collisions
+  for file in walkFiles(tmpDir / "*"):
+    let fileLower = file.normalizeFilename
+
+    if file != fileLower:
+      info("Renaming", fmt"{file.extractFilename} to {fileLower.extractFilename}")
+      file.moveFile(fileLower)
+
   var
     manifest = parseManifest(target.name)
     deleted: seq[string] = @[]
@@ -167,7 +175,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   # source tree, ask-remove from package before scanning.
   for fileName in manifest.keys:
     let
-      ext = fileName.splitFile.ext.strip(chars = {'.'})
+      ext = fileName.getFileExt
       dir = mapSrc(fileName, ext, srcMap, pkg.rules)
 
     var sourceName = dir / filename
@@ -213,7 +221,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     debug("Checking", file.fileName)
 
     let
-      ext = file.fileName.splitFile.ext.strip(chars = {'.'})
+      ext = file.fileName.getFileExt
       filePath = tmpDir / file.fileName
       dir = mapSrc(file.fileName, ext, srcMap, pkg.rules)
 
@@ -226,7 +234,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       continue
 
     var outFile = dir / file.fileName
-    if ext in GffExtensions:
+    if ext.toLower in GffExtensions:
       outFile.add("." & gffFormat)
 
     let outName = outFile.extractFilename
