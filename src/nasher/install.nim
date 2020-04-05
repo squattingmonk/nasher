@@ -20,8 +20,8 @@ const
 
   Options:
     --clean        Clears the cache directory before packing
-    --yes, --no    Automatically answer yes/no to the overwrite prompt
-    --default      Automatically accept the default answer to the overwrite prompt
+    --yes, --no    Automatically answer yes/no to prompts
+    --default      Automatically accept the default answer to prompts
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands
@@ -70,11 +70,12 @@ proc install*(opts: Options, pkg: PackageRef): bool =
     let
       installedTime = installed.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, installedTime)
-      defaultAnswer = if timeDiff > 0: Yes else: No
+      defaultAnswer = if timeDiff >= 0: Yes else: No
 
     hint(getTimeDiffHint("The file to be installed", timeDiff))
     if not askIf(fmt"{installed} already exists. Overwrite?", defaultAnswer):
-      quit(QuitFailure)
+      return ext == ".mod" and cmd != "install" and
+             askIf(fmt"Do you still wish to {cmd} {filename}?")
 
   copyFile(file, installed)
   setLastModificationTime(installed, fileTime)

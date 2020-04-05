@@ -16,7 +16,7 @@ const
     If the packed file would overwrite an existing file, you will be prompted to
     overwrite the file. The newly packaged file will have a modification time
     equal to the modification time of the newest source file. If the packed file
-    is newer than the existing file, the default is to overwrite the existing file.
+    is older than the existing file, the default is to keep the existing file.
 
   Options:
     --clean        Clears the cache directory before packing
@@ -62,14 +62,17 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
   display("Packing", fmt"files for target {target} into {file}")
 
   if existsFile(file):
-    let
-      packTime = file.getLastModificationTime
-      timeDiff = getTimeDiff(fileTime, packTime)
-      defaultAnswer = if timeDiff > 0: Yes else: No
+    if opts.get("replace", false):
+      info("Overwriting", file)
+    else:
+      let
+        packTime = file.getLastModificationTime
+        timeDiff = getTimeDiff(fileTime, packTime)
+        defaultAnswer = if timeDiff >= 0: Yes else: No
 
-    hint(getTimeDiffHint("The file to be packed", timeDiff))
-    if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
-      return false
+      hint(getTimeDiffHint("The file to be packed", timeDiff))
+      if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
+        return cmd != "pack" and askIf(fmt"Continue installing {file}?")
 
   let
     bin = opts.get("erfUtil")
