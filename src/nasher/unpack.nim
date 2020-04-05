@@ -103,11 +103,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   let
     installDir = opts.get("installDir", getNwnInstallDir())
     target = pkg.getTarget(opts.get("target"))
-    fileType = target.file.getFileExt
     file =
       if opts.hasKey("file"): opts.get("file").absolutePath
       else:
-        case fileType
+        case target.file.getFileExt
         of "mod": installDir / "modules" / target.file
         of "erf": installDir / "erf" / target.file
         of "hak": installDir / "hak" / target.file
@@ -121,6 +120,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     fatal(fmt"Cannot unpack {file}: file does not exist")
 
   let
+    fileType = file.getFileExt
     (_, name, ext) = file.splitFile
     shortFile = file.extractFilename
     erfUtil = opts.get("erfUtil")
@@ -189,6 +189,8 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     var sourceName = dir / filename
     if ext in GffExtensions:
       sourceName.add("." & gffFormat)
+    elif ext == "tlk":
+      sourceName.add("." & tlkFormat)
 
     if sourceName notin sourceFiles and existsFile(tmpDir / fileName):
       if not askIf(fmt"{fileName} not found in source directory. Should it be re-added?"):

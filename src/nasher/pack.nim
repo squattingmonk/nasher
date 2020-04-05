@@ -78,7 +78,13 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
   var
     manifest = newManifest(target)
 
-  createErf(cacheDir, file, bin, args)
+  if file.getFileExt == "tlk":
+    try:
+      copyFile(cacheDir / file, file)
+    except OSError:
+      fatal(fmt"No file found. Does {file}.json exist in the source tree?")
+  else:
+    createErf(cacheDir, file, bin, args)
 
   for file in walkFiles(cacheDir / "*"):
     if file.splitFile.ext == ".ncs":
