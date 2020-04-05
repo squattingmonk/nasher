@@ -1,5 +1,5 @@
 # nwnsc compiler
-FROM nwneetools/nwnsc-docker-builder:latest as nwnsc
+FROM nwneetools/nwnsc:latest as nwnsc
 # nim image
 FROM nimlang/choosenim:latest as nasher
 COPY --from=nwnsc usr/local/bin/nwnsc usr/local/bin/nwnsc
@@ -11,7 +11,7 @@ RUN dpkg --add-architecture i386 \
     && choosenim update stable \
     && nimble install nasher -y \
     && nasher config --nssFlags:"-n /nwn/data -o"
-RUN nasher config --userName:"nasher"  
+RUN nasher config --userName:"nasher"
 ENV PATH="/root/.nimble/bin:${PATH}"
 WORKDIR /nasher
 ENTRYPOINT [ "nasher" ]
