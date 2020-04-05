@@ -82,14 +82,14 @@ proc launch*(opts: Options) =
     (dir, bin) = path.splitPath
 
   if ext != ".mod":
-    fatal(fmt"Cannot {cmd} {file}: not a module")
+    display("Skipping", fmt"{cmd}: {file} is not a module")
+  else:
+    if not existsFile(path):
+      fatal(fmt"Cannot {cmd} {file}: {path} does not exist")
 
-  if not existsFile(path):
-    fatal(fmt"Cannot {cmd} {file}: {path} does not exist")
-
-  if fpUserExec notin path.getFilePermissions:
-    fatal(fmt"Cannot {cmd} {file}: {path} is not executable")
-  
-  display("Executing", fmt"{bin} {args} {name}")
-  var p = startProcess(bin, dir, [args, name], options = options)
-  discard p.waitForExit
+    if fpUserExec notin path.getFilePermissions:
+      fatal(fmt"Cannot {cmd} {file}: {path} is not executable")
+    
+    display("Executing", fmt"{bin} {args} {name}")
+    var p = startProcess(bin, dir, [args, name], options = options)
+    discard p.waitForExit
