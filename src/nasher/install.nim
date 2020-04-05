@@ -59,6 +59,7 @@ proc install*(opts: Options, pkg: PackageRef): bool =
       of ".erf": dir / "erf"
       of ".hak": dir / "hak"
       of ".mod": dir / "modules"
+      of ".tlk": dir / "tlk"
       else: dir)
 
   if not existsDir(installDir):

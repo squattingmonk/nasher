@@ -65,6 +65,9 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
     gffUtil = opts.get("gffUtil")
     gffFlags = opts.get("gffFlags")
     gffFormat = opts.get("gffFormat", "json")
+    tlkUtil = opts.get("tlkUtil")
+    tlkFlags = opts.get("tlkFlags")
+    tlkFormat = opts.get("tlkFormat", "json")
 
   display(category.capitalizeAscii, "target " & target.name)
 
@@ -93,13 +96,15 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
     let
       cacheFile = cacheDir / fileName
       srcTime = srcFile.getLastModificationTime
-      ext = srcFile.splitFile.ext.strip(chars = {'.'})
+      ext = srcFile.getFileExt
 
     if fileOlder(cacheFile, srcTime):
-      if ext == gffFormat:
-        if cmd != "compile":
+      if ext in [gffFormat, tlkFormat] and cmd != "compile":
+        if fileName.getFileExt == "tlk":
+          gffConvert(srcFile, cacheFile, tlkUtil, tlkFlags)
+        else:
           gffConvert(srcFile, cacheFile, gffUtil, gffFlags)
-          setLastModificationTime(cacheFile, srcTime)
+        setLastModificationTime(cacheFile, srcTime)
       elif cmd != "convert":
         display("Copying", srcFile & " -> " & fileName, priority = LowPriority)
         copyFile(srcFile, cacheFile)

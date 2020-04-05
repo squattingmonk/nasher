@@ -262,7 +262,8 @@ proc verifyBinaries*(opts: Options): bool =
     root = getPackageRoot()
     bins = [("nssCompiler", "nwnsc", "script compiler"),
             ("erfUtil", "nwn_erf", "erf utility"),
-            ("gffUtil", "nwn_gff", "gff utility")]
+            ("gffUtil", "nwn_gff", "gff utility"),
+            ("tlkUtil", "nwn_tlk", "tlk utility")]
 
   for bin in bins:
     let path = opts.getOrPut(bin[0], findExe(bin[1], root))

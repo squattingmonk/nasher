@@ -103,13 +103,15 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   let
     installDir = opts.get("installDir", getNwnInstallDir())
     target = pkg.getTarget(opts.get("target"))
+    fileType = target.file.getFileExt
     file =
       if opts.hasKey("file"): opts.get("file").absolutePath
       else:
-        case target.file.splitFile.ext
-        of ".mod": installDir / "modules" / target.file
-        of ".erf": installDir / "erf" / target.file
-        of ".hak": installDir / "hak" / target.file
+        case fileType
+        of "mod": installDir / "modules" / target.file
+        of "erf": installDir / "erf" / target.file
+        of "hak": installDir / "hak" / target.file
+        of "tlk": installDir / "tlk" / target.file
         else: dir / target.file
 
   if file == "":
@@ -145,7 +147,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     removeDir(tmpDir)
     createDir(tmpDir)
     withDir(tmpDir):
-      extractErf(file, erfUtil, erfFlags)
+      if fileType == "tlk":
+        copyFile(file, shortFile)
+      else:
+        extractErf(file, erfUtil, erfFlags)
 
   # Ensure all files are converted to lowercase to avoid collisions
   for file in walkFiles(tmpDir / "*"):
@@ -170,6 +175,9 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     gffUtil = opts.get("gffUtil")
     gffFlags = opts.get("gffFlags")
     gffFormat = opts.get("gffFormat", "json")
+    tlkUtil = opts.get("tlkUtil")
+    tlkFlags = opts.get("tlkFlags")
+    tlkFormat = opts.get("tlkFormat", "json")
 
   # Scan manifest and compare to sourceFiles. If a file was removed from the
   # source tree, ask-remove from package before scanning.
@@ -236,6 +244,8 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     var outFile = dir / file.fileName
     if ext.toLower in GffExtensions:
       outFile.add("." & gffFormat)
+    elif ext.toLower == "tlk":
+      outFile.add("." & tlkFormat)
 
     let outName = outFile.extractFilename
 
@@ -245,7 +255,11 @@ proc unpack*(opts: Options, pkg: PackageRef) =
             manifest.update(file.fileName, file.savedSum, packTime)
             continue
 
-    gffConvert(filePath, outFile, gffUtil, gffFlags)
+    if fileType == "tlk":
+      gffConvert(filePath, outFile, tlkUtil, tlkFlags)
+    else:
+      gffConvert(filePath, outFile, gffUtil, gffFlags)
+
     outFile.setLastModificationTime(packTime)
     manifest.update(file.fileName, file.fileSum, packTime)
 

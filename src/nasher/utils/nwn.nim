@@ -1,5 +1,6 @@
 import json, os, osproc, strformat, strutils
 from sequtils import mapIt, toSeq
+
 import cli
 
 const
@@ -29,8 +30,8 @@ proc gffToJson(file, bin, args: string): JsonNode =
   elif file.splitFile.ext == ".are" and result.hasKey("Version"):
     result.delete("Version")
 
-proc jsonToGff(inFile, outFile, bin, args: string) =
-  ## Converts a json ``inFile`` to an erf ``outFile``.
+proc convertFile(inFile, outFile, bin, args: string) =
+  ## Converts a ``inFile`` to ``outFile``.
   let
     cmd = join([bin, args, "-i", inFile.escape, "-o", outFile.escape], " ")
     (output, errCode) = execCmdEx(cmd, Options)
@@ -44,6 +45,9 @@ proc gffConvert*(inFile, outFile, bin, args: string) =
     (dir, name, ext) = outFile.splitFile
     fileType = ext.strip(chars = {'.'})
     outFormat = if fileType in GffExtensions: "gff" else: fileType
+    category = if outFormat in ["json", "gff", "tlk"]: "Converting" else: "Copying"
+
+  info(category, "$1 -> $2" % [inFile.extractFilename, name & ext])
 
   try:
     createDir(dir)
@@ -53,17 +57,17 @@ proc gffConvert*(inFile, outFile, bin, args: string) =
   except:
     fatal(getCurrentExceptionMsg())
 
-  let category = if outFormat in ["json", "gff"]: "Converting" else: "Copying"
-  info(category, "$1 -> $2" % [inFile.extractFilename, name & ext])
-
   ## TODO: Add gron and yaml support
   try:
     case outFormat
     of "json":
-      let text = gffToJson(inFile, bin, args).pretty & "\c\L"
-      writeFile(outFile, text)
-    of "gff":
-      jsonToGff(inFile, outFile, bin, args)
+      if inFile.splitFile.ext == ".tlk":
+        convertFile(inFile, outFile, bin, args & " -p")
+      else:
+        let text = gffToJson(inFile, bin, args).pretty & "\c\L"
+        writeFile(outFile, text)
+    of "gff", "tlk":
+      convertFile(inFile, outFile, bin, args)
     else:
       copyFile(inFile, outFile)
   except:
@@ -98,7 +102,7 @@ proc removeUnusedAreas*(dir, bin, args: string) =
 
   ifoJson["Mod_Area_list"]["value"] = %ifoAreas
   writeFile(fileJson, $ifoJson)
-  jsonToGff(fileJson, fileGff, bin, args)
+  convertFile(fileJson, fileGff, bin, args)
   removeFile(fileJson)
 
 proc extractErf*(file, bin, args: string) =
