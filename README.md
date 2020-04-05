@@ -32,7 +32,7 @@ it has some key differences:
 1. nasher and the tools it uses are written in [nim](https://nim-lang.org)
    rather than Ruby, so they are much faster (handy for large projects) and can
    be distributed in binary form
-2. nasher supports non-module projects (including erfs and haks)
+2. nasher supports non-module projects (including erfs, tlks, and haks)
 3. nasher supports multiple build targets (e.g., an installable erf and a demo
    module)
 4. nasher supports custom source tree layouts (e.g., dividing scripts into
@@ -193,11 +193,11 @@ options that work for those will work here as well.
     # Unpack "demo.mod" into the default target's source tree
     $ nasher unpack --file:demo.mod
 
-This unpacks a `.mod`, `.erf`, or `.hak` file into the source tree. GFF files
-are converted to JSON format. If a file does not exist in the source tree, it
-is checked against a series of rules in the package config. If a rule is
-matched, it will be placed in that directory. Otherwise, it is placed into the
-directory `unknown` in the package root.
+This unpacks a `.mod`, `.erf`, `.tlk`, or `.hak` file into the source tree. gff
+and tlk files are are converted to json format. If a file does not exist in the
+source tree, it is checked against a series of rules in the package config. If
+a rule is matched, it will be placed in that directory. Otherwise, it is placed
+into the directory `unknown` in the package root.
 
 If an extracted file would overwrite a newer version, you will be prompted to
 overwrite the file. You can force answer the prompt by passing the `--yes`,
@@ -220,8 +220,8 @@ useful if you have deleted files from a module. You can pass the
     # Make this project default to keeping deleted files
     $ nasher config --local removeDeleted false
 
-You can initialize a package with the contents of a `.mod`, `.erf`, or `.hak`
-file by running:
+You can initialize a package with the contents of a `.mod`, `.erf`, `.tlk` or
+`.hak` file by running:
 
     # Initialize into foo using the contents of bar.mod as source files
     $ nasher init foo bar.mod
@@ -269,10 +269,25 @@ Currently, the following configuration options are available:
 - `erfUtil`: the path to the erf pack/unpack utility
     - default (Posix): `nwn_erf`
     - default (Windows): `nwn_erf.exe`
+- `erfFlags`: additional flags to pass to the erf utility
+    - default: ""
 - `gffUtil`: the path to the gff conversion utility
     - default (Posix): `nwn_gff`
     - default (Windows): `nwn_gff.exe`
-- `installDir`: the NWN installation directory
+- `gffFlags`: additional flags to pass to the gff utility
+    - default: ""
+- `gffFormat`: the format to use to store gff files
+    - default: `json`
+    - supported: `json`
+- `tlkUtil`: the path to the tlk conversion utility
+    - default (Posix): `nwn_gff`
+    - default (Windows): `nwn_gff.exe`
+- `tlkFlags`: additional flags to pass to the tlk utility
+    - default: ""
+- `tlkFormat`: the format to use to store tlk files
+    - default: `json`
+    - supported: `json`
+- `installDir`: the NWN user directory where built files should be installed
     - default (Linux): `~/.local/share/Neverwinter Nights`
     - default (Windows and Mac): `~/Documents/Neverwinter Nights`
 - `gameBin`: the path to the nwmain binary (if not using default Steam path)
@@ -285,9 +300,9 @@ Currently, the following configuration options are available:
     - default: `true`
     - note: you will want to disable this if you have some areas that are
       present in a hak or override and not the module itself.
-- `useModuleFolder`: whether to use a subdirectory of the `modules` folder to 
+- `useModuleFolder`: whether to use a subdirectory of the `modules` folder to
   store unpacked module files. This feature is useful only for NWN:EE users.
-    - default: `true` during install; `true` during unpacking unless explicitly 
+    - default: `true` during install; `true` during unpacking unless explicitly
       specifying a file to unpack
 
 These options are meant to be separate from the package file (`nasher.cfg`)
