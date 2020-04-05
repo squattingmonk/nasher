@@ -10,10 +10,7 @@ const
   Usage:
     nasher init [options] [<dir> [<file>]]
     nasher list [options]
-    nasher compile [options] [<target>]
-    nasher pack [options] [<target>]
-    nasher install [options] [<target>]
-    nasher (play|test|serve) [options] [<target>]
+    nasher (convert|compile|pack|install|play|test|serve) [options] [<target>...]
     nasher unpack [options] [<target> [<file>]]
     nasher config [options] <key> [<value>]
 

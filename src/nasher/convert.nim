@@ -4,7 +4,7 @@ import utils/[cli, nwn, options, shared]
 const
   helpConvert* = """
   Usage:
-    nasher convert [options] [<target>]
+    nasher convert [options] [<target>...]
 
   Description:
     Converts all JSON sources for <target> into their GFF counterparts. If not

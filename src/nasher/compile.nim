@@ -8,7 +8,7 @@ import regex
 const
   helpCompile* = """
   Usage:
-    nasher compile [options] [<target>]
+    nasher compile [options] [<target>...]
 
   Description:
     Compiles all nss sources for <target>. If <target> is not supplied, the first

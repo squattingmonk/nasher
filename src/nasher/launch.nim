@@ -5,7 +5,7 @@ import utils/[cli, options, shared]
 const
   helpLaunch* = """
   Usage:
-    nasher (serve|play|test) [options] [<target>]
+    nasher (serve|play|test) [options] [<target>...]
 
   Description:
     Converts, compiles, and packs all sources for <target>, installs the packed
@@ -20,8 +20,8 @@ const
     --gameBin      The path to the nwmain binary file (if not the OS default)
     --serverBin    The path to the nwserver binary file (if not the OS default)
     --clean        Clears the cache directory before packing
-    --yes, --no    Automatically answer yes/no to the overwrite prompt
-    --default      Automatically accept the default answer to the overwrite prompt
+    --yes, --no    Automatically answer yes/no to prompts
+    --default      Automatically accept the default answer to prompts
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands

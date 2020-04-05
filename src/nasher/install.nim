@@ -5,7 +5,7 @@ import utils/[cli, nwn, options, shared]
 const
   helpInstall* = """
   Usage:
-    nasher install [options] [<target>]
+    nasher install [options] [<target>...]
 
   Description:
     Converts, compiles, and packs all sources for <target>, then installs the
