@@ -54,6 +54,7 @@ proc gitIgnore*(dir = getCurrentDir(), force = false) =
     *.erf
     *.hak
     *.mod
+    *.tlk
 
     # Ignore the nasher directory
     .nasher/
