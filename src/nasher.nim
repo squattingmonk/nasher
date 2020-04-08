@@ -65,7 +65,7 @@ when isMainModule:
     of "play", "test", "serve": help(helpLaunch)
     else: help(helpAll)
 
-  if not opts.verifyBinaries:
+  if cmd notin ["config", "list"] and not opts.verifyBinaries:
     fatal("Could not locate required binaries. Aborting...")
 
   if cmd notin ["init", "config", "unpack"] and
