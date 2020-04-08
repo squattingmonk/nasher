@@ -99,7 +99,10 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
       ext = srcFile.getFileExt
 
     if fileOlder(cacheFile, srcTime):
-      if ext in [gffFormat, tlkFormat] and cmd != "compile":
+      if ext in [gffFormat, tlkFormat]:
+        if cmd == "compile":
+          continue
+
         if fileName.getFileExt == "tlk":
           gffConvert(srcFile, cacheFile, tlkUtil, tlkFlags)
         else:
@@ -115,7 +118,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
           pkg.updated.add(fileName)
 
   # Trim unused areas from the module.ifo
-  if opts.get("removeUnusedAreas", true):
+  if cmd != "compile" and opts.get("removeUnusedAreas", true):
     removeUnusedAreas(cacheDir, gffUtil, gffFlags)
 
   # Prevent falling through to the next function if we were called directly
