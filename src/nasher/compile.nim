@@ -1,9 +1,7 @@
 from sequtils import toSeq
-import os, tables, strtabs, strutils
+import os, tables, strscans, strtabs, strutils
 
 import utils/[cli, compiler, options, shared]
-
-import regex
 
 const
   helpCompile* = """
@@ -33,19 +31,39 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
+const
+  patternMain = "$svoid$smain$s($s)"
+  patternCond = "$sint$sStartingConditional$s($s)"
+
 proc executable(script: string): bool =
-  let text = readFile(script)
-  text.contains(re"(void[\t ]+main|int[\t ]+StartingConditional)")
+  ## Returns whether ``script`` contains a main() or StartingConditional()
+  ## function and is thus executable nwscript.
+  for line in script.lines:
+    if scanf(line, patternMain) or scanf(line, patternCond):
+      return true
+
+iterator getIncluded(file: string): string =
+  ## Yields all files inluded in the nwscript file ``file``.
+  var included: string
+
+  for line in file.lines:
+    # Cannot just search for ascii identifiers because nwscript files can start
+    # with a number
+    if scanf(line, "$s#include$s\"$*\"", included):
+      var i = 0
+      while i < included.len and included[i] in IdentChars:
+        i.inc
+
+      if i == included.len:
+        yield included
 
 proc getIncludes(scripts: seq[string]): Table[string, seq[string]] =
   ## Returns a table listing scripts included by each script in ``scripts``.
   for script in scripts:
-    let text = readFile(script)
-    for match in text.findAll(re"""(?m:^\s*#include\s+"(.*)"\s*$)"""):
-      let included = text[match.group(0)[0]] & ".nss"
-      if result.hasKeyOrPut(script, @[included]) and
-        included notin result[script]:
-          result[script].add(included)
+    for name in script.getIncluded:
+      let file = name.addFileExt("nss")
+      if result.hasKeyOrPut(script, @[file]) and file notin result[script]:
+        result[script].add(file)
 
 proc getIncludesUpdated(file: string,
                         scripts: Table[string, seq[string]],
