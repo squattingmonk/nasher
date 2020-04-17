@@ -254,10 +254,9 @@ proc getOptions*: Options =
 
   result.dumpOptions
 
-proc verifyBinaries*(opts: Options): bool =
-  ## Verifies that the required binaries are available to nasher
+proc verifyBinaries*(opts: Options) =
+  ## Verifies that the required binaries are available to nasher.
   debug("Verifying", "binaries...")
-  result = true
   let
     root = getPackageRoot()
     bins = [("nssCompiler", "nwnsc", "script compiler"),
@@ -265,8 +264,10 @@ proc verifyBinaries*(opts: Options): bool =
             ("gffUtil", "nwn_gff", "gff utility"),
             ("tlkUtil", "nwn_tlk", "tlk utility")]
 
+  var fail = false
+
   for bin in bins:
-    let path = opts.getOrPut(bin[0], findExe(bin[1], root))
+    let path = opts.getOrPut(bin[0].expandPath, findExe(bin[1], root))
 
     if not existsFile(path):
       let
@@ -279,7 +280,10 @@ proc verifyBinaries*(opts: Options): bool =
           else:
             path & " does not exist."
       error("Could not locate " & bin[2] & ": " & msg)
-      result = false
+      fail = true
+
+  if fail:
+    fatal("Could not locate required binaries. Aborting...")
 
 proc initTarget: Target =
   result.name = ""

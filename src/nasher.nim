@@ -37,59 +37,71 @@ const
     --quiet        Disable all logging except errors
     --no-color     Disable color output (automatic if not a tty)
   """
+proc ctrlCQuit {.noconv.} =
+  quit(QuitFailure)
 
 when isMainModule:
-  var
-    opts = getOptions()
-    pkg = new(PackageRef)
+  setControlCHook(ctrlCQuit)
+  try:
+    var
+      opts = getOptions()
+      pkg = new(PackageRef)
 
-  let
-    cmd = opts.get("command")
-    help = opts.get("help", false)
-    version = opts.get("version", false)
+    let
+      cmd = opts.get("command")
+      help = opts.get("help", false)
+      version = opts.get("version", false)
 
-  if version:
-    echo "nasher " & NimblePkgVersion
-    quit(QuitSuccess)
+    if version:
+      echo "nasher " & NimblePkgVersion
+      quit(QuitSuccess)
 
-  if help:
+    if help:
+      case cmd
+      of "config": help(helpConfig)
+      of "init": help(helpInit)
+      of "list": help(helpList)
+      of "convert": help(helpConvert)
+      of "compile": help(helpCompile)
+      of "pack": help(helpPack)
+      of "install": help(helpInstall)
+      of "unpack": help(helpUnpack)
+      of "play", "test", "serve": help(helpLaunch)
+      else: help(helpAll)
+
+    if cmd notin ["init", "config", "list"]:
+      opts.verifyBinaries
+
+    if cmd notin ["init", "config"] and
+       not loadPackageFile(pkg, getPackageFile()):
+         fatal("This is not a nasher project. Please run nasher init.")
+
     case cmd
-    of "config": help(helpConfig)
-    of "init": help(helpInit)
-    of "list": help(helpList)
-    of "convert": help(helpConvert)
-    of "compile": help(helpCompile)
-    of "pack": help(helpPack)
-    of "install": help(helpInstall)
-    of "unpack": help(helpUnpack)
-    of "play", "test", "serve": help(helpLaunch)
-    else: help(helpAll)
-
-  if cmd notin ["config", "list"] and not opts.verifyBinaries:
-    fatal("Could not locate required binaries. Aborting...")
-
-  if cmd notin ["init", "config", "unpack"] and
-     not loadPackageFile(pkg, getPackageFile()):
-       fatal("This is not a nasher project. Please run nasher init.")
-
-  case cmd
-  of "config":
-    config(opts)
-  of "init":
-    init(opts, pkg)
-    unpack(opts, pkg)
-  of "unpack":
-    unpack(opts, pkg)
-  of "list":
-    list(opts, pkg)
-  of "convert", "compile", "pack", "install", "play", "test", "serve":
-    let targets = pkg.getTargets(opts.get("targets"))
-    for target in targets:
-      opts["target"] = target.name
-      if convert(opts, pkg) and
-         compile(opts, pkg) and
-         pack(opts, pkg) and
-         install(opts, pkg):
-           launch(opts)
-  else:
-    help(helpAll, QuitFailure)
+    of "config":
+      config(opts)
+    of "init":
+      if init(opts, pkg):
+        unpack(opts, pkg)
+    of "unpack":
+      unpack(opts, pkg)
+    of "list":
+      list(opts, pkg)
+    of "convert", "compile", "pack", "install", "play", "test", "serve":
+      let targets = pkg.getTargets(opts.get("targets"))
+      for target in targets:
+        opts["target"] = target.name
+        if convert(opts, pkg) and
+           compile(opts, pkg) and
+           pack(opts, pkg) and
+           install(opts, pkg):
+             launch(opts)
+    else:
+      help(helpAll, QuitFailure)
+  except NasherError:
+    error(getCurrentExceptionMsg())
+    quit(QuitFailure)
+  except:
+    error("An unknown error occurred. Please file a bug report at " &
+          "https://github.com/squattingmonk/nasher.nim/issues using the " &
+          "stack trace info below:")
+    raise

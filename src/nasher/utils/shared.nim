@@ -1,4 +1,4 @@
-import os, times
+import os, times, strtabs
 from sequtils import toSeq
 from strutils import unindent, strip
 from unicode import toLower
@@ -80,3 +80,10 @@ proc normalizeFilename*(file: string): string =
   ## Converts ``file``'s filename to lowercase
   let (dir, fileName) = file.splitPath
   dir / fileName.toLower
+
+proc expandPath*(path: string, keepUnknownKeys = false): string =
+  ## Expands the tilde and any environment variables in ``path``. If
+  ## ``keepUnknownKeys`` is ``true``, will leave unknown variables in place
+  ## rather than replacing them with an empty string.
+  let flags = {useEnvironment, if keepUnknownKeys: useKey else: useEmpty}
+  result = `%`(path.expandTilde, newStringTable(modeCaseSensitive), flags)

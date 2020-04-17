@@ -27,7 +27,7 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc init*(opts: Options, pkg: PackageRef) =
+proc init*(opts: Options, pkg: PackageRef): bool =
   let
     dir = opts.getOrPut("directory", getCurrentDir())
     file = dir / "nasher.cfg"
@@ -55,7 +55,9 @@ proc init*(opts: Options, pkg: PackageRef) =
     except:
       error("Could not initialize git repository: " & getCurrentExceptionMsg())
 
+  success("project initialized")
+
   # Check if we should unpack a file
-  if opts.get("file") == "":
-    success("project initialized")
-    quit(QuitSuccess)
+  if opts.hasKey("file"):
+    opts.verifyBinaries
+    result = true
