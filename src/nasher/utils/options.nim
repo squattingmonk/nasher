@@ -259,15 +259,19 @@ proc verifyBinaries*(opts: Options) =
   debug("Verifying", "binaries...")
   let
     root = getPackageRoot()
-    bins = [("nssCompiler", "nwnsc", "script compiler"),
-            ("erfUtil", "nwn_erf", "erf utility"),
-            ("gffUtil", "nwn_gff", "gff utility"),
-            ("tlkUtil", "nwn_tlk", "tlk utility")]
+    bins = [(flag: "nssCompiler", default: "nwnsc", desc: "script compiler"),
+            (flag: "erfUtil", default: "nwn_erf", desc: "erf utility"),
+            (flag: "gffUtil", default: "nwn_gff", desc: "gff utility"),
+            (flag: "tlkUtil", default: "nwn_tlk", desc: "tlk utility")]
 
   var fail = false
 
   for bin in bins:
-    let path = opts.getOrPut(bin[0].expandPath, findExe(bin[1], root))
+    if opts.hasKeyOrPut(bin.flag, findExe(bin.default, root)):
+      opts[bin.flag] = opts[bin.flag].expandPath
+
+    let path = opts[bin.flag]
+    info("Located", bin.desc & " at " & path)
 
     if not existsFile(path):
       let
