@@ -447,7 +447,7 @@ proc genSrcText(pattern = ""): string =
     defaultSrc = pattern
   while true:
     let answer = ask("Include pattern:", defaultSrc)
-    if answer.isNilOrWhitespace:
+    if answer.isEmptyOrWhitespace:
       break
     result.addPair("include", answer)
     defaultSrc = ""
@@ -457,7 +457,7 @@ proc genSrcText(pattern = ""): string =
   if askIf("Do you wish to exclude any files matching the include patterns?"):
     while true:
       let answer = ask("Exclude pattern:", allowBlank = false)
-      if answer.isNilOrWhitespace:
+      if answer.isEmptyOrWhitespace:
         break
       result.addPair("exclude", answer)
       if not askIf("Exclude another source pattern?", allowed = NotYes):
@@ -543,14 +543,14 @@ proc genPackageText*(opts: Options): string =
     while true:
       let authorName = ask("Author name:", defaultAuthor)
 
-      if authorName.isNilOrWhitespace:
+      if authorName.isEmptyOrWhitespace:
         break
 
       let
         authorEmail = ask("Author email:",
                           if authorName == defaultAuthor: defaultEmail else: "")
 
-      if authorEmail.isNilOrWhitespace:
+      if authorEmail.isEmptyOrWhitespace:
         result.addPair("author", authorName)
       else:
         result.addPair("author", "$1 <$2>" % [authorName, authorEmail])
