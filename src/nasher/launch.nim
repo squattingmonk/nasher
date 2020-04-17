@@ -1,6 +1,6 @@
-import os, osproc, strformat, strutils
+import os, osproc, strformat
 
-import utils/[cli, options, shared]
+import utils/[cli, options]
 
 const
   helpLaunch* = """
