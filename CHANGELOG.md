@@ -1,5 +1,19 @@
 # nasher changelog
 
+## 0.11.1: April 16, 2020
+
+- The `config` and `list` commands now work even if you are missing some of the
+  required binaries. Previously, this was preventing users from setting the
+  path to the binaries using the `config` command (#16).
+- Environment variables and tildes are now expanded in binary paths (#17)
+- No longer uses regex to check included or executable scripts (#19)
+- When an unhandled exception is thrown, nasher now gives a stack trace and a
+  message to report the issue on GitHub.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.0...0.11.1
+
 ## 0.11.0: April 5, 2020
 
 ### tlk support
