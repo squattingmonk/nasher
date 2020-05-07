@@ -1,5 +1,7 @@
 import os, strformat
 
+import glob
+
 import utils/[cli, manifest, nwn, options, shared]
 
 const
@@ -84,6 +86,12 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     except OSError:
       fatal(fmt"No file found. Does {file}.json exist in the source tree?")
   else:
+    const globOpts = {IgnoreCase, Hidden, Files}
+    for filter in pkg.getTarget(target).filters:
+      for file in glob.walkGlob(filter, cacheDir, globOpts):
+        info("Filtering", file)
+        removeFile(cacheDir/file)
+
     createErf(cacheDir, file, bin, args)
 
   for file in walkFiles(cacheDir / "*"):
