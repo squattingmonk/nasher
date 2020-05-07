@@ -86,9 +86,13 @@ proc install*(opts: Options, pkg: PackageRef): bool =
       erfUtil = opts.get("erfUtil")
       erfFlags = opts.get("erfFlags")
 
-    removeDir(modFolder)
-    createDir(modFolder)
+    if not existsDir(modFolder):
+      createDir(modFolder)
+
     withDir(modFolder):
+      for file in walkFiles("*"):
+        file.removeFile
+
       display("Extracting", fmt"module to {modFolder}")
       extractErf(installed, erfUtil, erfFlags)
 
