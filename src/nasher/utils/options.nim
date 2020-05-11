@@ -10,7 +10,7 @@ type
 
   Package = object
     name*, description*, version*, url*: string
-    authors*, includes*, excludes*, flags*, updated*: seq[string]
+    authors*, includes*, excludes*, filters*, flags*, updated*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
 
@@ -18,7 +18,7 @@ type
 
   Target = object
     name*, file*, description*: string
-    includes*, excludes*, flags*: seq[string]
+    includes*, excludes*, filters*, flags*: seq[string]
 
   Rule* = tuple[pattern, dir: string]
 
@@ -300,6 +300,8 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       target.includes = pkg.includes
     if target.excludes.len == 0:
       target.excludes = pkg.excludes
+    if target.filters.len == 0:
+      target.filters = pkg.filters
     if target.flags.len == 0:
       target.flags = pkg.flags
     pkg.targets.add(target)
@@ -339,6 +341,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "author": pkg.authors.add(e.value)
         of "source", "include": pkg.includes.add(e.value)
         of "exclude": pkg.excludes.add(e.value)
+        of "filter": pkg.filters.add(e.value)
         of "flags": pkg.flags.add(e.value)
         else:
           error(fmt"Unknown key/value pair: {key} = {e.value}")
@@ -349,6 +352,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "file": target.file = e.value
         of "source", "include": target.includes.add(e.value)
         of "exclude": target.excludes.add(e.value)
+        of "filter": target.filters.add(e.value)
         of "flags": target.flags.add(e.value)
         else:
           error(fmt"Unknown key/value pair '{key} = {e.value}'")
@@ -377,6 +381,7 @@ proc dumpPackage(pkg: PackageRef) =
   debug("Authors:", pkg.authors.join("\n"))
   debug("Includes:", pkg.includes.join("\n"))
   debug("Excludes:", pkg.excludes.join("\n"))
+  debug("Filters:", pkg.filters.join("\n"))
   debug("Flags:", pkg.flags.join("\n"))
 
   for pattern, dir in pkg.rules.items:
@@ -389,6 +394,7 @@ proc dumpPackage(pkg: PackageRef) =
     debug("File:", target.file)
     debug("Includes:", target.includes.join("\n"))
     debug("Excludes:", target.excludes.join("\n"))
+    debug("Filters:", target.filters.join("\n"))
     debug("Flags:", target.flags.join("\n"))
 
   stdout.write("\n")
