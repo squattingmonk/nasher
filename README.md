@@ -73,20 +73,20 @@ If you don't want to install Nim, you can instead use
 
 #### Example Usage
     # Linux
-    $ docker run --rm -it -v $(pwd):/nasher squattingmonk/nasher:latest
+    $ docker run --rm -it -v $(pwd):/nasher nwntools/nasher:latest
 
     # Windows
-    $ docker run --rm -it -v %cd%:/nasher squattingmonk:nasher:latest
+    $ docker run --rm -it -v %cd%:/nasher nwntools/nasher:latest
 
 #### Init example
 If you are feeling particularly lazy, you can initialize the config file with
 default settings:
 
     # Linux
-    $ docker run --rm -it -v $(pwd):/nasher squattingmonk/nasher:latest init --default
+    $ docker run --rm -it -v $(pwd):/nasher nwntools/nasher:latest init --default
 
     # Windows
-    $ docker run --rm -it -v %cd%:/nasher squattingmonk:nasher:latest init --default
+    $ docker run --rm -it -v %cd%:/nasher nwntools/nasher:latest init --default
 
 ## Usage
 Run `nasher --help` to see usage information. To get detailed usage information
