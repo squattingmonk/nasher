@@ -1,4 +1,4 @@
-from sequtils import toSeq
+from sequtils import toSeq, distribute
 import os, tables, strscans, strtabs, strutils
 
 import utils/[cli, compiler, options, shared]
@@ -113,15 +113,24 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       target = pkg.getTarget(opts["target"])
       compiler = opts.get("nssCompiler")
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
-      args = userFlags & target.flags & scripts
 
     if scripts.len > 0:
-      display("Compiling", $scripts.len  & " scripts")
-      if runCompiler(compiler, args) != 0:
+      var errors = false
+      let
+        chunkSize = opts.get("nssChunks", "500")
+        chunks = scripts.len div chunkSize.parseInt + 1
+      display("Compiling", $scripts.len & " scripts")
+      for chunk in distribute(scripts, chunks):
+        let args = userFlags & target.flags & chunk
+        if runCompiler(compiler, args) != 0:
+          errors = true
+
+      if errors:
         warning("Errors encountered during compilation (see above)")
-        if cmd in ["pack", "install"] and not
+        if cmd in ["pack", "install", "serve", "test", "play"] and not
           askIf("Do you want to continue $#ing?" % [cmd]):
             return false
+      success("compiled " & $scripts.len & " scripts")
     else:
       display("Skipping", "compilation: nothing to compile")
 
