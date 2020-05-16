@@ -90,7 +90,7 @@ proc mapSrc(file, ext, target: string, srcMap: SourceMap, rules: seq[Rule]): str
 
 proc unpack*(opts: Options, pkg: PackageRef) =
   let
-    dir = opts.get("directory", getCurrentDir())
+    dir = opts.get("directory", getPackageRoot())
 
   if not existsDir(dir):
     fatal("Cannot unpack to {dir}: directory does not exist.")
@@ -104,7 +104,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     installDir = opts.get("installDir", getNwnInstallDir())
     target = pkg.getTarget(opts.get("target"))
     file =
-      if opts.hasKey("file"): opts.get("file").absolutePath
+      if opts.hasKey("file"): opts.get("file").expandPath.absolutePath
       else:
         case target.file.getFileExt
         of "mod": installDir / "modules" / target.file
@@ -116,7 +116,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   if file == "":
     help(helpUnpack)
 
-  if not existsFile(file):
+  if not existsDir(file) and not existsFile(file):
     fatal(fmt"Cannot unpack {file}: file does not exist")
 
   let
@@ -143,6 +143,8 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       createDir(tmpDir)
       withDir(tmpDir):
         extractErf(file, erfUtil, erfFlags)
+  elif existsDir(file):
+    tmpDir = file
   else:
     removeDir(tmpDir)
     createDir(tmpDir)
