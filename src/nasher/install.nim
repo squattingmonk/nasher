@@ -38,7 +38,7 @@ proc install*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
     file = opts["file"]
-    dir = opts.getOrPut("installDir", getNwnInstallDir())
+    dir = opts.getOrPut("installDir", getNwnInstallDir()).expandPath
 
   if opts.get("noInstall", false):
     return cmd != "install"
@@ -54,13 +54,13 @@ proc install*(opts: Options, pkg: PackageRef): bool =
     (_, name, ext) = file.splitFile
     fileTime = file.getLastModificationTime
     fileName = name & ext
-    installDir = expandTilde(
+    installDir =
       case ext
       of ".erf": dir / "erf"
       of ".hak": dir / "hak"
       of ".mod": dir / "modules"
       of ".tlk": dir / "tlk"
-      else: dir)
+      else: dir
 
   if not existsDir(installDir):
     createDir(installDir)
