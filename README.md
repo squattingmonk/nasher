@@ -266,6 +266,10 @@ Currently, the following configuration options are available:
     - default (Windows): `nwnsc.exe`
 - `nssFlags`: the default flags to use on packages
     - default: `-lowqey`
+- `nssChunks`: the maximum number of scripts to process with one call to nwnsc
+    - default: `500`
+    - note: set this to a lower number if you run into errors about command
+      lengths being too long.
 - `erfUtil`: the path to the erf pack/unpack utility
     - default (Posix): `nwn_erf`
     - default (Windows): `nwn_erf.exe`

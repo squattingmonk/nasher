@@ -1,5 +1,23 @@
 # nasher changelog
 
+## 0.11.4:
+
+### Support unpacking from directories (#24)
+You can now pass a directory to the unpack command just as you would a file.
+
+### Process scripts in chunks (#31)
+Scripts are now processed in chunks to limit the size of the command passed to
+nwnsc. You can change the size of these chunks with the new `--nssChunks`
+setting.
+
+### `installDir` path expansion (#15)
+Tildes and environment variables are now interpreted correctly in the `install`
+and `unpack` commands.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.3...0.11.4
+
 ## 0.11.3: May 15, 2020
 
 Added support for underscores in target names. Previously these would be
