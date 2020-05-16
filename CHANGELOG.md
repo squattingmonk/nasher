@@ -1,5 +1,69 @@
 # nasher changelog
 
+## 0.11.3: May 15, 2020
+
+Added support for underscores in target names. Previously these would be
+removed. Target names must still be lowercase (nasher will make them lowercase)
+and may only have alphanumeric and underscores.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.2...0.11.3
+
+## 0.11.2: May 11, 2020
+
+### Added pre-pack file filtering (#22)
+
+This adds support for removing files from the cache before packing. This
+allows you to, for example, remove `.nss` files from a hak while leaving
+the compiled `.ncs` files in place.
+
+To filter files, use the `filter` key under either the package or the
+target. This key, like the `include` and `exclude` keys, takes a pattern
+to match and can be repeated multiple times to add as many filters as
+necessary. If a target does not have its own filter, it will inherit the
+package-level filter. Note that filter patterns will only yield files
+directly from the cache and should not contain directory information.
+
+    [Sources]
+    include = "src/*.{nss,json}"
+    filter = "test_*.{nss,ncs}"
+
+    [Target]
+    name = "hak"
+    file = "myhak.hak"
+    filter = "*.nss"            # Will filter out all nss files
+    filter = "test_*.{nss,ncs}" # Must include since not inherited
+
+    [Target]
+    name = "module"
+    file = "mymod.mod"
+    # No filter, so inherits the package-level filter
+
+### Module folders no longer deleted on install (#18)
+
+Now instead of deleting the mod folder, installing only deletes files in the
+install folder. It does not touch sub-directories, so if you keep your nasher
+repo inside your module folder you are safe.
+
+### Added $target variable for unpack rules (#25)
+
+The `[Rules]` section can now reference the special variable `$target`
+to get the name of the target currently being unpacked. For example, the
+following rule would unpack any unknown files  for the `demo` target
+into `src/demo`:
+
+    [Rules]
+    "*" = "src/$target"
+
+This change only affects unpack rules and does not support include or
+exclude rules.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.1...0.11.2
+
+
 ## 0.11.1: April 16, 2020
 
 - The `config` and `list` commands now work even if you are missing some of the
