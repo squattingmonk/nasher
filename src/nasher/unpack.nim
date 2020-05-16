@@ -101,7 +101,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   # If the user has specified a file to unpack, use that. Otherwise, look for
   # the installed target file.
   let
-    installDir = opts.get("installDir", getNwnInstallDir())
+    installDir = opts.get("installDir", getNwnInstallDir()).expandPath
     target = pkg.getTarget(opts.get("target"))
     file =
       if opts.hasKey("file"): opts.get("file").expandPath.absolutePath
