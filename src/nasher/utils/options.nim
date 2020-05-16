@@ -292,10 +292,16 @@ proc verifyBinaries*(opts: Options) =
 proc initTarget: Target =
   result.name = ""
 
+proc validTargetChars(name: string): bool =
+  name.allCharsInSet({'a'..'z', '0'..'9', '_'})
+
 proc addTarget(pkg: PackageRef, target: var Target) =
   ## Adds target to pkg's list of targets. If target has no items in the include
   ## or exclude list, that list is copied from pkg.
-  if target.name.len() > 0 and target.name != "all":
+  if target.name.len() > 0:
+    if target.name == "all" or not target.name.validTargetChars:
+      fatal("Illegal target name " & target.name.escape)
+
     if target.includes.len == 0:
       target.includes = pkg.includes
     if target.excludes.len == 0:
@@ -327,9 +333,9 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
     of cfgSectionStart:
       pkg.addTarget(target)
       debug("Section:", fmt"[{e.section}]")
-      section = e.section.normalize
+      section = e.section.toLower
     of cfgKeyValuePair, cfgOption:
-      key = e.key.normalize
+      key = e.key.toLower
       debug("Option:", fmt"{key} = {e.value}")
       case section
       of "package", "sources":
@@ -347,7 +353,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
           error(fmt"Unknown key/value pair: {key} = {e.value}")
       of "target":
         case key
-        of "name": target.name = e.value.normalize
+        of "name": target.name = e.value.toLower
         of "description": target.description = e.value
         of "file": target.file = e.value
         of "source", "include": target.includes.add(e.value)
