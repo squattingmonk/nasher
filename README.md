@@ -308,6 +308,11 @@ Currently, the following configuration options are available:
   store unpacked module files. This feature is useful only for NWN:EE users.
     - default: `true` during install; `true` during unpacking unless explicitly
       specifying a file to unpack
+- `truncateFloats`: the max number of decimal places to allow after floats in
+  gff files. Use this to prevent unneeded updates to files due to insignificant
+  float value changes.
+  - default: `4`
+  - supported: `1` - `32`
 
 These options are meant to be separate from the package file (`nasher.cfg`)
 since they may depend on the user.

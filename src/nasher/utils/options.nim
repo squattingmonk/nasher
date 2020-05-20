@@ -69,11 +69,24 @@ proc getBoolOrDefault(opts: Options, key: string, default = false): bool =
     except ValueError:
       discard
 
-proc get*[T: string|bool](opts: Options, key: string, default: T = ""): T =
+proc getIntOrDefault(opts: Options, key: string, default = 0): int =
+  ## Returns the integer value located at opts[key]. If there is no value or it
+  ## cannot be conveted to an int, returns ``default``.
+  result = default
+  if opts.contains(key):
+    try:
+      let value = opts[key]
+      result = value.parseInt
+    except ValueError:
+      discard
+
+proc get*[T: string|bool|int](opts: Options, key: string, default: T = ""): T =
   ## Alias for ``getOrDefault`` and ``getBoolOrDefault``, depending on the type
   ## of ``default``.
   when T is bool:
     opts.getBoolOrDefault(key, default)
+  elif T is int:
+    opts.getIntOrDefault(key, default)
   else:
     opts.getOrDefault(key, default)
 

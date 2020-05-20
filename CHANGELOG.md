@@ -1,5 +1,15 @@
 # nasher changelog
 
+## 0.11.5:
+
+Floats are now truncated to prevent insignificant changes from triggering file
+updates in git (#32). You can control the number of decimal places to allow
+with the new `--truncateFloats` flag; its default value is `4`.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.4...0.11.5
+
 ## 0.11.4:
 
 ### Support unpacking from directories (#24)

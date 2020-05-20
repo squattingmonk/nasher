@@ -117,8 +117,8 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
     if scripts.len > 0:
       var errors = false
       let
-        chunkSize = opts.get("nssChunks", "500")
-        chunks = scripts.len div chunkSize.parseInt + 1
+        chunkSize = opts.get("nssChunks", 500)
+        chunks = scripts.len div chunkSize + 1
       display("Compiling", $scripts.len & " scripts")
       for chunk in distribute(scripts, chunks):
         let args = userFlags & target.flags & chunk
