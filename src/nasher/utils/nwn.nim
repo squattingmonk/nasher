@@ -12,7 +12,24 @@ const
     "jrl", "gff", "gui"
   ]
 
-proc gffToJson(file, bin, args: string): JsonNode =
+proc truncateFloats(j: var JsonNode, precision: range[1..32] = 4) =
+  case j.kind
+  of JObject:
+    for _, v in j.mpairs:
+      v.truncateFloats(precision)
+  of JArray:
+    for e in j.mitems:
+      e.truncateFloats(precision)
+  of JFloat:
+    var f = j.getFloat.formatFloat(ffDecimal, precision)
+    f.trimZeros
+    if {'.', 'e'} notin f:
+      f.add(".0")
+    j = newJFloat(f.parseFloat)
+  else:
+    discard
+
+proc gffToJson(file, bin, args: string, precision: range[1..32] = 4): JsonNode =
   ## Converts ``file`` to json, stripping the module ID if ``file`` is
   ## module.ifo.
   let
@@ -24,7 +41,8 @@ proc gffToJson(file, bin, args: string): JsonNode =
 
   result = output.parseJson
 
-  ## TODO: truncate floats
+  result.truncateFloats(precision)
+
   if file.extractFilename == "module.ifo" and result.hasKey("Mod_ID"):
     result.delete("Mod_ID")
   elif file.splitFile.ext == ".are" and result.hasKey("Version"):
@@ -39,7 +57,7 @@ proc convertFile(inFile, outFile, bin, args: string) =
   if errCode != 0:
     fatal(fmt"Could not convert {inFile}: {output}")
 
-proc gffConvert*(inFile, outFile, bin, args: string) =
+proc gffConvert*(inFile, outFile, bin, args: string, precision: range[-1..32] = -1) =
   ## Converts ``inFile`` to ``outFile``
   let
     (dir, name, ext) = outFile.splitFile
@@ -64,7 +82,7 @@ proc gffConvert*(inFile, outFile, bin, args: string) =
       if inFile.splitFile.ext == ".tlk":
         convertFile(inFile, outFile, bin, args & " -p")
       else:
-        let text = gffToJson(inFile, bin, args).pretty & "\c\L"
+        let text = gffToJson(inFile, bin, args, precision).pretty & "\c\L"
         writeFile(outFile, text)
     of "gff", "tlk":
       convertFile(inFile, outFile, bin, args)

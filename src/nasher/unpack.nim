@@ -91,6 +91,10 @@ proc mapSrc(file, ext, target: string, srcMap: SourceMap, rules: seq[Rule]): str
 proc unpack*(opts: Options, pkg: PackageRef) =
   let
     dir = opts.get("directory", getPackageRoot())
+    precision = opts.get("truncateFloats", 4)
+
+  if precision notin 1..32:
+    fatal("Invalid value: --truncateFloats must be between 1 and 32")
 
   if not existsDir(dir):
     fatal("Cannot unpack to {dir}: directory does not exist.")
@@ -262,7 +266,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     if fileType == "tlk":
       gffConvert(filePath, outFile, tlkUtil, tlkFlags)
     else:
-      gffConvert(filePath, outFile, gffUtil, gffFlags)
+      gffConvert(filePath, outFile, gffUtil, gffFlags, precision)
 
     outFile.setLastModificationTime(packTime)
     manifest.update(file.fileName, file.fileSum, packTime)
