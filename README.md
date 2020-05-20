@@ -346,6 +346,13 @@ exclude = "**/test_*.nss"
 name = "demo"
 description = "A demo module showing the system in action"
 file = "core_framework.mod"
+
+[Target]
+name = "scripts"
+description = "A hak file containing compiled scripts"
+file = "core_scripts.hak"
+include = "src/**/*.nss"
+filter = "*.nss"
 ```
 
 While you can write your own package file, the `init` command will create one
@@ -374,6 +381,11 @@ are relative to the package root.
   subdirectories). This field can be repeated.
 - `exclude`: a glob pattern matching files to exclude from sources. This field
   can be repeated.
+- `filter`: a glob pattern matching files to remove before packing. It operates
+  on converted files in the cache, not source files, so it should not contain
+  any directory information. Use this to include files that are needed for
+  compilation but should not be included in the final file. This field can be
+  repeated.
 
 When nasher looks for sources, it first finds all files that match any include
 pattern and then filters out files that match any exclude pattern. In the
@@ -418,9 +430,20 @@ repeated, specifying a different target each time.
   target. This field is optional. If supplied, this target will exclude only
   those files that match the supplied patterns; otherwise, the target will
   exclude all files excluded by the package. This field can be repeated.
+- `filter`: a glob pattern matching files to remove before packing. It operates
+  on converted files in the cache, not source files, so it should not contain
+  any directory information. Use this to remove files that are needed for
+  compilation but should not be included in the final file. This field is
+  optional. If supplied, this target will filter only those files that match
+  the supplied patterns; otherwise, the target will filter all files filtered
+  by the package. This field can be repeated.
 
 In the example package file, the `demo` target will use the package `include`
 and `exclude` fields since it did not specify its own. However, the `default`
 target excludes files in `src/demo` and its subdirectories; since it overrides
 the package `exclude`, it needs to repeat the `exclude` line from the package
 to avoid accidentally including nss files beginning with `test_`.
+
+Meanwhile, the `scripts` target will include all `.nss` files, but will filter
+them out after compilation and before packing, leaving only the compiled `.ncs`
+files behind.
