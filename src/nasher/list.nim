@@ -34,6 +34,9 @@ proc list*(opts: Options, pkg: PackageRef) =
       display("Includes:", target.includes.join("\n"))
       display("Excludes:", target.excludes.join("\n"))
       display("Filters:", target.filters.join("\n"))
+
+      for pattern, dir in target.rules.items:
+        display("Rule:", pattern & " -> " & dir)
       hasRun = true
   else:
     fatal("No targets found. Please check your nasher.cfg.")

@@ -19,6 +19,7 @@ type
   Target = object
     name*, file*, description*: string
     includes*, excludes*, filters*, flags*: seq[string]
+    rules*: seq[Rule]
 
   Rule* = tuple[pattern, dir: string]
 
@@ -323,6 +324,8 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       target.filters = pkg.filters
     if target.flags.len == 0:
       target.flags = pkg.flags
+    if target.rules.len == 0:
+      target.rules = pkg.rules
     pkg.targets.add(target)
   target = initTarget()
 
@@ -363,7 +366,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "filter": pkg.filters.add(e.value)
         of "flags": pkg.flags.add(e.value)
         else:
-          error(fmt"Unknown key/value pair: {key} = {e.value}")
+          pkg.rules.add((e.key, e.value))
       of "target":
         case key
         of "name": target.name = e.value.toLower
@@ -374,7 +377,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "filter": target.filters.add(e.value)
         of "flags": target.flags.add(e.value)
         else:
-          error(fmt"Unknown key/value pair '{key} = {e.value}'")
+          target.rules.add((e.key, e.value))
       of "rules":
         pkg.rules.add((e.key, e.value))
       else:
@@ -415,6 +418,9 @@ proc dumpPackage(pkg: PackageRef) =
     debug("Excludes:", target.excludes.join("\n"))
     debug("Filters:", target.filters.join("\n"))
     debug("Flags:", target.flags.join("\n"))
+
+    for pattern, dir in target.rules.items:
+      debug("Rule:", fmt"{pattern} -> {dir}")
 
   stdout.write("\n")
 

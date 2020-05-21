@@ -190,7 +190,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   for fileName in manifest.keys:
     let
       ext = fileName.getFileExt
-      dir = mapSrc(fileName, ext, target.name, srcMap, pkg.rules)
+      dir = mapSrc(fileName, ext, target.name, srcMap, target.rules)
 
     var sourceName = dir / filename
     if ext in GffExtensions:
@@ -239,7 +239,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     let
       ext = file.fileName.getFileExt
       filePath = tmpDir / file.fileName
-      dir = mapSrc(file.fileName, ext, target.name, srcMap, pkg.rules)
+      dir = mapSrc(file.fileName, ext, target.name, srcMap, target.rules)
 
     if dir == "unknown":
       warning("cannot decide where to extract " & file.fileName)
