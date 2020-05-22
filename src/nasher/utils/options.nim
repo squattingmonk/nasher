@@ -307,7 +307,7 @@ proc initTarget: Target =
   result.name = ""
 
 proc validTargetChars(name: string): bool =
-  name.allCharsInSet({'a'..'z', '0'..'9', '_'})
+  name.allCharsInSet({'a'..'z', '0'..'9', '_', '-'})
 
 proc addTarget(pkg: PackageRef, target: var Target) =
   ## Adds target to pkg's list of targets. If target has no items in the include
