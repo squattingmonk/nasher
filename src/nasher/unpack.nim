@@ -110,11 +110,12 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     file =
       if opts.hasKey("file"): opts.get("file").expandPath.absolutePath
       else:
+        let fileName = target.file.extractFilename
         case target.file.getFileExt
-        of "mod": installDir / "modules" / target.file
-        of "erf": installDir / "erf" / target.file
-        of "hak": installDir / "hak" / target.file
-        of "tlk": installDir / "tlk" / target.file
+        of "mod": installDir / "modules" / fileName
+        of "erf": installDir / "erf" / fileName
+        of "hak": installDir / "hak" / fileName
+        of "tlk": installDir / "tlk" / fileName
         else: dir / target.file
 
   if file == "":

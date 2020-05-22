@@ -72,6 +72,8 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     hint(getTimeDiffHint("The file to be packed", timeDiff))
     if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
       return cmd != "pack" and askIf(fmt"Continue installing {file}?")
+  else:
+    file.parentDir.createDir
 
   let
     bin = opts.get("erfUtil")
@@ -81,16 +83,17 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     manifest = newManifest(target)
 
   if file.getFileExt == "tlk":
+    let fileName = file.extractFilename
     try:
-      copyFile(cacheDir / file, file)
+      copyFile(cacheDir / fileName, file)
     except OSError:
-      fatal(fmt"No file found. Does {file}.json exist in the source tree?")
+      fatal(fmt"No file found. Does {fileName}.json exist in the source tree?")
   else:
     const globOpts = {IgnoreCase, Hidden, Files}
     for filter in pkg.getTarget(target).filters:
       for file in glob.walkGlob(filter, cacheDir, globOpts):
         info("Filtering", file)
-        removeFile(cacheDir/file)
+        removeFile(cacheDir / file)
 
     createErf(cacheDir, file, bin, args)
 
