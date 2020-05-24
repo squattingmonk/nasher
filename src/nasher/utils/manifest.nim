@@ -45,6 +45,16 @@ proc parseTime(time: string): Time =
       error("Could not parse timestamp " & time)
       fromUnix(0)
 
+proc getFilesChanged*(manifest: Manifest, srcFile, outFile: string): bool =
+  ## Returns whether either srcFile or outFile have changed in the manifest
+  let fileName = outFile.extractFilename
+
+  if not existsFile(outFile) or not manifest.data.hasKey(fileName):
+    return true
+
+  return (manifest.data{fileName, "srcSum"}.getStr != $srcFile.secureHashFile or
+          manifest.data{fileName, "outSum"}.getStr != $outFile.secureHashFile)
+
 proc getChangedFiles*(manifest: Manifest, dir = getCurrentDir()): seq[FileDetail] =
   info("Checking", "changed files")
   for file in walkFiles(dir / "*"):
@@ -68,6 +78,13 @@ proc update*(manifest: var Manifest, fileName, fileSum: string, fileTime: Time) 
 
 proc add*(manifest: var Manifest, file: string, fileTime: Time) =
   manifest.update(file.extractFilename, $file.secureHashFile, fileTime)
+
+proc add*(manifest: var Manifest, srcFile, outFile: string) =
+  let
+    fileName = outFile.extractFilename
+    srcSum = $srcFile.secureHashFile
+    outSum = $outFile.secureHashFile
+  manifest.data[fileName] = %* {"srcSum": srcSum, "outSum": outSum}
 
 proc delete*(manifest: var Manifest, file: string) =
   if manifest.data.hasKey(file):

@@ -1,5 +1,5 @@
-import os, strtabs, strutils, strformat
-import utils/[cli, nwn, options, shared]
+import os, strtabs, strutils, strformat, sequtils
+import utils/[cli, manifest, nwn, options, shared]
 
 const
   helpConvert* = """
@@ -29,20 +29,10 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc getCacheMap(includes, excludes: seq[string]): StringTableRef =
-  ## Generates a table mapping source files to their proper names in the cache
-  result = newStringTable()
-  for file in walkSourceFiles(includes, excludes):
-    # Ensure filenames are lowercase before converting to avoid collisions
-    let fileLower = file.normalizeFilename
-    if file != fileLower:
-      info("Renaming", fmt"{file.extractFilename} to {fileLower.extractFilename}")
-      file.moveFile(fileLower)
-
-    let
-      (_, name, ext) = fileLower.splitFile
-      fileName = if ext == ".json": name else: name & ext
-    result[fileName] = fileLower
+proc outFile(srcFile: string): string =
+  ## Returns the filename of the converted source file
+  let (_, name, ext) = srcFile.splitFile
+  if ext == ".json": name else: name & ext
 
 proc convert*(opts: Options, pkg: PackageRef): bool =
   setCurrentDir(getPackageRoot())
@@ -61,61 +51,84 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
 
   let
     category = (if cmd == "compile": "compiling" else: cmd & "ing")
-    cacheMap = getCacheMap(target.includes, target.excludes)
     gffUtil = opts.get("gffUtil")
     gffFlags = opts.get("gffFlags")
     gffFormat = opts.get("gffFormat", "json")
     tlkUtil = opts.get("tlkUtil")
     tlkFlags = opts.get("tlkFlags")
     tlkFormat = opts.get("tlkFormat", "json")
+    srcFiles = getSourceFiles(target.includes, target.excludes)
+    outFiles = srcFiles.map(outFile)
 
   display(category.capitalizeAscii, "target " & target.name)
-
-  if cacheMap.len == 0:
+  if srcFiles.len == 0:
     error("No source files found for target " & target.name)
     return false
 
   display("Updating", "cache for target " & target.name)
   if opts.get("clean", false):
     removeDir(cacheDir)
+    removeFile(cacheDir & ".json")
 
   createDir(cacheDir)
 
-  # Remove deleted files
+  # We use a separate manifest from the one used for packing and unpacking
+  # because the user may convert or compile without packing or unpacking. This
+  # manifest will contain the sha1 of the source file and the out file.
+  var manifest = parseManifest("cache" / target.name)
+
+  # Remove deleted files from the cache
   for file in walkFiles(cacheDir / "*"):
     let
       (_, name, ext) = file.splitFile
       fileName = if ext == ".ncs": name & ".nss" else: name & ext
 
-    if fileName notin cacheMap:
-      display("Removing", name & ext, priority = LowPriority)
-      removeFile(file)
+    if fileName.extractFilename notin outFiles:
+      info("Removing", name & ext)
+      file.removeFile
 
   # Copy newer files
-  for fileName, srcFile in cacheMap.pairs:
+  for file in srcFiles:
+    # Ensure filenames are lowercase before converting to avoid collisions
     let
-      cacheFile = cacheDir / fileName
-      srcTime = srcFile.getLastModificationTime
-      ext = srcFile.getFileExt
+      srcFile = file.normalizeFilename
+      outFile = cacheDir / srcFile.outFile
 
-    if fileOlder(cacheFile, srcTime):
-      if ext in [gffFormat, tlkFormat]:
+    if file != srcFile:
+      info("Renaming", fmt"{file.extractFilename} to {srcFile.extractFilename}")
+      file.moveFile(srcFile)
+
+    if manifest.getFilesChanged(srcFile, outFile):
+      let
+        srcExt = srcFile.getFileExt
+        fileName = outFile.extractFilename
+
+      if srcExt in [gffFormat, tlkFormat]:
         if cmd == "compile":
           continue
 
         if fileName.getFileExt == "tlk":
-          gffConvert(srcFile, cacheFile, tlkUtil, tlkFlags)
+          gffConvert(srcFile, outFile, tlkUtil, tlkFlags)
         else:
-          gffConvert(srcFile, cacheFile, gffUtil, gffFlags)
-        setLastModificationTime(cacheFile, srcTime)
-      elif cmd != "convert":
-        display("Copying", srcFile & " -> " & fileName, priority = LowPriority)
-        copyFile(srcFile, cacheFile)
-        setLastModificationTime(cacheFile, srcTime)
+          gffConvert(srcFile, outFile, gffUtil, gffFlags)
+      else:
+        info("Copying", srcFile & " -> " & fileName)
+        copyFile(srcFile, outFile)
 
         # Let compile() know this is a new or updated script
-        if ext == "nss":
+        if cmd != "convert" and srcExt == "nss":
+          removeFile(outfile.changeFileExt("ncs"))
           pkg.updated.add(fileName)
+
+      manifest.add(srcFile, outFile)
+    elif srcFile.getFileExt == "nss":
+      # Don't trust that compiled scripts in the cache are correct
+      let compiled = outFile.changeFileExt("ncs")
+      if existsFile(compiled) and manifest.getFilesChanged(srcFile, compiled):
+        manifest.delete(compiled)
+        removeFile(compiled)
+
+  manifest.write
 
   # Trim unused areas from the module.ifo
   if cmd != "compile" and opts.get("removeUnusedAreas", true):
