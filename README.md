@@ -42,9 +42,9 @@ it has some key differences:
 7. nasher is known to run on Windows, but has not been thoroughly tested there
 
 ## Requirements
-- [nim](https://github.com/dom96/choosenim) >= 1.0.2
-- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.8
-- [nwnsc](https://gitlab.com/glorwinger/nwnsc)
+- [nim](https://github.com/dom96/choosenim) >= 1.2.0
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.10
+- [nwnsc](https://github.com/nwneetools/nwnsc)
 
 Alternatively, you can use [Docker](#docker).
 
@@ -69,14 +69,17 @@ The examples below assume you have done so.
 
 ### Docker
 If you don't want to install Nim, you can instead use
-[Docker](https://www.docker.com/products/docker-desktop).
+[Docker](https://www.docker.com/products/docker-desktop). You can install
+nasher using the `latest` tag, which installs the latest tagged version of
+nasher, or with a version tag, such as `0.11.6` to use a particular tagged
+version of nasher.
 
 #### Example Usage
-    # Linux
+    # Linux, using latest tagged version
     $ docker run --rm -it -v $(pwd):/nasher nwntools/nasher:latest
 
-    # Windows
-    $ docker run --rm -it -v %cd%:/nasher nwntools/nasher:latest
+    # Windows, using version 0.11.6
+    $ docker run --rm -it -v %cd%:/nasher nwntools/nasher:0.11.6
 
 #### Init example
 If you are feeling particularly lazy, you can initialize the config file with
@@ -442,6 +445,15 @@ repeated, specifying a different target each time.
   optional. If supplied, this target will filter only those files that match
   the supplied patterns; otherwise, the target will filter all files filtered
   by the package. This field can be repeated.
+- Any other key under the target will be treated as an unpack rule for that
+  target. In unpack rules, they key is a pattern to match the file against
+  while the key is a directory in which to place the file. You can have any
+  number of unpack rules. If a target does not contain its own unpack rules, it
+  will inherit those of the package. If the target file is being unpacked and a
+  file is encountered which is not in the target's source tree, the filename
+  will be checked against each pattern in the source tree; when a matching
+  pattern is found, the file will be placed in the directory assigned to that
+  pattern.
 
 In the example package file, the `demo` target will use the package `include`
 and `exclude` fields since it did not specify its own. However, the `default`
