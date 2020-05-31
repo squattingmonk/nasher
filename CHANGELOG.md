@@ -1,6 +1,72 @@
 # nasher changelog
 
-## 0.11.5:
+## 0.11.6: May 31, 2020
+
+### Allowed packing file to subdirectory
+[(#23)](https://github.com/squattingmonk/nasher.nim/issues/23)
+
+The user can now include path information in the file section of a
+target to allow the target to be packed to a different location. For
+example:
+
+    [Target]
+    name = "demo"
+    file = "packed/demo.mod"
+
+Behavior for files that include path information:
+
+1. When packing: if the file contains path information, it will be
+   relative to the project root.
+2. When installing: any path portion of the file will be discarded and
+   the file will be installed into $installDir/{erf,hak,modules,tlk}/ as
+   appropriate.
+3. When unpacking using a target: any path portion will be discarded and
+   the file will be unpacked from $installDir/{erf,hak,modules,tlk}/ as
+   appropriate.
+4. When unpacking by explicitly passing a file: the path will be
+   relelative directory names ative current working directory. Absolute paths are allowed here.
+
+Using the example above, we would get the following:
+
+    # Packs to ./packed/demo.mod
+    $ nasher pack demo
+
+    # Installs to $installDir/modules/demo.mod
+    $ nasher install demo
+
+    # Unpacks from $installDir/modules/demo.mod
+    $ nasher unpack demo
+
+    # Unpacks from ./packed/demo.mod
+    $ nasher unpack demo packed/demo.mod
+
+### Added per-target unpack rules
+
+Any unrecognized key/value pair in the [Package] or [Target] sections
+will be treated as an unpack rule of the form `"pattern" = "destination"`.
+If a target does not have any unpack rules of its own, it will use the
+package's rules, just like it can inherit the package's include,
+exclude, and filter fields.
+
+Note that the unpack rules are only used if the file cannot be found
+among the target's sources.
+
+### Truncate floats when unpacking gff files
+[(#32)](https://github.com/squattingmonk/nasher.nim/issues/32)
+
+You can use the `--truncateFloats` flag to set how many decimal places to
+truncate floats to (default is `4`).
+
+### Minor fixes
+- Hyphens are now allowed in target names
+- nasher now uses a manifest to track files that need to be reconverted in the
+  cache, fixing [#20](https://github.com/squattingmonk/nasher.nim/issues/20).
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.4...0.11.6
+
+## 0.11.5: May 20, 2020
 
 Floats are now truncated to prevent insignificant changes from triggering file
 updates in git (#32). You can control the number of decimal places to allow
@@ -10,7 +76,7 @@ with the new `--truncateFloats` flag; its default value is `4`.
 
 Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.4...0.11.5
 
-## 0.11.4:
+## 0.11.4: May 16, 2020
 
 ### Support unpacking from directories (#24)
 You can now pass a directory to the unpack command just as you would a file.
