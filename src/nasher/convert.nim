@@ -121,12 +121,6 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
           pkg.updated.add(fileName)
 
       manifest.add(srcFile, outFile)
-    elif srcFile.getFileExt == "nss":
-      # Don't trust that compiled scripts in the cache are correct
-      let compiled = outFile.changeFileExt("ncs")
-      if existsFile(compiled) and manifest.getFilesChanged(srcFile, compiled):
-        manifest.delete(compiled)
-        removeFile(compiled)
 
   manifest.write
 

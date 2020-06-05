@@ -1,5 +1,14 @@
 # nasher changelog
 
+## 0.11.7: June 05, 2020
+
+Fixes scripts always being recompiled 
+([#37](https://github.com/squattingmonk/nasher.nim/issues/37))
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.6...0.11.7
+
 ## 0.11.6: May 31, 2020
 
 ### Allowed packing file to subdirectory
