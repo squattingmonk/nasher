@@ -478,6 +478,14 @@ proc getTargets*(pkg: PackageRef, names = ""): seq[Target] =
         return pkg.targets
       result.add(pkg.getTarget(name))
 
+proc isSrcFile*(pkg: PackageRef, file: string): bool =
+  ## Returns whether ``file`` is a source file of ``pkg``.
+  file.matchesAny(pkg.includes) and not file.matchesAny(pkg.excludes)
+
+proc isSrcFile*(target: Target, file: string): bool =
+  ## Returns whether ``file`` is a source file of ``target``.
+  file.matchesAny(target.includes) and not file.matchesAny(target.excludes)
+
 # ----- Package Generation -----------------------------------------------------
 
 proc addLine(s: var string, line = "") =

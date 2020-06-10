@@ -1,4 +1,4 @@
-from sequtils import distribute, map
+from sequtils import distribute, apply
 import os, tables, strscans, strtabs, strutils
 
 import utils/[cli, compiler, options, shared]
@@ -96,6 +96,7 @@ proc getUpdated(pkg: PackageRef, files: seq[string]): seq[string] =
 proc compile*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
+    target = pkg.getTarget(opts["target"])
 
   if opts.get("noCompile", false):
     return cmd != "compile"
@@ -104,7 +105,21 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
     # If we are only compiling one file...
     var scripts: seq[string]
     if cmd == "compile" and opts.hasKey("files"):
-      scripts = opts["files"].split(';').map(extractFilename)
+      for file in opts["files"].split(';'):
+        let
+          fileName = file.extractFilename
+          pkgRoot = getPackageRoot()
+
+        if file == fileName and existsFile(file):
+          info("Found", fileName & " in target cache")
+          scripts.add(fileName)
+        elif (existsFile(file) and target.isSrcFile(file.relativePath(pkgRoot))) or # absolute
+             (existsFile(pkgRoot / file) and target.isSrcFile(file)):               # relative
+               info("Found", fileName & " at " & file)
+               scripts.add(fileName)
+        else:
+          fatal("Cannot compile $1: not in sources for target \"$2\"" %
+                [file, target.name])
     else:
       # Only compile scripts that have not been compiled since update
       var files: seq[string]
@@ -119,7 +134,6 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       scripts = pkg.getUpdated(files)
 
     let
-      target = pkg.getTarget(opts["target"])
       compiler = opts.get("nssCompiler")
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
 
