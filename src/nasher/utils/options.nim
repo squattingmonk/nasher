@@ -280,7 +280,12 @@ proc verifyBinaries*(opts: Options) =
 
   var fail = false
 
-  for bin in bins:
+  let
+    cmds = ["compile", "pack", "install", "play", "test", "serve"]
+    start = if opts["command"] notin cmds or opts.get("noCompile", false): 1
+            else: 0
+
+  for bin in bins[start..^1]:
     if opts.hasKeyOrPut(bin.flag, findExe(bin.default, root)):
       opts[bin.flag] = opts[bin.flag].expandPath
 
