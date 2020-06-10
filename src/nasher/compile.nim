@@ -1,4 +1,4 @@
-from sequtils import toSeq, distribute
+from sequtils import distribute, map
 import os, tables, strscans, strtabs, strutils
 
 import utils/[cli, compiler, options, shared]
@@ -18,17 +18,18 @@ const
     sources and packing the target file.
 
   Options:
-    --clean        Clears the cache directory before compiling
+    --clean            Clears the cache directory before compiling
+    -f, --file:<file>  Compiles <file> only. Can be repeated.
 
   Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
+    -h, --help         Display help for nasher or one of its commands
+    -v, --version      Display version information
 
   Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
+    --debug            Enable debug logging
+    --verbose          Enable additional messages about normal operation
+    --quiet            Disable all logging except errors
+    --no-color         Disable color output (automatic if not a tty)
   """
 
 const
@@ -68,6 +69,8 @@ proc getIncludes(scripts: seq[string]): Table[string, seq[string]] =
 proc getIncludesUpdated(file: string,
                         scripts: Table[string, seq[string]],
                         updated: var Table[string, bool]): bool =
+  ## Returns whether ``file`` includes a script that has been updated. Will
+  ## follow nested includes.
   if updated.hasKeyOrPut(file, false):
     return updated[file]
 
@@ -98,18 +101,24 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
     return cmd != "compile"
 
   withDir(opts["directory"]):
-    # Only compile scripts that have not been compiled since update
-    let
-      files = toSeq(walkFiles("*.nss"))
+    # If we are only compiling one file...
+    var scripts: seq[string]
+    if cmd == "compile" and opts.hasKey("files"):
+      scripts = opts["files"].split(';').map(extractFilename)
+    else:
+      # Only compile scripts that have not been compiled since update
+      var files: seq[string]
 
-    for file in files:
-      if file notin pkg.updated and file.executable:
-        let compiled = file.changeFileExt("ncs")
-        if not existsFile(compiled) or file.fileNewer(compiled):
-          pkg.updated.add(file)
+      for file in walkFiles("*.nss"):
+        files.add(file)
+        if file notin pkg.updated and file.executable:
+          let compiled = file.changeFileExt("ncs")
+          if not existsFile(compiled) or file.fileNewer(compiled):
+            pkg.updated.add(file)
 
-    let
       scripts = pkg.getUpdated(files)
+
+    let
       target = pkg.getTarget(opts["target"])
       compiler = opts.get("nssCompiler")
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine

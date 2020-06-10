@@ -118,8 +118,8 @@ proc parseConfigFile*(opts: Options, file: string) =
   ## defaults to options. It runs before the command-line options are processed,
   ## so the user can override these commands as needed.
   const prohibited =
-    ["command", "config", "level", "directory", "file", "target", "targets",
-     "help", "version"]
+    ["command", "config", "level", "directory", "file", "files",
+     "target", "targets", "help", "version"]
 
   let fileStream = newFileStream(file)
 
@@ -217,6 +217,13 @@ proc parseCmdLine(opts: Options) =
           else:
             opts.putKeyOrHelp("key", key)
             opts.putKeyOrHelp("value", val)
+        of "compile":
+          case key
+          of "f", "file":
+            if opts.hasKeyOrPut("files", val):
+              opts["files"] = opts["files"] & ";" & val
+          else:
+            opts[key]= val
         else:
           opts[key] = val
     else: discard
