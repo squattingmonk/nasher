@@ -57,7 +57,7 @@ proc convertFile(inFile, outFile, bin, args: string) =
   if errCode != 0:
     fatal(fmt"Could not convert {inFile}: {output}")
 
-proc gffConvert*(inFile, outFile, bin, args: string, precision: range[-1..32] = -1) =
+proc gffConvert*(inFile, outFile, bin, args: string, precision: range[1..32] = 4) =
   ## Converts ``inFile`` to ``outFile``
   let
     (dir, name, ext) = outFile.splitFile
