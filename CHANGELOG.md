@@ -1,8 +1,42 @@
 # nasher changelog
 
+## 0.11.8: June 21, 2020
+
+### Added option to compile single files
+([#35](https://github.com/squattingmonk/nasher.nim/issues/35))
+
+This update allows the `compile` command to specify a single script to compile
+using the `--file` flag. This flag can take a semicolon-delimited list or it
+can be repeated.
+
+When used to compile a single file, the command will still operate on a target.
+If no target is specified by the user, the default target is used. Thus, if the
+script specified by the user is not in the source tree for the target, the
+command will fail.
+
+If only a filename is given, it uses the file from the cache. If a to a file is
+given, it must point to a script within the target's source tree; the cached
+version of the file will still be used, but this makes it easier to work with
+the your shell's tab-completion.
+
+### Other fixes
+
+- The compiler binary check is only performed when running the `compile`,
+  `pack`, `install`, `play`, `test`, and `serve` commands when the
+  `--noCompile` flag is passed.
+  ([#38](https://github.com/squattingmonk/nasher.nim/issues/38))
+- Environment variables in server and game binary paths are now resolved
+  correctly.
+- Fixed an error that prevented the game and server binaries from being
+  executed on Windows
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.7...0.11.8
+
 ## 0.11.7: June 05, 2020
 
-Fixes scripts always being recompiled 
+Fixes scripts always being recompiled
 ([#37](https://github.com/squattingmonk/nasher.nim/issues/37))
 
 ---
