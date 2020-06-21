@@ -93,5 +93,5 @@ proc launch*(opts: Options) =
       fatal(fmt"Cannot {cmd} {file}: {path} is not executable")
     
     display("Executing", fmt"{bin} {args} {name}")
-    var p = startProcess(bin, dir, [args, name], options = options)
+    var p = startProcess(path, dir, [args, name], options = options)
     discard p.waitForExit
