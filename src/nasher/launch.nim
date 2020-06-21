@@ -1,6 +1,6 @@
 import os, osproc, strformat
 
-import utils/[cli, options]
+import utils/[cli, options, shared]
 
 const
   helpLaunch* = """
@@ -64,17 +64,19 @@ proc launch*(opts: Options) =
 
   case cmd
   of "play":
-    path = opts.get("gameBin", getGameBin()).expandTilde
+    path = opts.get("gameBin", getGameBin())
     args = "+LoadNewModule"
   of "test":
-    path = opts.get("gameBin", getGameBin()).expandTilde
+    path = opts.get("gameBin", getGameBin())
     args = "+TestNewModule"
   of "serve":
-    path = opts.get("serverBin", getServerBin()).expandTilde
+    path = opts.get("serverBin", getServerBin())
     args = "-module"
     options.incl(poParentStreams)
   else:
     assert false
+
+  path = path.expandPath
 
   let
     file = opts["file"]
