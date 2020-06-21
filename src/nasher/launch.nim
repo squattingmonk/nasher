@@ -42,7 +42,7 @@ proc getGameBin: string =
   when defined(Linux):
     result = "~/.local/share" / SteamPath / "linux-x86/nwmain-linux"
   when defined(Windows):
-    result = "%PROGRAMFILES(X86)%" / SteamPath / "win32" / "nwmain.exe"
+    result = "${PROGRAMFILES(X86)}" / SteamPath / "win32" / "nwmain.exe"
   when defined(MacOS):
     result = "~/Library/Application Support" / SteamPath / "macos/nwmain.app/Contents/MacOS/nwmain"
 
@@ -50,7 +50,7 @@ proc getServerBin: string =
   when defined(Linux):
     result = "~/.local/share" / SteamPath / "linux-x86/nwserver-linux"
   when defined(Windows):
-    result = "%PROGRAMFILES(X86)%" / SteamPath / "win32" / "nwmain.exe"
+    result = "${PROGRAMFILES(X86)}" / SteamPath / "win32" / "nwmain.exe"
   when defined(MacOS):
     result = "~/Library/Application Support" / SteamPath / "macos/nwserver-macos"
 
