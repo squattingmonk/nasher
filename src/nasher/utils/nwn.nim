@@ -89,7 +89,7 @@ proc gffConvert*(inFile, outFile, bin, args: string, precision: range[1..32] = 4
     else:
       copyFile(inFile, outFile)
   except:
-    fatal(fmt"Could not create {outFile}. Is the destination writeable?")
+    fatal(fmt"Could not create {outFile}:\n" & getCurrentExceptionMsg())
 
 proc removeUnusedAreas*(dir, bin, args: string) =
   ## Removes any areas not in ``dir`` from the module.ifo file in ``dir``.
