@@ -81,7 +81,12 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
   for file in walkFiles(cacheDir / "*"):
     let
       (_, name, ext) = file.splitFile
-      fileName = if ext == ".ncs": name & ".nss" else: name & ext
+      fileName =
+        case ext
+        of ".ncs", ".ndb":
+          name & ".nss"
+        else:
+          name & ext
 
     if fileName.extractFilename notin outFiles:
       info("Removing", name & ext)
