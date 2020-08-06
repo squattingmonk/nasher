@@ -12,20 +12,26 @@ const
     "jrl", "gff", "gui"
   ]
 
-proc truncateFloats(j: var JsonNode, precision: range[1..32] = 4) =
+proc truncateFloats(j: var JsonNode, precision: range[1..32] = 4, bearing: bool = false) =
   case j.kind
   of JObject:
-    for _, v in j.mpairs:
-      v.truncateFloats(precision)
+    for k, v in j.mpairs:
+      if(k == "Bearing"):
+        v.truncateFloats(precision, true)
+      else:
+        v.truncateFloats(precision, bearing)
   of JArray:
     for e in j.mitems:
-      e.truncateFloats(precision)
+      e.truncateFloats(precision, bearing)
   of JFloat:
     var f = j.getFloat.formatFloat(ffDecimal, precision)
     f.trimZeros
     if {'.', 'e'} notin f:
       f.add(".0")
-    j = newJFloat(f.parseFloat)
+    j = newJFloat(
+      if bearing and f == formatFloat(-PI, ffDecimal, precision):
+        f.parseFloat.abs
+      else: f.parseFloat)
   else:
     discard
 
