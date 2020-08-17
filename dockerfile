@@ -15,6 +15,6 @@ RUN dpkg --add-architecture i386 \
 RUN nasher config --userName:"nasher"
 ENV PATH="/root/.nimble/bin:${PATH}"
 WORKDIR /nasher
-RUN mkdir -p /nasher/install/{modules,erf,hak,tlk}
+RUN bash -c 'mkdir -pv /nasher/install/{modules,erf,hak,tlk}'
 ENTRYPOINT [ "nasher" ]
 CMD [ "list --quiet" ]
