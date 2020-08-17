@@ -10,9 +10,11 @@ RUN dpkg --add-architecture i386 \
     && apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 -y \
     && choosenim update stable \
     && nimble install nasher@#0.11.8 -y \
-    && nasher config --nssFlags:"-n /nwn/data -o"
+    && nasher config --nssFlags:"-n /nwn/data -o" \
+    && nasher config --installDir:"/nasher/install"
 RUN nasher config --userName:"nasher"
 ENV PATH="/root/.nimble/bin:${PATH}"
 WORKDIR /nasher
+RUN bash -c 'mkdir -pv /nasher/install/{modules,erf,hak,tlk}'
 ENTRYPOINT [ "nasher" ]
 CMD [ "list --quiet" ]
