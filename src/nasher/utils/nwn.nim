@@ -1,4 +1,4 @@
-import json, os, osproc, strformat, strutils
+import json, os, osproc, strformat, strutils, math
 from sequtils import mapIt, toSeq
 
 import cli
