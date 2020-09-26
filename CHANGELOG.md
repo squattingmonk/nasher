@@ -1,5 +1,35 @@
 # nasher changelog
 
+## 0.11.9: September 26, 2020
+
+### Allow `install` and launch commands to work with docker
+([#44](https://github.com/squattingmonk/nasher.nim/pull/44))
+Added dummy folders to the docker volume to prevent permission issues when
+trying to access the installation directory. This fixes
+([#39](https://github.com/squattingmonk/nasher.nim/issues/39)). You can mount
+your installation directory to the new `nasher/install` folder using the
+following command:
+
+```sh
+docker run --rm -it -v ${pwd}:/nasher \
+    -v /your/dir/here:/nasher/install squattingmonk/nasher:latest install
+```
+
+### Force "Bearing" on 180 degrees to be positive
+([#41](https://github.com/squattingmonk/nasher.nim/issues/41))
+This prevents additional diffs between +PI and -PI that refer to the same
+bearing. This issue was fixed in a recent NWN:EE patch, but may be useful to
+those running 1.69.
+
+### Other fixes
+- `.ndb` files are no longer deleted from the cache after compilation
+- Improved error messages when converting between GFF and JSON fails
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.8...0.11.9
+
+
 ## 0.11.8: June 21, 2020
 
 ### Added option to compile single files
