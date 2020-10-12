@@ -9,7 +9,7 @@ type
   Options* = StringTableRef
 
   Package = object
-    name*, description*, version*, url*: string
+    name*, description*, version*, url*, branch*: string
     authors*, includes*, excludes*, filters*, flags*, updated*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
@@ -17,7 +17,7 @@ type
   PackageRef* = ref Package
 
   Target = object
-    name*, file*, description*: string
+    name*, file*, description*, branch*: string
     includes*, excludes*, filters*, flags*: seq[string]
     rules*: seq[Rule]
 
@@ -338,6 +338,8 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       target.flags = pkg.flags
     if target.rules.len == 0:
       target.rules = pkg.rules
+    if target.branch.len == 0:
+      target.branch = pkg.branch
     pkg.targets.add(target)
   target = initTarget()
 
@@ -377,6 +379,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "exclude": pkg.excludes.add(e.value)
         of "filter": pkg.filters.add(e.value)
         of "flags": pkg.flags.add(e.value)
+        of "branch": pkg.branch.add(e.value)
         else:
           pkg.rules.add((e.key, e.value))
       of "target":
@@ -388,6 +391,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "exclude": target.excludes.add(e.value)
         of "filter": target.filters.add(e.value)
         of "flags": target.flags.add(e.value)
+        of "branch": target.branch.add(e.value)
         else:
           target.rules.add((e.key, e.value))
       of "rules":
@@ -417,6 +421,7 @@ proc dumpPackage(pkg: PackageRef) =
   debug("Excludes:", pkg.excludes.join("\n"))
   debug("Filters:", pkg.filters.join("\n"))
   debug("Flags:", pkg.flags.join("\n"))
+  debug("Branch:", pkg.branch)
 
   for pattern, dir in pkg.rules.items:
     debug("Rule:", fmt"{pattern} -> {dir}")
@@ -430,6 +435,7 @@ proc dumpPackage(pkg: PackageRef) =
     debug("Excludes:", target.excludes.join("\n"))
     debug("Filters:", target.filters.join("\n"))
     debug("Flags:", target.flags.join("\n"))
+    debug("Branch:", target.branch)
 
     for pattern, dir in target.rules.items:
       debug("Rule:", fmt"{pattern} -> {dir}")
@@ -563,11 +569,13 @@ proc genRuleText: string =
       if not askIf("Do you wish to add another rule?", allowed = NotYes):
         break
 
-proc genTargetText(defaultName: string): string =
+proc genTargetText(defaultName: string, defaultBranch: string): string =
   result.addLine("[Target]")
   result.addPair("name", ask("Target name:", defaultName))
   result.addPair("file", ask("File to generate:", "demo.mod"))
   result.addPair("description", ask("File description:"))
+  if gitRepo():
+    result.addPair("branch", ask("Git branch:", defaultBranch))
 
   hint("Adding a list of sources for this target will limit the target " &
        "to those sources. If you don't add sources to this target, it will " &
@@ -577,9 +585,11 @@ proc genTargetText(defaultName: string): string =
 
 proc genPackageText*(opts: Options): string =
   display("Generating", "package config file")
+  let 
+    defaultBranch = opts.get("branch", gitBranch())
 
   if not opts.get("skipPkgInfo", false):
-    let
+    let 
       defaultUrl = opts.get("url", gitRemote())
 
     result.addLine("[Package]")
@@ -587,6 +597,8 @@ proc genPackageText*(opts: Options): string =
     result.addPair("description", ask("Package description:"))
     result.addPair("version", ask("Package version:"))
     result.addPair("url", ask("Package URL:", defaultUrl))
+    if gitRepo():
+      result.addPair("branch", ask("Git branch:", defaultBranch))
 
     var
       defaultAuthor = opts.get("userName", gitUser())
@@ -636,7 +648,7 @@ proc genPackageText*(opts: Options): string =
   var targetName = "default"
   while true:
     result.addLine
-    result.add(genTargetText(targetName))
+    result.add(genTargetText(targetName, defaultBranch))
     targetName = ""
 
     if not askIf("Do you wish to add another target?", allowed = NotYes):

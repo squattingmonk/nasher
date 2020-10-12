@@ -1,4 +1,5 @@
-import os, osproc, strutils, uri
+import os, osproc, streams, strformat, strutils, uri
+import cli
 
 from shared import withDir
 
@@ -22,7 +23,7 @@ proc gitEmail*: string =
 proc gitRepo*(dir = getCurrentDir()): bool =
   ## Returns whether ``dir`` is a git repo.
   withDir(dir):
-    gitExecCmd("git rev-parse --is-inside-work-tree") != "true"
+    gitExecCmd("git rev-parse --is-inside-work-tree") == "true"
 
 proc gitRemote*(dir = getCurrentDir()): string =
   ## Returns the remote for the git project in ``dir``. Supports ssh formatted
@@ -41,8 +42,56 @@ proc gitRemote*(dir = getCurrentDir()): string =
 proc gitInit*(dir = getCurrentDir()): bool =
   ## Initializes dir as a git repository and returns whether the operation was
   ## successful. Will throw an OSError if dir does not exist.
+  ## README.md created to prevent branch checkout errors before first commit
+  var exitCode: int
+
   withDir(dir):
-     execCmdEx("git init").exitCode == 0
+    exitCode = execCmdEx("git init").exitCode
+    if exitCode == 0:
+      var s = openFileStream("README.md", fmWrite)
+      s.writeLine("My NWN Repo.")
+      s.close
+
+      discard gitExecCmd("git add README.md")
+      discard gitExecCmd("git commit -m \"initial commit\"")
+
+  result = exitCode == 0
+
+proc gitExistsBranch(dir: string, branch: string): bool =
+  ## Determines if passed branch exists in passed repository
+  withDir(dir):
+    gitExecCmd("git show-ref --verify refs/heads/" & branch, "error") != "error"
+
+proc gitBranch*(dir = getCurrentDir()): string =
+  ## Return name of the current branch
+  withDir(dir):
+    gitExecCmd("git rev-parse --abbrev-ref HEAD", "master")
+
+proc gitCheckoutBranch(dir: string, branch: string, create = false) =
+  # Checkout desired branch, if it exists.  If not, prompts for creation or
+  # uses of current branch
+  if not gitExistsBranch(dir, branch):
+    if create:
+      withDir(dir):
+        discard execCmdEx("git checkout -b " & branch)
+    else:
+      if askIf(fmt"Git branch '{branch}' was not found.  Create it?"):
+        gitCheckoutBranch(dir, branch, true)
+  else:
+    withDir(dir):
+      discard execCmdEx("git checkout " & branch)
+
+proc gitSetBranch*(dir = getCurrentDir(), branch: string) =
+  ## Called if the branch option was specified in configuration or command line.  If the current
+  ## branch is not the specified branch, will checkout the specified branch, if it exists
+  if gitRepo(dir):
+    if branch.len > 0 and gitBranch(dir) != branch:
+      gitCheckoutBranch(dir, branch)
+    else:
+      if branch.len == 0:
+        error("git branch could not be determined, using current branch.")
+
+    display("Git Branch:", gitBranch(dir))
 
 proc gitIgnore*(dir = getCurrentDir(), force = false) =
   ## Creates a .gitignore file in ``dir`` if one does not already exist or if

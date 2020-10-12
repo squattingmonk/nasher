@@ -1,7 +1,7 @@
 import tables, os, strformat, strutils, times
 from glob import walkGlob
 
-import utils/[cli, manifest, nwn, options, shared]
+import utils/[cli, git, manifest, nwn, options, shared]
 
 const
   helpUnpack* = """
@@ -117,12 +117,19 @@ proc unpack*(opts: Options, pkg: PackageRef) =
         of "hak": installDir / "hak" / fileName
         of "tlk": installDir / "tlk" / fileName
         else: dir / target.file
+    branch =
+      if opts.hasKey("branch"): opts.get("branch")
+      else: target.branch
 
   if file == "":
     help(helpUnpack)
 
   if not existsDir(file) and not existsFile(file):
     fatal(fmt"Cannot unpack {file}: file does not exist")
+
+  # Add git branch functionality here.  check for branch in options, if none, check in target
+  # gitSetBranch handles repo and branch existence checks
+  gitSetBranch(dir, branch)
 
   let
     fileType = file.getFileExt
