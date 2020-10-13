@@ -1,4 +1,4 @@
-import os, osproc, streams, strformat, strutils, uri
+import os, osproc, strformat, strutils, uri
 import cli
 
 from shared import withDir
@@ -41,19 +41,14 @@ proc gitRemote*(dir = getCurrentDir()): string =
 
 proc gitInit*(dir = getCurrentDir()): bool =
   ## Initializes dir as a git repository and returns whether the operation was
-  ## successful. Will throw an OSError if dir does not exist.
-  ## README.md created to prevent branch checkout errors before first commit
+  ## successful. Will throw an OSError if dir does not exist.  Init empty commit
+  ## made on branch `master` to force branch recognition
   var exitCode: int
 
   withDir(dir):
     exitCode = execCmdEx("git init").exitCode
     if exitCode == 0:
-      var s = openFileStream("README.md", fmWrite)
-      s.writeLine("My NWN Repo.")
-      s.close
-
-      discard gitExecCmd("git add README.md")
-      discard gitExecCmd("git commit -m \"initial commit\"")
+      discard execCmdEx("git commit --allow-empty -m \"root commit\"")
 
   result = exitCode == 0
 
@@ -61,6 +56,7 @@ proc gitExistsBranch(dir: string, branch: string): bool =
   ## Determines if passed branch exists in passed repository
   withDir(dir):
     gitExecCmd("git show-ref --verify refs/heads/" & branch, "error") != "error"
+    #gitExecCmd("git branch --list " & branch, "error") != "error"
 
 proc gitBranch*(dir = getCurrentDir()): string =
   ## Return name of the current branch
