@@ -1,7 +1,7 @@
 import json, os, osproc, strformat, strutils, math
 from sequtils import mapIt, toSeq
 
-import cli
+import cli, options
 
 const
   Options = {poUsePath, poStdErrToStdOut}
@@ -97,8 +97,9 @@ proc gffConvert*(inFile, outFile, bin, args: string, precision: range[1..32] = 4
   except:
     fatal(fmt"Could not create {outFile}:\n" & getCurrentExceptionMsg())
 
-proc removeUnusedAreas*(dir, bin, args: string) =
-  ## Removes any areas not in ``dir`` from the module.ifo file in ``dir``.
+proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.Target) =
+  ## Removes any areas not in ``dir`` from the module.ifo file in ``dir``
+  ## and sets module name and min version, if specified
   let
     fileGff = dir / "module.ifo"
     fileJson = fileGff & ".json"
@@ -113,18 +114,35 @@ proc removeUnusedAreas*(dir, bin, args: string) =
 
   let
     entryArea = ifoJson["Mod_Entry_Area"]["value"].getStr
+    moduleName =
+      if opts.hasKey("modName"): opts.get("modName")
+      else: target.modName
+    moduleVersion =
+      if opts.hasKey("modMinGameVersion"): opts.get("modMinGameVersion")
+      else: target.modMinGameVersion
 
+  # Area List update
   if entryArea notin areas:
     fatal("This module does not have a valid starting area!")
 
-  for key, value in ifoJson["Mod_Area_list"]["value"].getElems.pairs:
-    let area = value["Area_Name"]["value"].getStr
-    if area in areas:
-      ifoAreas.add(value)
-    else:
-      info("Removing", fmt"unused area {area.escape} from module.ifo")
+  if areas.len > 0:
+    for area in areas:
+      ifoAreas.add(%* {"__struct_id":6,"Area_Name":{"type":"resref","value":area}})
 
-  ifoJson["Mod_Area_list"]["value"] = %ifoAreas
+    ifoJson["Mod_Area_list"]["value"] = %ifoAreas
+    success("area list updated")
+  
+  # Module Name Update
+  if moduleName.len > 0 and moduleName != ifoJson["Mod_Name"]["value"]["0"].getStr():
+    ifoJson["Mod_Name"]["value"]["0"] = %moduleName
+    success("module name set to " & moduleName)
+
+  # Module Version Update
+  if moduleVersion.len > 0 and moduleVersion != ifoJson["Mod_MinGameVer"]["value"].getStr():
+    if askIf(fmt"Changing the module's min game version to {moduleVersion} could have unintended consequences.  Continue?"):
+      ifoJson["Mod_MinGameVer"]["value"] = %moduleVersion
+      success("module min game version set to " & moduleVersion)
+
   writeFile(fileJson, $ifoJson)
   convertFile(fileJson, fileGff, bin, args)
   removeFile(fileJson)

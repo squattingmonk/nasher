@@ -9,15 +9,15 @@ type
   Options* = StringTableRef
 
   Package = object
-    name*, description*, version*, url*: string
+    name*, description*, version*, url*, modName*, modMinGameVersion*: string
     authors*, includes*, excludes*, filters*, flags*, updated*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
 
   PackageRef* = ref Package
 
-  Target = object
-    name*, file*, description*: string
+  Target* = object
+    name*, file*, description*, modName*, modMinGameVersion*: string
     includes*, excludes*, filters*, flags*: seq[string]
     rules*: seq[Rule]
 
@@ -338,6 +338,10 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       target.flags = pkg.flags
     if target.rules.len == 0:
       target.rules = pkg.rules
+    if target.modName.len == 0:
+      target.modName = pkg.modName
+    if target.modMinGameVersion.len == 0:
+      target.modMinGameVersion = pkg.modMinGameVersion
     pkg.targets.add(target)
   target = initTarget()
 
@@ -377,6 +381,8 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "exclude": pkg.excludes.add(e.value)
         of "filter": pkg.filters.add(e.value)
         of "flags": pkg.flags.add(e.value)
+        of "modName": pkg.modName = e.value
+        of "modMinGameVersion": pkg.modMinGameVersion = e.value
         else:
           pkg.rules.add((e.key, e.value))
       of "target":
@@ -388,6 +394,8 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "exclude": target.excludes.add(e.value)
         of "filter": target.filters.add(e.value)
         of "flags": target.flags.add(e.value)
+        of "modName": target.modName = e.value
+        of "modMinGameVersion": target.modMinGameVersion = e.value
         else:
           target.rules.add((e.key, e.value))
       of "rules":
@@ -417,6 +425,8 @@ proc dumpPackage(pkg: PackageRef) =
   debug("Excludes:", pkg.excludes.join("\n"))
   debug("Filters:", pkg.filters.join("\n"))
   debug("Flags:", pkg.flags.join("\n"))
+  debug("Module Name:", pkg.modName)
+  debug("Module Min Game Version:", pkg.modMinGameVersion)
 
   for pattern, dir in pkg.rules.items:
     debug("Rule:", fmt"{pattern} -> {dir}")
@@ -430,6 +440,8 @@ proc dumpPackage(pkg: PackageRef) =
     debug("Excludes:", target.excludes.join("\n"))
     debug("Filters:", target.filters.join("\n"))
     debug("Flags:", target.flags.join("\n"))
+    debug("Module Name:", target.modName)
+    debug("Module Min Game Version:", target.modMinGameVersion)
 
     for pattern, dir in target.rules.items:
       debug("Rule:", fmt"{pattern} -> {dir}")
