@@ -97,13 +97,29 @@ proc gffConvert*(inFile, outFile, bin, args: string, precision: range[1..32] = 4
   except:
     fatal(fmt"Could not create {outFile}:\n" & getCurrentExceptionMsg())
 
+proc isValid(version: string): bool =
+  # Returns true if the version number is plausible.
+  let decomp = version.split('.')
+
+  if decomp.len < 2 or decomp.len > 4:
+    return false
+  
+  for section in decomp:
+    try:
+      discard section.parseUInt
+      result = true
+    except ValueError:
+      return false
+
 proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.Target) =
-  ## Removes any areas not in ``dir`` from the module.ifo file in ``dir``
+  ## Updates the areas listing in module.ifo, checks for matching .gic/.git files,          
   ## and sets module name and min version, if specified
   let
     fileGff = dir / "module.ifo"
     fileJson = fileGff & ".json"
     areas = toSeq(walkFiles(dir / "*.are")).mapIt(it.splitFile.name)
+    gics = toSeq(walkFiles(dir / "*.gic")).mapIt(it.splitFile.name)
+    gits = toSeq(walkFiles(dir / "*.git")).mapIt(it.splitFile.name)
 
   if not existsFile(fileGff):
     return
@@ -111,6 +127,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
   var
     ifoJson = gffToJson(fileGff, bin, args)
     ifoAreas: seq[JsonNode]
+    unmatchedAreas: seq[string]
 
   let
     entryArea = ifoJson["Mod_Entry_Area"]["value"].getStr
@@ -126,23 +143,40 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
     fatal("This module does not have a valid starting area!")
 
   if areas.len > 0:
+    display("Updating", "area list")
+    let plurality = (if areas.len > 1: "s" else: "")
+
     for area in areas:
       ifoAreas.add(%* {"__struct_id":6,"Area_Name":{"type":"resref","value":area}})
 
+      if area notin gics or area notin gits:
+        unmatchedAreas.add(area)
+
+    if unmatchedAreas.len > 0:
+      warning("The following do not have matching .gic or .git files and will not be accessible " &
+        "in the toolset: " & unmatchedAreas.join(", "))
+
     ifoJson["Mod_Area_list"]["value"] = %ifoAreas
-    success("area list updated")
+    success(fmt"area list updated --> {areas.len} area{plurality} listed")
   
   # Module Name Update
-  if moduleName.len > 0 and moduleName != ifoJson["Mod_Name"]["value"]["0"].getStr():
+  if moduleName.len > 0 and moduleName != ifoJson["Mod_Name"]["value"]["0"].getStr:
     ifoJson["Mod_Name"]["value"]["0"] = %moduleName
     success("module name set to " & moduleName)
 
-  # Module Version Update
-  if moduleVersion.len > 0 and moduleVersion != ifoJson["Mod_MinGameVer"]["value"].getStr():
-    if askIf(fmt"Changing the module's min game version to {moduleVersion} could have unintended consequences.  Continue?"):
-      ifoJson["Mod_MinGameVer"]["value"] = %moduleVersion
-      success("module min game version set to " & moduleVersion)
+  # Module Min Game Version Update
+  if moduleVersion.isValid:
+    let currentVersion = ifoJson["Mod_MinGameVer"]["value"].getStr
 
+    if moduleVersion == currentVersion:
+      display("Version:", fmt"current module min game version is '{currentVersion}', no change required")
+    else:
+      if askIf(fmt"Changing the module's min game version to '{moduleVersion}' could have unintended consequences.  Continue?"):
+        ifoJson["Mod_MinGameVer"]["value"] = %moduleVersion
+        success("module min game version set to " & moduleVersion)
+  else:
+    error(fmt"requested min game version '{moduleVersion}' is not valid")
+    
   writeFile(fileJson, $ifoJson)
   convertFile(fileJson, fileGff, bin, args)
   removeFile(fileJson)
