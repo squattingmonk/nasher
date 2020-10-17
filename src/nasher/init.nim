@@ -37,6 +37,14 @@ proc init*(opts: Options, pkg: PackageRef): bool =
 
   display("Initializing", "into " & dir)
 
+  try:
+    display("Creating", "package file at " & file)
+    createDir(dir)
+    writeFile(file, genPackageText(opts))
+    success("created package file")
+  except:
+    fatal("Could not create package file at " & file)
+
   # TODO: support hg
   if opts.getOrPut("vcs", "git") == "git":
     try:
@@ -46,14 +54,6 @@ proc init*(opts: Options, pkg: PackageRef): bool =
         success("initialized git repository")
     except:
       error("Could not initialize git repository: " & getCurrentExceptionMsg())
-
-  try:
-    display("Creating", "package file at " & file)
-    createDir(dir)
-    writeFile(file, genPackageText(opts))
-    success("created package file")
-  except:
-    fatal("Could not create package file at " & file)
 
   success("project initialized")
 

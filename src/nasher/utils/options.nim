@@ -96,7 +96,7 @@ proc getPackageRoot*(baseDir = getCurrentDir()): string =
   result = baseDir.absolutePath()
 
   for dir in parentDirs(result):
-    if existsFile(dir / "nasher.cfg"):
+    if fileExists(dir / "nasher.cfg"):
       return dir
 
 proc getConfigFile*(pkgDir = ""): string =
@@ -111,7 +111,7 @@ proc getPackageFile*(baseDir = getCurrentDir()): string =
   getPackageRoot(baseDir) / "nasher.cfg"
 
 proc existsPackageFile*(dir = getCurrentDir()): bool =
-  existsFile(getPackageFile(dir))
+  fileExists(getPackageFile(dir))
 
 proc parseConfigFile*(opts: Options, file: string) =
   ## Loads all all values from ``file`` into opts. This provides user-defined
@@ -299,7 +299,7 @@ proc verifyBinaries*(opts: Options) =
     let path = opts[bin.flag]
     info("Located", bin.desc & " at " & path)
 
-    if not existsFile(path):
+    if not fileExists(path):
       let
         file = path.extractFilename
         msg =
@@ -445,7 +445,7 @@ proc dumpPackage(pkg: PackageRef) =
 proc loadPackageFile*(pkg: PackageRef, file: string): bool =
   ## Initializes ``pkg`` with the contents of ``file``. Returns whether the
   ## operation was successful.
-  if existsFile(file):
+  if fileExists(file):
     pkg.parsePackageFile(file)
     pkg.dumpPackage
     result = true
@@ -569,13 +569,11 @@ proc genRuleText: string =
       if not askIf("Do you wish to add another rule?", allowed = NotYes):
         break
 
-proc genTargetText(defaultName: string, defaultBranch: string): string =
+proc genTargetText(defaultName: string): string =
   result.addLine("[Target]")
   result.addPair("name", ask("Target name:", defaultName))
   result.addPair("file", ask("File to generate:", "demo.mod"))
   result.addPair("description", ask("File description:"))
-  if gitRepo():
-    result.addPair("branch", ask("Git branch:", defaultBranch))
 
   hint("Adding a list of sources for this target will limit the target " &
        "to those sources. If you don't add sources to this target, it will " &
@@ -585,8 +583,6 @@ proc genTargetText(defaultName: string, defaultBranch: string): string =
 
 proc genPackageText*(opts: Options): string =
   display("Generating", "package config file")
-  let 
-    defaultBranch = opts.get("branch", gitBranch())
 
   if not opts.get("skipPkgInfo", false):
     let 
@@ -597,8 +593,6 @@ proc genPackageText*(opts: Options): string =
     result.addPair("description", ask("Package description:"))
     result.addPair("version", ask("Package version:"))
     result.addPair("url", ask("Package URL:", defaultUrl))
-    if gitRepo():
-      result.addPair("branch", ask("Git branch:", defaultBranch))
 
     var
       defaultAuthor = opts.get("userName", gitUser())
@@ -648,7 +642,7 @@ proc genPackageText*(opts: Options): string =
   var targetName = "default"
   while true:
     result.addLine
-    result.add(genTargetText(targetName, defaultBranch))
+    result.add(genTargetText(targetName))
     targetName = ""
 
     if not askIf("Do you wish to add another target?", allowed = NotYes):
