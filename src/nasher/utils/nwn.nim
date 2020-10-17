@@ -162,7 +162,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
     success("module name set to " & moduleName)
 
   # Module Min Game Version Update
-  if moduleVersion.isValid:
+  if moduleVersion.len > 0 and moduleVersion.isValid:
     let currentVersion = ifoJson["Mod_MinGameVer"]["value"].getStr
 
     if moduleVersion == currentVersion:
@@ -171,7 +171,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
       if askIf(fmt"Changing the module's min game version to '{moduleVersion}' could have unintended consequences.  Continue?"):
         ifoJson["Mod_MinGameVer"]["value"] = %moduleVersion
         success("module min game version set to " & moduleVersion)
-  elif moduleVersion.len > 0:
+  else:
     error(fmt"requested min game version '{moduleVersion}' is not valid")
     
   writeFile(fileJson, $ifoJson)
