@@ -131,6 +131,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
 
   let
     entryArea = ifoJson["Mod_Entry_Area"]["value"].getStr
+    removeUnused = opts.get("removeUnusedAreas", true)
     moduleName = opts.get("modName", target.modName)
     moduleVersion = opts.get("modMinGameVersion", target.modMinGameVersion)
 
@@ -138,7 +139,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
   if entryArea notin areas:
     fatal("This module does not have a valid starting area!")
 
-  if areas.len > 0:
+  if areas.len > 0 and removeUnused:
     display("Updating", "area list")
     let plurality = (if areas.len > 1: "s" else: "")
 

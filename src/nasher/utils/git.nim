@@ -59,5 +59,5 @@ proc gitIgnore*(dir = getCurrentDir(), force = false) =
     # Ignore the nasher directory
     .nasher/
     """
-  if force or not existsFile(dir / file):
+  if force or not fileExists(dir / file):
     writeFile(dir / file, text.unindent(4))

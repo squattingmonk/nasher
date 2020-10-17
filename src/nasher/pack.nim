@@ -63,7 +63,7 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
 
   display("Packing", fmt"files for target {target} into {file}")
 
-  if existsFile(file):
+  if fileExists(file):
     let
       packTime = file.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, packTime)

@@ -32,7 +32,7 @@ proc init*(opts: Options, pkg: PackageRef): bool =
     dir = opts.getOrPut("directory", getCurrentDir())
     file = dir / "nasher.cfg"
 
-  if existsFile(file):
+  if fileExists(file):
     fatal(dir & " is already a nasher project")
 
   display("Initializing", "into " & dir)

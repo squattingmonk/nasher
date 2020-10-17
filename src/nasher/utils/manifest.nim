@@ -49,7 +49,7 @@ proc getFilesChanged*(manifest: Manifest, srcFile, outFile: string): bool =
   ## Returns whether either srcFile or outFile have changed in the manifest
   let fileName = outFile.extractFilename
 
-  if not existsFile(outFile) or not manifest.data.hasKey(fileName):
+  if not fileExists(outFile) or not manifest.data.hasKey(fileName):
     return true
 
   return (manifest.data{fileName, "srcSum"}.getStr != $srcFile.secureHashFile or

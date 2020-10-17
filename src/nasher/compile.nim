@@ -110,11 +110,11 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
           fileName = file.extractFilename
           pkgRoot = getPackageRoot()
 
-        if file == fileName and existsFile(file):
+        if file == fileName and fileExists(file):
           info("Found", fileName & " in target cache")
           scripts.add(fileName)
-        elif (existsFile(file) and target.isSrcFile(file.relativePath(pkgRoot))) or # absolute
-             (existsFile(pkgRoot / file) and target.isSrcFile(file)):               # relative
+        elif (fileExists(file) and target.isSrcFile(file.relativePath(pkgRoot))) or # absolute
+             (fileExists(pkgRoot / file) and target.isSrcFile(file)):               # relative
                info("Found", fileName & " at " & file)
                scripts.add(fileName)
         else:
@@ -128,7 +128,7 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
         files.add(file)
         if file notin pkg.updated and file.executable:
           let compiled = file.changeFileExt("ncs")
-          if not existsFile(compiled) or file.fileNewer(compiled):
+          if not fileExists(compiled) or file.fileNewer(compiled):
             pkg.updated.add(file)
 
       scripts = pkg.getUpdated(files)

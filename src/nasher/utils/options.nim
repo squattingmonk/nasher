@@ -96,7 +96,7 @@ proc getPackageRoot*(baseDir = getCurrentDir()): string =
   result = baseDir.absolutePath()
 
   for dir in parentDirs(result):
-    if existsFile(dir / "nasher.cfg"):
+    if fileExists(dir / "nasher.cfg"):
       return dir
 
 proc getConfigFile*(pkgDir = ""): string =
@@ -111,7 +111,7 @@ proc getPackageFile*(baseDir = getCurrentDir()): string =
   getPackageRoot(baseDir) / "nasher.cfg"
 
 proc existsPackageFile*(dir = getCurrentDir()): bool =
-  existsFile(getPackageFile(dir))
+  fileExists(getPackageFile(dir))
 
 proc parseConfigFile*(opts: Options, file: string) =
   ## Loads all all values from ``file`` into opts. This provides user-defined
@@ -299,7 +299,7 @@ proc verifyBinaries*(opts: Options) =
     let path = opts[bin.flag]
     info("Located", bin.desc & " at " & path)
 
-    if not existsFile(path):
+    if not fileExists(path):
       let
         file = path.extractFilename
         msg =
@@ -451,7 +451,7 @@ proc dumpPackage(pkg: PackageRef) =
 proc loadPackageFile*(pkg: PackageRef, file: string): bool =
   ## Initializes ``pkg`` with the contents of ``file``. Returns whether the
   ## operation was successful.
-  if existsFile(file):
+  if fileExists(file):
     pkg.parsePackageFile(file)
     pkg.dumpPackage
     result = true
@@ -468,7 +468,7 @@ proc getTarget*(pkg: PackageRef, name = ""): Target =
   else:
     try:
       result = pkg.targets[0]
-    except IndexError:
+    except Defect:
       fatal("No targets found. Please check your nasher.cfg file.")
 
 proc getTargets*(pkg: PackageRef, names = ""): seq[Target] =

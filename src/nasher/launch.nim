@@ -86,7 +86,7 @@ proc launch*(opts: Options) =
   if ext != ".mod":
     display("Skipping", fmt"{cmd}: {file} is not a module")
   else:
-    if not existsFile(path):
+    if not fileExists(path):
       fatal(fmt"Cannot {cmd} {file}: {path} does not exist")
 
     if fpUserExec notin path.getFilePermissions:
