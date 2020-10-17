@@ -121,7 +121,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
     gics = toSeq(walkFiles(dir / "*.gic")).mapIt(it.splitFile.name)
     gits = toSeq(walkFiles(dir / "*.git")).mapIt(it.splitFile.name)
 
-  if not existsFile(fileGff):
+  if not fileExists(fileGff):
     return
 
   var
@@ -131,12 +131,8 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
 
   let
     entryArea = ifoJson["Mod_Entry_Area"]["value"].getStr
-    moduleName =
-      if opts.hasKey("modName"): opts.get("modName")
-      else: target.modName
-    moduleVersion =
-      if opts.hasKey("modMinGameVersion"): opts.get("modMinGameVersion")
-      else: target.modMinGameVersion
+    moduleName = opts.get("modName", target.modName)
+    moduleVersion = opts.get("modMinGameVersion", target.modMinGameVersion)
 
   # Area List update
   if entryArea notin areas:
@@ -174,7 +170,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
       if askIf(fmt"Changing the module's min game version to '{moduleVersion}' could have unintended consequences.  Continue?"):
         ifoJson["Mod_MinGameVer"]["value"] = %moduleVersion
         success("module min game version set to " & moduleVersion)
-  else:
+  elif moduleVersion.len > 0:
     error(fmt"requested min game version '{moduleVersion}' is not valid")
     
   writeFile(fileJson, $ifoJson)
