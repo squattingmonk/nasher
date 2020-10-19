@@ -9,15 +9,15 @@ type
   Options* = StringTableRef
 
   Package = object
-    name*, description*, version*, url*: string
+    name*, description*, version*, url*, modName*, modMinGameVersion*: string
     authors*, includes*, excludes*, filters*, flags*, updated*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
 
   PackageRef* = ref Package
 
-  Target = object
-    name*, file*, description*: string
+  Target* = object
+    name*, file*, description*, modName*, modMinGameVersion*: string
     includes*, excludes*, filters*, flags*: seq[string]
     rules*: seq[Rule]
 
@@ -96,7 +96,7 @@ proc getPackageRoot*(baseDir = getCurrentDir()): string =
   result = baseDir.absolutePath()
 
   for dir in parentDirs(result):
-    if existsFile(dir / "nasher.cfg"):
+    if fileExists(dir / "nasher.cfg"):
       return dir
 
 proc getConfigFile*(pkgDir = ""): string =
@@ -111,7 +111,7 @@ proc getPackageFile*(baseDir = getCurrentDir()): string =
   getPackageRoot(baseDir) / "nasher.cfg"
 
 proc existsPackageFile*(dir = getCurrentDir()): bool =
-  existsFile(getPackageFile(dir))
+  fileExists(getPackageFile(dir))
 
 proc parseConfigFile*(opts: Options, file: string) =
   ## Loads all all values from ``file`` into opts. This provides user-defined
@@ -299,7 +299,7 @@ proc verifyBinaries*(opts: Options) =
     let path = opts[bin.flag]
     info("Located", bin.desc & " at " & path)
 
-    if not existsFile(path):
+    if not fileExists(path):
       let
         file = path.extractFilename
         msg =
@@ -338,6 +338,10 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       target.flags = pkg.flags
     if target.rules.len == 0:
       target.rules = pkg.rules
+    if target.modName.len == 0:
+      target.modName = pkg.modName
+    if target.modMinGameVersion.len == 0:
+      target.modMinGameVersion = pkg.modMinGameVersion
     pkg.targets.add(target)
   target = initTarget()
 
@@ -377,6 +381,8 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "exclude": pkg.excludes.add(e.value)
         of "filter": pkg.filters.add(e.value)
         of "flags": pkg.flags.add(e.value)
+        of "modName": pkg.modName = e.value
+        of "modMinGameVersion": pkg.modMinGameVersion = e.value
         else:
           pkg.rules.add((e.key, e.value))
       of "target":
@@ -388,6 +394,8 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "exclude": target.excludes.add(e.value)
         of "filter": target.filters.add(e.value)
         of "flags": target.flags.add(e.value)
+        of "modName": target.modName = e.value
+        of "modMinGameVersion": target.modMinGameVersion = e.value
         else:
           target.rules.add((e.key, e.value))
       of "rules":
@@ -417,6 +425,8 @@ proc dumpPackage(pkg: PackageRef) =
   debug("Excludes:", pkg.excludes.join("\n"))
   debug("Filters:", pkg.filters.join("\n"))
   debug("Flags:", pkg.flags.join("\n"))
+  debug("Module Name:", pkg.modName)
+  debug("Module Min Game Version:", pkg.modMinGameVersion)
 
   for pattern, dir in pkg.rules.items:
     debug("Rule:", fmt"{pattern} -> {dir}")
@@ -430,6 +440,8 @@ proc dumpPackage(pkg: PackageRef) =
     debug("Excludes:", target.excludes.join("\n"))
     debug("Filters:", target.filters.join("\n"))
     debug("Flags:", target.flags.join("\n"))
+    debug("Module Name:", target.modName)
+    debug("Module Min Game Version:", target.modMinGameVersion)
 
     for pattern, dir in target.rules.items:
       debug("Rule:", fmt"{pattern} -> {dir}")
@@ -439,7 +451,7 @@ proc dumpPackage(pkg: PackageRef) =
 proc loadPackageFile*(pkg: PackageRef, file: string): bool =
   ## Initializes ``pkg`` with the contents of ``file``. Returns whether the
   ## operation was successful.
-  if existsFile(file):
+  if fileExists(file):
     pkg.parsePackageFile(file)
     pkg.dumpPackage
     result = true
@@ -454,9 +466,9 @@ proc getTarget*(pkg: PackageRef, name = ""): Target =
         return target
     fatal("Unknown target " & wanted)
   else:
-    try:
+    if pkg.targets.len > 0:
       result = pkg.targets[0]
-    except IndexError:
+    else:
       fatal("No targets found. Please check your nasher.cfg file.")
 
 proc getTargets*(pkg: PackageRef, names = ""): seq[Target] =

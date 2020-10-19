@@ -44,10 +44,10 @@ proc install*(opts: Options, pkg: PackageRef): bool =
     return cmd != "install"
 
   display("Installing", file & " into " & dir)
-  if not existsFile(file):
+  if not fileExists(file):
     fatal(fmt"Cannot install {file}: file does not exist")
 
-  if not existsDir(dir):
+  if not dirExists(dir):
     fatal(fmt"Cannot install to {dir}: directory does not exist")
 
   let
@@ -62,11 +62,11 @@ proc install*(opts: Options, pkg: PackageRef): bool =
       of ".tlk": dir / "tlk"
       else: dir
 
-  if not existsDir(installDir):
+  if not dirExists(installDir):
     createDir(installDir)
 
   let installed = installDir / fileName
-  if existsFile(installed):
+  if fileExists(installed):
     let
       installedTime = installed.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, installedTime)
@@ -86,7 +86,7 @@ proc install*(opts: Options, pkg: PackageRef): bool =
       erfUtil = opts.get("erfUtil")
       erfFlags = opts.get("erfFlags")
 
-    if not existsDir(modFolder):
+    if not dirExists(modFolder):
       createDir(modFolder)
 
     withDir(modFolder):

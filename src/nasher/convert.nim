@@ -128,10 +128,10 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
       manifest.add(srcFile, outFile)
 
   manifest.write
-
-  # Trim unused areas from the module.ifo
-  if cmd != "compile" and opts.get("removeUnusedAreas", true):
-    removeUnusedAreas(cacheDir, gffUtil, gffFlags)
+  
+  # Update the module's .ifo file
+  if cmd != "compile":
+    updateIfo(cacheDir, gffUtil, gffFlags, opts, target)
 
   # Prevent falling through to the next function if we were called directly
   return cmd != "convert"
