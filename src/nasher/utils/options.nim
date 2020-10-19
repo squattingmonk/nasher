@@ -466,9 +466,9 @@ proc getTarget*(pkg: PackageRef, name = ""): Target =
         return target
     fatal("Unknown target " & wanted)
   else:
-    try:
+    if pkg.targets.len > 0:
       result = pkg.targets[0]
-    except Defect:
+    else:
       fatal("No targets found. Please check your nasher.cfg file.")
 
 proc getTargets*(pkg: PackageRef, names = ""): seq[Target] =
