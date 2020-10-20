@@ -1,5 +1,30 @@
 # nasher changelog
 
+## 0.12.2: October 20, 2020
+
+### Use copy of cache directory to filter and pack
+([#52](https://github.com/squattingmonk/nasher.nim/issues/52))
+
+This fixes an issue caused by filtered files being removed from the cache
+directory before packing. Now a copy of the directory is made, the filters are
+applied, and the target file is made from that, leaving the cached content in
+place.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.12.1...0.12.2
+
+
+## 0.12.1: October 20, 2020
+
+This change removes a spurious warning about missing `.gic` files that
+overwhelmed the output on large modules.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.12.0...0.12.1
+
+
 ## 0.12.0: October 20, 2020
 
 ### Include directives and exec functions comments now ignored

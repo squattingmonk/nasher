@@ -9,7 +9,7 @@ RUN dpkg --add-architecture i386 \
     && apt upgrade -y \
     && apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 -y \
     && choosenim update 1.2.0 \
-    && nimble install nasher@#0.12.0 -y \
+    && nimble install nasher@#0.12.2 -y \
     && nasher config --nssFlags:"-n /nwn/data -o" \
     && nasher config --installDir:"/nasher/install"
 RUN nasher config --userName:"nasher"

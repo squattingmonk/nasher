@@ -89,22 +89,23 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     except OSError:
       fatal(fmt"No file found. Does {fileName}.json exist in the source tree?")
   else:
+    let packDir = ".nasher" / "pack"
+    removeDir(packDir)
+    copyDirWithPermissions(cacheDir, packDir)
     const globOpts = {IgnoreCase, Hidden, Files}
     for filter in pkg.getTarget(target).filters:
-      for file in glob.walkGlob(filter, cacheDir, globOpts):
+      for file in glob.walkGlob(filter, packDir, globOpts):
         info("Filtering", file)
-        removeFile(cacheDir / file)
+        removeFile(packDir / file)
 
-    createErf(cacheDir, file, bin, args)
+    createErf(packDir, file, bin, args)
 
   for file in walkFiles(cacheDir / "*"):
-    if file.splitFile.ext == ".ncs":
-      continue
-  
-    manifest.add(file, fileTime)
+    if file.splitFile.ext != ".ncs":
+      manifest.add(file, fileTime)
 
   manifest.write
-      
+
   success("packed " & file)
   setLastModificationTime(file, fileTime)
 
