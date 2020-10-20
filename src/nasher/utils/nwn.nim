@@ -112,13 +112,12 @@ proc isValid(version: string): bool =
       return false
 
 proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.Target) =
-  ## Updates the areas listing in module.ifo, checks for matching .gic/.git files,          
+  ## Updates the areas listing in module.ifo, checks for matching .git files,          
   ## and sets module name and min version, if specified
   let
     fileGff = dir / "module.ifo"
     fileJson = fileGff & ".json"
     areas = toSeq(walkFiles(dir / "*.are")).mapIt(it.splitFile.name)
-    gics = toSeq(walkFiles(dir / "*.gic")).mapIt(it.splitFile.name)
     gits = toSeq(walkFiles(dir / "*.git")).mapIt(it.splitFile.name)
 
   if not fileExists(fileGff):
@@ -146,11 +145,11 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
     for area in areas:
       ifoAreas.add(%* {"__struct_id":6,"Area_Name":{"type":"resref","value":area}})
 
-      if area notin gics or area notin gits:
+      if area notin gits:
         unmatchedAreas.add(area)
 
     if unmatchedAreas.len > 0:
-      warning("The following do not have matching .gic or .git files and will not be accessible " &
+      warning("The following do not have matching .git files and will not be accessible " &
         "in the toolset: " & unmatchedAreas.join(", "))
 
     ifoJson["Mod_Area_list"]["value"] = %ifoAreas
