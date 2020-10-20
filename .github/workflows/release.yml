@@ -7,7 +7,7 @@ on:
 
 env:
   APP_NAME: 'nasher'
-  NIM_VERSION: 'stable'
+  NIM_VERSION: '1.2.0'
   MAINTAINER: 'Michael A. Sinclair <squattingmonk@gmail.com>'
   RELEASE_FILES: nasher LICENSE README.*
 

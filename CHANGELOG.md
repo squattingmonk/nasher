@@ -1,5 +1,35 @@
 # nasher changelog
 
+## 0.12.0: October 20, 2020
+
+### Include directives and exec functions comments now ignored
+([#48](https://github.com/squattingmonk/nasher.nim/issues/48))
+
+Previously, include scripts that had executable functions inside of multi-line
+comment blocks were erroneously marked as executable, causing unnecessary
+recompilation since no `.ncs` file was generated after the last compile.
+
+This also fixes a related error, where include directives inside
+multi-line comments were erroneously detected.
+
+### Add module name/version functionality
+([#51](https://github.com/squattingmonk/nasher.nim/pull/51))
+
+Thanks to tinygiant98 for this update. This update adds the ability to set a
+module's name and the minimum game version required to run it.
+
+You can set the module's name and minimum game version using the `modName` and
+`modMinGameVersion` settings, respectively. They can be passed as fields under
+a `[Package]` or `[Target]` section of `nasher.cfg` or as command-line flags.
+If a target does not have a set module name or version, it will inherit from
+the package. If neither is present, no changes will be made. A command-line
+option will override any setting in the `nasher.cfg`.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.11.9...0.12.0
+
+
 ## 0.11.9: September 26, 2020
 
 ### Allow `install` and launch commands to work with docker
