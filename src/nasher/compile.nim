@@ -1,5 +1,5 @@
 from sequtils import distribute, apply
-import os, tables, strscans, strtabs, strutils
+import os, tables, strtabs, strutils, pegs
 
 import utils/[cli, compiler, options, shared]
 
@@ -32,37 +32,71 @@ const
     --no-color         Disable color output (automatic if not a tty)
   """
 
-const
-  patternMain = "$svoid$smain$s($s)"
-  patternCond = "$sint$sStartingConditional$s($s)"
 
 proc executable(script: string): bool =
   ## Returns whether ``script`` contains a main() or StartingConditional()
   ## function and is thus executable nwscript.
+  var
+    comment: bool
+
+  let
+    pExec = peg"""
+      execfunc <- (mlcomment / \s)* (main / conditional) \s* '(' \s* ')'
+      main <- 'void' \s+ 'main'
+      conditional <- 'int' \s+ 'StartingConditional'
+      mlcomment <- @ '*/'
+      """
+    pCommentOpen = peg"""
+      copen <- (@ strlit)* @ '/*' !@ '*/'
+      strlit <- '"' @ '"'
+      """
+    pCommentClose = peg"@ '*/'"
+
   for line in script.lines:
-    if scanf(line, patternMain) or scanf(line, patternCond):
+    if comment:
+      if line.match(pCommentClose):
+        comment = false
+      else:
+        continue
+    if line.match(pExec):
       return true
+    elif line.match(pCommentOpen):
+      comment = true
 
 iterator getIncluded(file: string): string =
   ## Yields all files inluded in the nwscript file ``file``.
-  var included: string
+  var
+    comment: bool
+
+  let
+    pInclude = peg"""
+      file <- ^\s* '#include' \s+ '"' {\ident+} '"' (\s / comment)*$
+      comment <- '/*' @ '*/' / '//' .*
+      """
+    pCommentOpen = peg"""
+      open <- (@ strlit)* @ '/*' !@ '*/'
+      strlit <- '"' @ '"'
+      """
+    pCommentClose = peg"""
+      close <- @ '*/'
+      """
 
   for line in file.lines:
-    # Cannot just search for ascii identifiers because nwscript files can start
-    # with a number
-    if scanf(line, "$s#include$s\"$*\"", included):
-      var i = 0
-      while i < included.len and included[i] in IdentChars:
-        i.inc
-
-      if i == included.len:
-        yield included
+    if comment:
+      if line.match(pCommentClose):
+        comment = false
+    else:
+      if line =~ pInclude:
+        yield matches[0]
+      elif line.match(pCommentOpen):
+        comment = true
 
 proc getIncludes(scripts: seq[string]): Table[string, seq[string]] =
   ## Returns a table listing scripts included by each script in ``scripts``.
   for script in scripts:
     for name in script.getIncluded:
       let file = name.addFileExt("nss")
+      debug(script & " includes " & file)
       if result.hasKeyOrPut(script, @[file]) and file notin result[script]:
         result[script].add(file)
 
@@ -129,6 +163,7 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
         if file notin pkg.updated and file.executable:
           let compiled = file.changeFileExt("ncs")
           if not fileExists(compiled) or file.fileNewer(compiled):
+            debug("Recompiling", "executable script " & file)
             pkg.updated.add(file)
 
       scripts = pkg.getUpdated(files)
