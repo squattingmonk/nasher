@@ -41,53 +41,84 @@ proc gitRemote*(dir = getCurrentDir()): string =
 
 proc gitInit*(dir = getCurrentDir()): bool =
   ## Initializes dir as a git repository and returns whether the operation was
-  ## successful. Will throw an OSError if dir does not exist.  Init empty commit
-  ## made on branch `master` to force branch recognition
-  var exitCode: int
-
+  ## successful. Will throw an OSError if dir does not exist.
   withDir(dir):
-    exitCode = execCmdEx("git init").exitCode
-    if exitCode == 0:
-      discard execCmdEx("git commit --allow-empty -m \"root commit\"")
+    execCmdEx("git init").exitCode == 0
 
-  result = exitCode == 0
+proc empty(repo: string): bool =
+  # See if this is a new repo with no commits yet
+  withDir(repo):
+    gitExecCmd("git branch --list", "none").len == 0
 
-proc gitExistsBranch(dir: string, branch: string): bool =
-  ## Determines if passed branch exists in passed repository
+proc exists(repo: string): bool =
+  # Check for repo existence
+  gitRepo(repo)
+
+proc exists(branch: string, dir: string): bool =
+  # Check for branch existence
   withDir(dir):
     gitExecCmd("git show-ref --verify refs/heads/" & branch, "error") != "error"
-    #gitExecCmd("git branch --list " & branch, "error") != "error"
 
-proc gitBranch*(dir = getCurrentDir()): string =
-  ## Return name of the current branch
-  withDir(dir):
-    gitExecCmd("git rev-parse --abbrev-ref HEAD", "master")
-
-proc gitCheckoutBranch(dir: string, branch: string, create = false) =
+proc checkout(branch: string, repo: string, create = false): bool = 
   # Checkout desired branch, if it exists.  If not, prompts for creation or
-  # uses of current branch
-  if not gitExistsBranch(dir, branch):
-    if create:
-      withDir(dir):
-        discard execCmdEx("git checkout -b " & branch)
-    else:
-      if askIf(fmt"Git branch '{branch}' was not found.  Create it?"):
-        gitCheckoutBranch(dir, branch, true)
+  # uses of current branch.  If can't checkout because of an error, do something else?
+  if create:
+    withDir(repo):
+      gitExecCmd("git checkout -b " & branch, "error") != "error"
   else:
-    withDir(dir):
-      discard execCmdEx("git checkout " & branch)
+    withDir(repo):
+      gitExecCmd("git checkout " & branch, "error") != "error"
 
-proc gitSetBranch*(dir = getCurrentDir(), branch: string) =
-  ## Called if the branch option was specified in configuration or command line.  If the current
-  ## branch is not the specified branch, will checkout the specified branch, if it exists
-  if gitRepo(dir):
-    if branch.len > 0 and gitBranch(dir) != branch:
-      gitCheckoutBranch(dir, branch)
+proc branch(repo: string, default = ""): string =
+  # Gets the current repo branch
+  withDir(repo):
+    gitExecCmd("git rev-parse --abbrev-ref HEAD", default)
+
+proc create(branch: string, repo: string):bool =
+  branch.checkout(repo, true)
+
+proc gitSetBranch*(repo = getCurrentDir(), branch: string): string =
+  ## Called if the branch option was specified in configuration or command line
+  if repo.exists:
+    #Specific branch requested
+    if branch.exists(repo):
+      # Requested branch exists
+      if repo.branch == branch:
+        # We're already on the requested branch
+        result = branch
+      else:
+        # We're not on the requested branch, switch
+        if branch.checkout(repo):
+          # We've switched to the requested branch successfully
+          result = repo.branch
+        else:
+          # Some error preventing the switch, uncommitted or unmerged?
+          # Do something to resolve the issue...
+
+
+          result = "none"
     else:
-      if branch.len == 0:
-        error("git branch could not be determined, using current branch.")
+      # Requested branch doesn't exist
+      if repo.empty:
+        # Repo doesn't have any commits yet
+        let question = "Nasher cannot determine the status of this repo because there have not been any commits. " &
+                       fmt"Continue the operation on branch {branch}?"
 
-    display("Git Branch:", gitBranch(dir))
+        if askIf(question):
+          if branch.create(repo): 
+            if branch != "master":
+              warning("check repo structure, orphan branch may have been created")
+
+            result = branch
+          else: fatal(fmt"branch {branch} could not be created")
+        else:
+          fatal("operation aborted by user")
+      else:
+        # There are commits, just that this branch doesn't exist yet
+        if branch.create(repo):
+          result = branch
+  else:
+    result = "none"
 
 proc gitIgnore*(dir = getCurrentDir(), force = false) =
   ## Creates a .gitignore file in ``dir`` if one does not already exist or if

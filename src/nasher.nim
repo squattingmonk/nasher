@@ -95,7 +95,8 @@ when isMainModule:
         opts["target"] = target.name
         if branch == "none":
           branch = target.branch
-        gitSetBranch(dir, branch)
+        if branch.len > 0:
+          display("VCS Branch:", gitSetBranch(dir, branch))
 
         if convert(opts, pkg) and
            compile(opts, pkg) and

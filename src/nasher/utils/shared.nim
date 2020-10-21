@@ -44,12 +44,12 @@ proc getTimeDiffHint*(file: string, diff: int): string =
 proc fileOlder*(file: string, time: Time): bool =
   ## Checks whether file is older than a time. Only checks seconds since copying
   ## modification times results in unequal nanoseconds.
-  if existsFile(file):
+  if fileExists(file):
     getTimeDiff(time, file.getLastModificationTime) > 0
   else: true
 
 proc fileNewer*(file: string, time: Time): bool =
-  if existsFile(file):
+  if fileExists(file):
     getTimeDiff(time, file.getLastModificationTime) < 0
   else: false
 

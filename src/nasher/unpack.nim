@@ -42,6 +42,7 @@ const
                    output file.
     --yes, --no    Automatically answer yes/no to the overwrite prompt
     --default      Automatically accept the default answer to the overwrite prompt
+    --branch       Place files into specified vcs branch
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands
@@ -96,7 +97,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   if precision notin 1..32:
     fatal("Invalid value: --truncateFloats must be between 1 and 32")
 
-  if not existsDir(dir):
+  if not dirExists(dir):
     fatal("Cannot unpack to {dir}: directory does not exist.")
 
   if not loadPackageFile(pkg, getPackageFile(dir)):
@@ -117,19 +118,17 @@ proc unpack*(opts: Options, pkg: PackageRef) =
         of "hak": installDir / "hak" / fileName
         of "tlk": installDir / "tlk" / fileName
         else: dir / target.file
-    branch =
-      if opts.hasKey("branch"): opts.get("branch")
-      else: target.branch
+    branch = opts.get("branch", target.branch)
 
   if file == "":
     help(helpUnpack)
 
-  if not existsDir(file) and not existsFile(file):
+  if not dirExists(file) and not fileExists(file):
     fatal(fmt"Cannot unpack {file}: file does not exist")
 
-  # Add git branch functionality here.  check for branch in options, if none, check in target
-  # gitSetBranch handles repo and branch existence checks
-  gitSetBranch(dir, branch)
+  # If requested, set a specific vcs branch
+  if branch.len > 0:
+    display("VCS Branch", gitSetBranch(dir, branch))
 
   let
     fileType = file.getFileExt
@@ -151,11 +150,11 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     tmpDir = installDir / "modules" / name
 
     info("Using", "module folder at " & tmpDir)
-    if not existsDir(tmpDir):
+    if not dirExists(tmpDir):
       createDir(tmpDir)
       withDir(tmpDir):
         extractErf(file, erfUtil, erfFlags)
-  elif existsDir(file):
+  elif dirExists(file):
     tmpDir = file
   else:
     removeDir(tmpDir)
@@ -206,7 +205,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
     elif ext == "tlk":
       sourceName.add("." & tlkFormat)
 
-    if sourceName notin sourceFiles and existsFile(tmpDir / fileName):
+    if sourceName notin sourceFiles and fileExists(tmpDir / fileName):
       if not askIf(fmt"{fileName} not found in source directory. Should it be re-added?"):
         if not useFolder:
           removeFile(tmpDir / fileName)
@@ -226,7 +225,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       (_, name, ext) = splitFile(file)
       fileName = if ext == ".json": name else: name.addFileExt(ext)
 
-    if not existsFile(tmpDir / fileName) and
+    if not fileExists(tmpDir / fileName) and
       (removeDeleted or
         (askRemove and
          askIf(fmt"{fileName} was not found in {shortFile}. " &
