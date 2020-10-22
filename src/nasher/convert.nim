@@ -16,7 +16,8 @@ const
     the target file.
 
   Options:
-    --clean        Clears the cache directory before converting
+    --clean            Clears the cache directory before converting
+    --branch:<branch>  Selects git branch before operation.
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands

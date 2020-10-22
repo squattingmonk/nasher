@@ -1,7 +1,7 @@
 import tables, os, strformat, strutils, times
 from glob import walkGlob
 
-import utils/[cli, manifest, nwn, options, shared]
+import utils/[cli, git, manifest, nwn, options, shared]
 
 const
   helpUnpack* = """
@@ -42,6 +42,7 @@ const
                    output file.
     --yes, --no    Automatically answer yes/no to the overwrite prompt
     --default      Automatically accept the default answer to the overwrite prompt
+    --branch       Place files into specified vcs branch
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands
@@ -117,12 +118,17 @@ proc unpack*(opts: Options, pkg: PackageRef) =
         of "hak": installDir / "hak" / fileName
         of "tlk": installDir / "tlk" / fileName
         else: dir / target.file
+    branch = opts.get("branch", target.branch)
 
   if file == "":
     help(helpUnpack)
 
   if not dirExists(file) and not fileExists(file):
     fatal(fmt"Cannot unpack {file}: file does not exist")
+
+  # If requested, set a specific vcs branch
+  if branch.len > 0:
+    display("VCS Branch", gitSetBranch(dir, branch))
 
   let
     fileType = file.getFileExt

@@ -19,9 +19,10 @@ const
     and Mac or `~/.local/share/Neverwinter Nights` on Linux.
 
   Options:
-    --clean        Clears the cache directory before packing
-    --yes, --no    Automatically answer yes/no to prompts
-    --default      Automatically accept the default answer to prompts
+    --clean            Clears the cache directory before packing
+    --yes, --no        Automatically answer yes/no to prompts
+    --default          Automatically accept the default answer to prompts
+    --branch:<branch>  Selects git branch before operation.
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands
