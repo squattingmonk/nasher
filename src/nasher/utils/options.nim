@@ -9,7 +9,7 @@ type
   Options* = StringTableRef
 
   Package = object
-    name*, description*, version*, url*, modName*, modMinGameVersion*: string
+    name*, description*, version*, url*, modName*, modMinGameVersion*, branch*: string
     authors*, includes*, excludes*, filters*, flags*, updated*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
@@ -17,7 +17,7 @@ type
   PackageRef* = ref Package
 
   Target* = object
-    name*, file*, description*, modName*, modMinGameVersion*: string
+    name*, file*, description*, modName*, modMinGameVersion*, branch*: string
     includes*, excludes*, filters*, flags*: seq[string]
     rules*: seq[Rule]
 

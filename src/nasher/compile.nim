@@ -20,6 +20,7 @@ const
   Options:
     --clean            Clears the cache directory before compiling
     -f, --file:<file>  Compiles <file> only. Can be repeated.
+    --branch:<branch>  Selects git branch before operation.
 
   Global Options:
     -h, --help         Display help for nasher or one of its commands
