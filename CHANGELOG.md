@@ -1,5 +1,16 @@
 # nasher changelog
 
+## 0.12.3: October 21, 2020
+
+This release fixes problems with compilation of neverwinter.nim and the
+outdated glob dependency in docker. It's an ugly temporary fix until the
+upstream issues are resolved.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.12.2...0.12.3
+
+
 ## 0.12.2: October 20, 2020
 
 ### Use copy of cache directory to filter and pack
