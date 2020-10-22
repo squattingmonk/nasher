@@ -12,4 +12,5 @@ bin           = @["nasher"]
 
 requires "nim >= 1.2.0"
 requires "neverwinter >= 1.3.1"
+requires "regex 0.16.2"
 requires "glob >= 0.9.0"
