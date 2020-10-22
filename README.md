@@ -7,6 +7,8 @@ module repository.
 - [Description](#description)
 - [Requirements](#requirements)
 - [Installation](#installation)
+    - [Binaries](#binaries)
+    - [Nimble](#nimble)
     - [Docker](#docker)
 - [Usage](#usage)
     - [Initializing a new package](#initializing-a-new-package)
@@ -39,16 +41,25 @@ it has some key differences:
    directories based on category)
 5. nasher can install built targets into the NWN installation directory
 6. nasher uses json rather than yaml for storing gff files
-7. nasher is known to run on Windows, but has not been thoroughly tested there
 
 ## Requirements
-- [nim](https://github.com/dom96/choosenim) >= 1.2.0
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.2.10
 - [nwnsc](https://github.com/nwneetools/nwnsc)
+
+If building from scratch, you will also need [nim](https://nim-lang.org) which
+is most easily installed with [choosenim](https://github.com/dom96/choosenim).
 
 Alternatively, you can use [Docker](#docker).
 
 ## Installation
+
+### Binaries
+Precompiled binaries are available on the [GitHub Releases
+page](https://github.com/squattingmonk/nasher.nim/releases). You will still
+need neverwinter.nim and nwnsc (available in binary form from their respective
+project pages).
+
+### Nimble
 You can install nasher through `nimble`:
 
     # Install latest tagged version
@@ -63,16 +74,14 @@ Or by building from source:
     $ cd nasher
     $ nimble install
 
-Nasher should now be on your nimble path (~/.nimble/bin on Linux). To make it
-easier to run nasher and other nim binaries, add this directory to your PATH.
+Nasher should now be on your nimble path (`~/.nimble/bin` on Linux). To make it
+easier to run nasher and other nim binaries, add this directory to your `PATH`.
 The examples below assume you have done so.
 
 ### Docker
-If you don't want to install Nim, you can instead use
-[Docker](https://www.docker.com/products/docker-desktop). You can install
-nasher using the `latest` tag, which installs the latest tagged version of
-nasher, or with a version tag, such as `0.11.6` to use a particular tagged
-version of nasher.
+You can also run using [Docker](https://docker.com/products/docker-desktop)
+using the `latest` tag, which installs the latest tagged version of nasher, or
+with a version tag, such as `0.11.6` to use a particular tagged version.
 
 #### Example Usage
     # Linux, using latest tagged version
