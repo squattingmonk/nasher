@@ -3,15 +3,17 @@ import cli
 
 from shared import withDir
 
+var lastError: string
+
 proc gitExecCmd(cmd: string, default = ""): string =
   ## Runs ``cmd``, returning its output on success or ``default`` on error.
-  ## If default is empty, returns error text.
   let (output, errCode) = execCmdEx(cmd)
   if errCode != 0:
-    if default.len == 0: output.strip
-    else: default
+    lastError = output.strip
+    default
   else:
     # Remove trailing newline
+    lastError = ""
     output.strip
 
 proc gitUser*: string =
@@ -86,9 +88,7 @@ proc gitSetBranch*(repo = getCurrentDir(), branch: string): string =
         if branch.checkout(repo):
           result = repo.branch
         else:
-          withDir(repo):
-            error(gitExecCmd("git checkout " & branch))
-
+          error(lastError)
           fatal(fmt"You must resolve the git repo error before you can continue on branch {branch}")
     else:
       if repo.empty:
@@ -105,7 +105,7 @@ proc gitSetBranch*(repo = getCurrentDir(), branch: string): string =
         else:
           fatal("operation aborted by user")
       else:
-        if branch.create(repo): result = branch
+        if repo.create(branch): result = branch
   else:
     result = "this folder is not a git repository"
 
