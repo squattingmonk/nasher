@@ -1,36 +1,29 @@
-import os, osproc, strformat, strutils, uri
+import std/[options, os, osproc, strformat, strutils, uri]
 import cli
 
 from shared import withDir
 
-var lastError: string
-
-proc gitExecCmd(cmd: string, default = ""): string =
+proc gitExecCmd(cmd: string): Option[string] =
   ## Runs ``cmd``, returning its output on success or ``default`` on error.
   let (output, errCode) = execCmdEx(cmd)
-  if errCode != 0:
-    lastError = output.strip
-    default
-  else:
-    # Remove trailing newline
-    lastError = ""
-    output.strip
+  if errcode == 0:
+    result = some(output.strip)
 
 proc gitUser*: string =
   ## Returns the configured git username or "" on failure.
-  gitExecCmd("git config --get user.name")
+  gitExecCmd("git config --get user.name").get("")
 
 proc gitEmail*: string =
   ## Returns the configured git email or "" on failure.
-  gitExecCmd("git config --get user.email")
+  gitExecCmd("git config --get user.email").get("")
 
 proc gitRemote*(repo = getCurrentDir()): string =
   ## Returns the remote for the git project in ``dir``. Supports ssh formatted
   ## remotes.
   withDir(repo):
-    result = gitExecCmd("git ls-remote --get-url")
-
-    if result != "":
+    let url = gitExecCmd("git ls-remote --get-url")
+    if url.isSome:
+      result = url.get
       if result.endsWith(".git"):
         result.setLen(result.len - 4)
 
@@ -47,32 +40,32 @@ proc gitInit*(repo = getCurrentDir()): bool =
 proc empty(repo: string): bool =
   # Check if repo has any commits
   withDir(repo):
-    gitExecCmd("git branch --list", "none").len == 0
+    gitExecCmd("git branch --list").get == ""
 
 proc exists(repo: string): bool =
   # Check for repo existence
   withDir(repo):
-    gitExecCmd("git rev-parse --is-inside-work-tree") == "true"
+    gitExecCmd("git rev-parse --is-inside-work-tree").isSome
 
 proc exists(branch: string, repo: string): bool =
   # Check for branch existence
   withDir(repo):
-    gitExecCmd("git show-ref --verify refs/heads/" & branch, "error") != "error"
+    gitExecCmd(fmt"git show-ref --verify refs/heads/{branch}").isSome
 
 proc checkout(branch: string, repo: string, create = false): bool = 
   # Checkout desired branch, if it exists.  If not, prompts for creation or
   # uses of current branch.  If can't checkout because of an error, do something else?
-  if create:
-    withDir(repo):
-      gitExecCmd("git checkout -b " & branch, "error") != "error"
-  else:
-    withDir(repo):
-      gitExecCmd("git checkout " & branch, "error") != "error"
-
+  let flag = if create: "-b " else: ""
+  withDir(repo):
+    gitExecCmd(fmt"git checkout {flag}{branch}").isSome
+  
 proc branch(repo: string, default = ""): string =
   # Gets the current repo branch
   withDir(repo):
-    gitExecCmd("git rev-parse --abbrev-ref HEAD", default)
+    let branch = gitExecCmd("git rev-parse --abbrev-ref HEAD")
+
+    if branch.isSome:
+      result = branch.get
 
 proc create(repo: string, branch: string):bool =
   # Wrapper function for checkout; creates a new git branch in repo
@@ -88,8 +81,7 @@ proc gitSetBranch*(repo = getCurrentDir(), branch: string): string =
         if branch.checkout(repo):
           result = repo.branch
         else:
-          error(lastError)
-          fatal(fmt"You must resolve the git repo error before you can continue on branch {branch}")
+          fatal(fmt"{branch} could not be checked out.  Resolve all git repo errors before continuing.")
     else:
       if repo.empty:
         let question = "Nasher cannot determine the status of this repo because there have not been any commits. " &
