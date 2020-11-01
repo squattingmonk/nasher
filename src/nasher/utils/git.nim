@@ -3,33 +3,60 @@ import cli
 
 from shared import withDir
 
+proc gitExecCmdS(cmd: string): tuple[output: string, exitCode: int] =
+  ## Runs ``cmd``, returning its output on success or ``default`` on error.
+  execCmdEx(cmd)
+  #let (output, errCode) = execCmdEx(cmd)
+  #result = some((output.strip, errCode))
+  #if errcode == 0:
+  #  result = some((output.strip, errCode))
+
 proc gitExecCmd(cmd: string): Option[string] =
   ## Runs ``cmd``, returning its output on success or ``default`` on error.
+ 
   let (output, errCode) = execCmdEx(cmd)
   if errcode == 0:
     result = some(output.strip)
 
 proc gitUser*: string =
   ## Returns the configured git username or "" on failure.
-  gitExecCmd("git config --get user.name").get("")
+  let gitResult = execCmdEx("git config --get user.name")
+
+  if gitResult.exitCode == 0:
+    gitResult.output.strip
+  else: "whatever the default is"
 
 proc gitEmail*: string =
   ## Returns the configured git email or "" on failure.
   gitExecCmd("git config --get user.email").get("")
 
-proc gitRemote*(repo = getCurrentDir()): string =
-  ## Returns the remote for the git project in ``dir``. Supports ssh formatted
-  ## remotes.
+proc gitRemoteS*(repo = getCurrentDir()): string =
   withDir(repo):
-    let url = gitExecCmd("git ls-remote --get-url")
-    if url.isSome:
-      result = url.get
+    let url = gitExecCmdS("git ls-remote --get-url")
+    result = url.output
+
+    if url.exitCode == 0:
       if result.endsWith(".git"):
         result.setLen(result.len - 4)
 
       if result.parseUri.scheme == "":
         let ssh = parseUri("ssh://" & result)
         result = ("https://$1/$2$3") % [ssh.hostname, ssh.port, ssh.path]
+    else: result = ""
+
+proc gitRemote*(repo = getCurrentDir()): string =
+  ## Returns the remote for the git project in ``dir``. Supports ssh formatted
+  ## remotes.
+  withDir(repo):
+    let url = gitExecCmdS("git ls-remote --get-url")
+
+    result = url.output
+    if result.endsWith(".git"):
+      result.setLen(result.len - 4)
+
+    if result.parseUri.scheme == "":
+      let ssh = parseUri("ssh://" & result)
+      result = ("https://$1/$2$3") % [ssh.hostname, ssh.port, ssh.path]
 
 proc gitInit*(repo = getCurrentDir()): bool =
   ## Initializes dir as a git repository and returns whether the operation was
@@ -38,29 +65,33 @@ proc gitInit*(repo = getCurrentDir()): bool =
     execCmdEx("git init").exitCode == 0
 
 proc empty(repo: string): bool =
-  # Check if repo has any commits
+  ## Check if repo has any commits
   withDir(repo):
     gitExecCmd("git branch --list").get == ""
 
 proc exists(repo: string): bool =
-  # Check for repo existence
+  ## Check for repo existence
   withDir(repo):
     gitExecCmd("git rev-parse --is-inside-work-tree").isSome
 
 proc exists(branch: string, repo: string): bool =
-  # Check for branch existence
+  ## Check for branch existence
   withDir(repo):
     gitExecCmd(fmt"git show-ref --verify refs/heads/{branch}").isSome
 
-proc checkout(branch: string, repo: string, create = false): bool = 
-  # Checkout desired branch, if it exists.  If not, prompts for creation or
-  # uses of current branch.  If can't checkout because of an error, do something else?
+proc checkout(branch: string, repo: string, create = false, throw = false): bool = 
+  ## Checkout desired branch, if it exists.  If not, prompts for creation or
+  ## uses of current branch.  If can't checkout because of an error, do something else?
   let flag = if create: "-b " else: ""
   withDir(repo):
-    gitExecCmd(fmt"git checkout {flag}{branch}").isSome
+    let gitResult = gitExecCmdS(fmt"git checkout {flag}{branch}")
+    
+    result = gitResult.exitCode == 0
+    if not result and throw:
+      error(gitResult.output)
   
 proc branch(repo: string, default = ""): string =
-  # Gets the current repo branch
+  ## Gets the current repo branch
   withDir(repo):
     let branch = gitExecCmd("git rev-parse --abbrev-ref HEAD")
 
@@ -68,7 +99,7 @@ proc branch(repo: string, default = ""): string =
       result = branch.get
 
 proc create(repo: string, branch: string):bool =
-  # Wrapper function for checkout; creates a new git branch in repo
+  ## Wrapper function for checkout; creates a new git branch in repo
   branch.checkout(repo, true)
 
 proc gitSetBranch*(repo = getCurrentDir(), branch: string): string =
