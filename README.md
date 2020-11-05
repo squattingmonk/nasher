@@ -28,7 +28,6 @@ This guide is current as of nasher release 0.12.3.
     * [Basic Workflow](#basic-workflow)
     * [Getting Help](#getting-help)
 * [Configuration](#configuration)
-    * [Configuration Keys](#keys)
     * [nasher.cfg](#nashercfg)
         * [Package](#package)
         * [Sources](#sources)
@@ -37,7 +36,6 @@ This guide is current as of nasher release 0.12.3.
         * [Source Trees](#source-trees)
         * [Tips](#tips)
 * [Commands](#commands)
-    * [Global Arguments](#arguments)
     * [config](#config)
     * [init](#init)
     * [list](#list)
@@ -48,7 +46,7 @@ This guide is current as of nasher release 0.12.3.
     * [install](#install)
     * [launch](#launch)
 * [Errors](#errors)
-* [Troubleshooting](#troubleshooting)
+* [FAQs](#faqs)
 * [Contributing](#contributing)
 * [Changelog](#changelog)
 * [License](#license)
@@ -117,7 +115,7 @@ to get fancy with containers, but most people should use the other routes.
 
 Docker commands are run with the same nomenclature as native nasher commands.
 If you want to use docker, any time you see a native nasher command in this
-document, you can replace it with the docker command. So the follwing are
+document, you can replace it with the docker command. So the following are
 equivalent:
 ```console
 $ nasher <command>
@@ -203,17 +201,17 @@ If you're still stuck, you can get assistance in several locations:
 
 ## Configuration
 
-### Config Keys
-
-Configuration keys can be set using the [`config`](#config) command. These can
-be set on a global, per-package, or per-command basis. See the [keys](#keys)
-section for available settings.
+Nasher can be configured for user-specific settings with the [`config`](#config)
+command. Configuration keys can be set on a global, per-package, or per-command
+basis. See the [keys](#keys) section for available settings.
 
 ### nasher.cfg
 
 A nasher package must have a `nasher.cfg` file in the package root directory.
 This file contains package-specific settings that should be the same across all
-instances of the package. Here is a sample `nasher.cfg` file:
+instances of the package. It does not vary for different users.
+
+Here is a sample `nasher.cfg` file:
 
 ```ini
 [Package]
@@ -278,16 +276,16 @@ This section provides a places to note the to codify a package's author,
 description, name, version, and url. This data is currently not used by any
 nasher commands, but that may change in the future.
 
-| Field               | Repeatable | Description                                             |
-| ---                 | ---        | ---                                                     |
-| `name`              | no         | package name                                            |
-| `description`       | no         | package description; """triple quotes for multiline"""  |
-| `version`           | no         | package version                                         |
-| `url`               | no         | web location where the package can be downloaded        |
-| `author`            | yes        | name/email of the author                                |
+| Field         | Repeatable | Description                                                          |
+| ---           | ---        | ---                                                                  |
+| `name`        | no         | package name                                                         |
+| `description` | no         | package description; """triple quotes for multi-line descriptions""" |
+| `version`     | no         | package version                                                      |
+| `url`         | no         | web location where the package can be downloaded                     |
+| `author`      | yes        | name/email of the author                                             |
 
 Some fields, while optional, are inherited from the package by
-[targets](#targets) if set in this section:
+[targets](#target) if set in this section:
 
 | Field               | Repeatable | Description                                             |
 | ---                 | ---        | ---                                                     |
@@ -346,7 +344,7 @@ sections if they are not set for this target.
 | `file`              | no         | no        | filename including extension be created; can optionally include path info |
 | `description`       | no         | no        | an optional field that describes the target                               |
 | `include`           | yes        | yes       | glob pattern matching files to include                                    |
-| `exclude`           | yes        | yes       | glob pattern matching fiels to exclude                                    |
+| `exclude`           | yes        | yes       | glob pattern matching files to exclude                                    |
 | `filter`            | yes        | yes       | glob pattern matching cached files to be excluded after compilation       |
 | `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                   |
 | `modName`           | no         | yes       | the name to give a module target file                                     |
@@ -385,7 +383,7 @@ follows:
 3. Each file in the cache directory is checked against the map; matching files
    are copied the corresponding source path.
 4. The remaining files' names are compared to the target's [rules](#rules);
-   matching files are moved to the corresponding source path. Note tat rule
+   matching files are moved to the corresponding source path. Note that rule
    patterns should not have any path information since they are compared to
    files in the cache, not the source tree.
 5. Files not caught by the rules are placed in the `unknown` folder in the
@@ -402,7 +400,7 @@ follows:
   detailed [Rules] section is not necessary.
 * Make the [Sources](#sources) section as inclusive as possible and use target
   `exclude` field to narrow down the included files needed by the target
-* If you use nasher to build your haks, consider having a seprate repo or a
+* If you use nasher to build your haks, consider having a separate repo or a
   subfolder containing all of your hak file content as a separate nasher
   package. This allows you to build more detailed hak-only targets and build
   all of your haks at once with a `nasher install all` command.
@@ -441,7 +439,7 @@ Local (package-level) configuration is stored in `.nasher/user.cfg` in the
 package root directory. Any values defined here take precedence over those in
 the global config file. This file will be ignored by git.
 
-Global and local configuration options can be overriden on a per-command basis
+Global and local configuration options can be overridden on a per-command basis
 by passing the key/value pair as an option to the command.
 
 #### Options
@@ -660,7 +658,7 @@ output files are placed in `.nasher/cache/<target>`.
 If not supplied, `<target>` will default to the first target defined in the
 package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
 on all defined targets in a loop. You can also specify multiple targets by
-separatng them with spaces.
+separating them with spaces.
 
 *Note*: this command is called by [`pack`](#pack), so you don't need to run it
 separately unless you want to convert files without compiling and packing.
@@ -698,7 +696,7 @@ error description.
 If not supplied, `<target>` will default to the first target defined in the
 package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
 on all defined targets in a loop. You can also specify multiple targets by
-separatng them with spaces.
+separating them with spaces.
 
 nasher will only recompile scripts that have changed since the target was last
 compiled or that include scripts that have changed since the last compile
@@ -905,7 +903,7 @@ $ nasher test demo
   to `.json` format. If your permissions are set correctly, the problem is
   likely a json source file with invalid syntax.
 
-## Troubleshooting
+## FAQs
 
 * **Can nasher `<anything you want here>`?** \
   Probably.
