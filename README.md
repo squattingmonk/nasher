@@ -865,6 +865,72 @@ $ # Install the "demo" target and play using the first character in the localvau
 $ nasher test demo
 ```
 
+## Errors
+
+* **`"No source files found for target"`** \
+  Caused by improper sourcing (`include = `) in either the `[Sources]` or
+  `[Target]` section in your [`nasher.cfg`](#nashercfg).
+
+* **`"This is not a nasher repository. Please run init"`** \
+  Caused by running any nasher command except `nasher config --global` before
+  running [`nasher init`](#init) in the project folder.
+
+  Caused by incorrectly referencing the present working directory in the
+  `docker run` command. The reference can be CLI-specific. For example, Linux
+  wants to see `$(pwd)` while PowerShell requires `${pwd}`. Look up the
+  appropriate reference for your shell. `%cd%` only works for Windows
+  `cmd.exe`.
+
+* **`"The following areas do not have matching .git files and will not be
+  accessible in the toolset"`** \
+  When the area list is built during the conversion process, nasher matches the
+  list of `.are` files with `.git` files. This warning will list any `.are`
+  files that do not have matching `.git` files.
+
+* **`"This module does not have a valid starting area!"`** \
+  A module cannot be packed/installed without a valid starting area. Either
+  extract a valid starting area into the nasher project folder or manually edit
+  your `module.ifo.json` file's `Mod_Entry_Area` key to reference an existing
+  area.
+
+* **`"this answer cannot be blank. Aborting..."`** \
+  Answer to prompt required, but not provided.
+
+* **`"not a valid choice. Aborting..."`** \
+  User selected an invalid multiple-choice answer.
+
+* **`"Could not create {outFile}. Is the destination writeable?"`** \
+  Raised if a destination folder for file conversion does not have write
+  permissions. Can also be raised if there is another error converting the file
+  to `.json` format. If your permissions are set correctly, the problem is
+  likely a json source file with invalid syntax.
+
+## Troubleshooting
+
+* **Can nasher `<anything you want here>`?** \
+  Probably.
+
+* **Can I use absolute or relative paths?** \
+  Yes.
+
+* **Does nasher strip the module ID?** \
+  Yes.
+
+* **I really need nasher to do something it doesn't. Can you add this
+  feature?** \
+  nasher is actively maintained and new features are constantly added. If your
+  request fits within the scope for nasher, it can likely be added. File an
+  [issue](https://github.com/squattingmonk/nasher/issues) and it will be
+  addressed shortly.
+
+* **I thought using nasher was supposed to be easy, why is it so difficult?** \
+  Getting used to a command-line workflow can be a little daunting if you're
+  used to GUI programs. However, as a rule of thumb, if you're doing more work
+  after installing nasher than you did before, you're likely missing some key
+  piece of information and/or configuration that will make your life a lot
+  easier. If you can't find your answers by re-reading this document, see the
+  [Getting Help](#getting-help) section.
+
 ## Contributing
 
 Bug fixes and new features are greatly appreciated! Here's how to get started:
