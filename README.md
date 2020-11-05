@@ -1,28 +1,41 @@
 # nasher
 
-Nasher is a command-line utility written in [nim](https://nim-lang.org/) and designed to manipulate Neverwinter Nights modules by allowing quick and easy module operations (unpacking, converting, compiling, packing), incorporating git-based version control, and enabling team collaboration.  While similar to [nwn-devbase](https://github.com/jakkn/nwn-devbase), nasher has some key differences:
-* nasher and the tools it uses are written in nim rather than Ruby, so they are much faster (handy for large projects) and can be distributed in binary form
-* nasher supports non-module projects (including erfs, tlks, and haks)
-* nasher supports multiple build targets (e.g., an installable erf and a demo module)
-* nasher supports custom source tree layouts (e.g., dividing scripts into directories based on category)
-* nasher can install built targets into the NWN installation directory
-* nasher uses json rather than yaml for storing gff files
+Nasher is a command-line tool for converting a Neverwinter Nights module to
+text-based source files and vice versa. This allows git-based version control
+and team collaboration.
 
-The purpose of this document is to get you started with a combination of nasher and git in order to start version controlling your NWN module and allow you to build new module files on-demand.  This guide is written for those with some programming and/or command-line experience.  If you are having issues using nasher after reading this guide, you can obtain help in several locations:
-* Neverwinter Vault Discord Server ([invitation](https://discord.gg/pWVqMRX)) ([workflow-and-tools channel](https://discord.com/channels/255017439371329537/511127010962046986))
-* NWNX Discord Server ([invitation](https://discord.gg/fNZp2ND)) ([general channel](https://discord.com/channels/382306806866771978/382306806866771980))
-* [nasher GitHub issues](https://github.com/squattingmonk/nasher.nim/issues) 
+Nasher is similar to [nwn-devbase](https://github.com/jakkn/nwn-devbase), but
+it has some key differences:
+* nasher and the tools it uses are written in nim rather than Ruby, so they are
+  much faster (handy for large projects) and can be distributed in binary form
+* nasher supports non-module projects (including erfs, tlks, and haks)
+* nasher supports multiple build targets (e.g., an installable erf and a demo
+  module) from the same code base
+* nasher supports custom source tree layouts (e.g., dividing scripts into
+  directories based on category)
+* nasher can install built targets into the NWN installation directory or
+  launch them in-game
+* nasher uses json rather than yaml for storing gff files
 
 This guide is current as of nasher release 0.12.3.
 
 * [Installation Options](#installation-options)
-    * [Releases](#releases) (beginner)
-    * [Docker](#docker) (moderate)
-    * [Native](#native) (advanced)
+    * [Binary Releases](#binary-releases)
+    * [Nimble](#nimble)
+    * [Docker](#docker)
+* [Getting Started](#getting-started)
+    * [First-Time Setup](#first-time-setup)
+    * [Basic Workflow](#basic-workflow)
+    * [Getting Help](#getting-help)
 * [Configuration](#configuration)
-    * [Basic Configuration](#basic-configuration)
     * [Configuration Keys](#keys)
-    * [nasher.cfg](#nasher.cfg)
+    * [nasher.cfg](#nashercfg)
+        * [Package](#package)
+        * [Sources](#sources)
+        * [Rules](#rules)
+        * [Target](#target)
+        * [Source Trees](#source-trees)
+        * [Tips](#tips)
 * [Commands](#commands)
     * [Global Arguments](#arguments)
     * [config](#config)
@@ -36,239 +49,172 @@ This guide is current as of nasher release 0.12.3.
     * [launch](#launch)
 * [Errors](#errors)
 * [Troubleshooting](#troubleshooting)
+* [Contributing](#contributing)
+* [Changelog](#changelog)
+* [License](#license)
 
-# Installation Options
-##### [top](#nasher) | [install](#installation-options) | [configuration](#configuration) | [commands](#commands) | [errors](#errors) | [troubleshooting](#troubleshooting)
-&nbsp;
+## Installation Options
 
-## Releases
----
-Compiled versions of nasher are available on the [nasher releases](https://github.com/squattingmonk/nasher.nim/releases) page.  Download the version for your OS and place a pointer to the location of the executable file in your PATH environmental variable.
+### Binary Releases
 
-Requirements
-* [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.3.1
+*Note: This is the easiest way to install, and is recommended for most users.*
+
+#### Requirements
+
+[Download](https://github.com/squattingmonk/nasher/releases) latest version
+of nasher for your OS and place a pointer to the location of the executable
+file in your [`PATH` environment variable](https://superuser.com/a/284351).
+
+In addition, you will need the following tools:
+* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.3.1
 * [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.2
 
-Best practices
-* Keep the binaries for nasher, neverwinter.nim and nwnsc in the same location. 
-* Do not keep binaries in your nasher project folder, or add them to .gitignore
-* Do not publish binaries to your source control repository.  If you are collaborating, each team member should download and install the binaries individually.
+#### Tips
+* Keep the binaries for nasher, neverwinter.nim, and nwnsc in the same
+  location.
+* Do not keep binaries in your nasher project folder
+* Do not publish binaries with your source control repository. If you are
+  collaborating, each team member should download and install the binaries
+  individually.
 
-## Docker
----
-Docker can be used on most operating systems to run all nasher [commands](#commands).
+### Nimble
 
-Requirements
-* [Docker](https://docs.docker.com/get-docker/)
+*Note: this method is harder to set up, but makes it easier to update.*
 
-Notes
-* Docker commands are run with the same nomenclature as native nasher commands.  If you want to use Docker, anytime you see a native nasher command in this document, you can replace it with the Docker command:
-    ```c
-    // Native nasher
-    $ nasher <command> <target> <options>
+First, install the following:
+* [nim](https://nim-lang.org) and its package manager, `nimble`:
+    * [Windows](https://nim-lang.org/install_windows.html)
+    * [Linux and Mac](https://nim-lang.org/install_unix.html)
+* [nwnsc](https://github.com/nwneetools/nwnsc) >= 1.1.2
 
-    // Docker equivalent
-    $ docker run --rm -it -v ${pwd}:/nasher squattingmonk/nasher:latest <command> <target> <options>
-    ```
+*Note: when building nasher, nimble will download and install neverwinter.nim
+automatically. You do not need to install it yourself.*
 
-Best practices
-* Create batch/script files to run your most common nasher commands as the docker command line interface can be rather verbose.  An excellent example of this is in [The Frozen North](https://github.com/b5635/the-frozen-north) GitHub repository.
-
-## Native
----
-Native installation is considered advanced usage and requires installation of several tools and systems for nasher to work correctly.
-
-Requirements
-* [nim](https://nim-lang.org/) >= 1.2.0
-* [neverwinter.nim](https://github.com/niv/neverwinter.nim) >= 1.3.1
-* [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.2
-
-Installation
-
-Nimble is the nim package manage and is bundled with nim:
-```c
-// To install the latest tagged version
+Now you can have nimble download and install nasher:
+```console
+$ # Install the latest tagged version (recommended)
 $ nimble install nasher
 
-// To install the latest version from the master branch
+$ # Install the latest version from the master branch
 $ nimble install nasher@#head
 
-// To install a specific tagged version
+$ # Install a specific tagged version
 $ nimble install nasher@#0.11.6
 ```
 
-You can also build directly from nasher source code:
-```
-$ git clone https://github.com/squattingmonk/nasher.nim.git nasher
+Alternatively, you can clone the repo and build it yourself (handy if you want
+to make changes and contribute to development):
+```console
+$ git clone https://github.com/squattingmonk/nasher.git
 $ cd nasher
 $ nimble install
 ```
 
-Notes
-* If you have nim regex 0.17.0 installed prior to installing nasher, you will have errors during execution.  Regress your installation to 0.16.2 to resolve these errors.
+### Docker
 
-Best practices
-* Use [choosenim](https://github.com/dom96/choosenim/releases) to install and manage nim
+You can also run with [docker](https://docs.docker.com/get-docker/) if you want
+to get fancy with containers, but most people should use the other routes.
 
-# Configuration
-##### [top](#nasher) | [install](#installation-options) | [configuration](#configuration) | [commands](#commands) | [errors](#errors) | [troubleshooting](#troubleshooting)
-&nbsp;
-
-## Basic Configuration
-nasher requires no additional configuration to run unpack operations.  However, to convert, compile and pack a module, you must first initialize a nasher project and configure nwnsc.  The `--nssFlags` sends specific flags to nwnsc on execution.
-
-Intializing a nasher project creates a `nasher.cfg` and, optionally, prepares the folder for use as a git repository:
-```c
-// Initialize a nasher project with default configuration values
-$ nasher init --default
-
-// If you don't want a git repo intialized during nasher initialization
-$ nasher init --default --vcs:none
+Docker commands are run with the same nomenclature as native nasher commands.
+If you want to use docker, any time you see a native nasher command in this
+document, you can replace it with the docker command. So the follwing are
+equivalent:
+```console
+$ nasher <command>
+$ docker run --rm -it -v ${pwd}:/nasher nwneetools/nasher:latest <command>
 ```
 
-Configure nwnsc:
-```c
-// Provide the path to nwn binary files to nasher
-$ nasher config --nssFlags:"-n \"~/.local/share/Steam/steamapps/common/Neverwinter Nights\" -owkey"
+#### Tips
+Create batch/script files to run your most common nasher commands since the
+docker commands can be rather verbose. An excellent example of this is in [The
+Frozen North](https://github.com/b5635/the-frozen-north) GitHub repository.
 
-// Provide the location of the nwnsc binary to nasher.
-$ nasher config --nssCompiler:"C:\\Users\\<username>\\Neverwinter Nights\\nwnsc.exe"
+## Getting Started
+
+### First-Time Setup
+nasher will detect nwnsc if it is in your `PATH`, and it will detect NWN if it
+was installed by Steam to the default location for your OS (other installations
+are not [supported](https://github.com/squattingmonk/nasher/issues/40) yet). If
+you are having issues, try setting the following config options to appropriate
+values for your use case:
+
+```console
+$ # Set the NWN user directory (i.e., where to install modules, haks, etc.)
+$ nasher config --installDir:"%USERPROFILE%/Neverwinter Nights"  # Windows
+$ nasher config --installDir:"~/Documents/Neverwinter Nights"    # Posix
+
+$ # Set the path to nwnsc
+$ nasher config --nssCompiler:"%USERPROFILE%/bin/nwnsc.exe"      # Windows
+$ nasher config --nssCompiler:"~/.local/bin/nwnsc"               # Posix
+
+$ # Tell nwnsc where to look for NWN's data files
+$ nasher config --nssFlags:'-n "C:/Program Files/NWN"'           # Windows
+$ nasher config --nssFlags:'-n /opt/nwn'                         # Posix
+```
+Further information on configuration can be found [below](#configuration).
+
+### Basic Workflow
+
+1. Initialize your directory as a nasher project and follow the prompts:
+   ```console
+   $ nasher init myproject
+   $ cd myproject
+   ```
+   When the prompt asks for your target's filename, make sure you put the
+   filename of the module you want to use for the project (e.g.,
+   `mymodule.mod`)
+2. Unpack your module: `nasher unpack`
+3. Edit the source files as needed
+4. Pack and install the module: `nasher install`
+5. Test the module in-game
+6. Make changes in the toolset
+7. Unpack the changes back into your nasher project: `nasher unpack`
+
+Repeat steps 3-7 until you are satisfied with your changes, then commit the
+files in git and push to your remote repo:
+```console
+$ git commit -am "My commit message"
+$ git push origin master
 ```
 
-Notes
-* Use absolute paths when providing a path to the nwnsc `-n` argument in the `--nssFlags` configure value.
-* Escape the path `(\")`in the `-n` argument in the `--nssFlags` configuration value if it has spaces.  Escaping is not required if the path does not contain spaces.
-* The method for referencing the present working directory (pwd) is different in many command line clients.  `${pwd}` may not work for yours.  Google is your friend.
-* Spaces in the path value assigned to `--nssCompiler` do not have to be escaped.
-
-Best practices
-* Do not include other configurable nwnsc flags, such as `-b` and `-i`.  Those flags can be passed to nwnsc per target through nasher.cfg.
-
-`--nssFlags` and `--nssCompiler` are the minimum configuration values required to successfully accomplish a pack procedure with nasher.  There are many more configuration options available.
-
-## Keys
----
-Gets, sets, or unsets user-defined configuration options. These options can be local (package-specific) or global (across all packages). Regardless, they override default nasher settings.
-
-Nasher uses three sources for configuration data.  A global `user.cfg` (stored  in %APPDATA%\nasher\user.cfg on Windows or in $XDG_CONFIG/nasher/user.cfg on Linux and Mac), a local `user.cfg` (stored in .nasher/user.cfg in the package root directory) and the command-line.  Command-line options take precedence over the local configuration values, and local configuration values take precedence over the global configuration values.  Local configuration files will be ignored by git unless the `-vsc:none` flag used on `nasher init`.
-
-Available Configuration Keys:
-|Key|Default|Description|
-|---|---|---|
-|userName|git user.name|The default name to add to the author section of new packages|
-|userEmail|git user.email|The default email use for the author section of new packages|
-|nssCompiler|project root path| The path to the script compiler|
-|nssFlags|-loqey|The [flags](#nwnsc-flags) to send to nwnsc.exe for compiling scripts|
-|nssChunks|500|The maximum number of scripts to process at one time|
-|erfUtil|nwn_erf.exe|the path to the erf pack/unpack utility|
-|erfFlags||Flags to pass to erfUtil|
-|gffUtil|nwn_gff.exe|the path to the gff conversion utility|
-|gffFlags||Flags to pass to gffUtil|
-|gffFormat|json|the format to use to store gff files|
-|tlkUtil|nwn_gff.exe|the path to the tlk conversion utility|
-|tlkFlags||Flags to pass to tlkUtil|
-|tlkFormat|json|the format to use to store tlk files|
-|installDir|Win: `~/Documents/Neverwinter Nights`|NWN user directory where built files should be installed|
-||Linux: `~.local/share/Neverwinter Nights`||
-|gameBin||path to nwnmain binary (only needed if not using steam)|
-|serverBin||path to the nwserver binary (only needed if not using steam)|
-|vcs|git|version control system to use for new packages|
-|removeUnusedAreas|true|if `true`, prevents area not present in sources files from being referenced in `module.ifo`|
-|||set to `false` if there are module areas in a hak or override|
-|useModuleFolder|true|whether to use a subdirectory in the `modules` folder to store unpacked module files|
-|||only used by NWN:EE|
-|modName||sets the "Mod_Name" value in module.ifo|
-|modMinGameVersion||sets the "Mod_MinGameVersion in module.ifo|
-|truncateFloats|4|maximum number of decimal places to allow after floats in gff files|
-|||prevents unneeded file updates due to insignificant float value changes|
-
-Command Line Options
-|Argument|Description|
-|---|---|
-|`--global`|applies to all packages (default)|
-|`--local`|applies to the current package only|
-|`--get`|display the value of `<key>` (default if `<value>` not passed)|
-|`--set`|set `<key>` to `<value>` (default when `<value>` passed)|
-|`--unset`|deletes key/value pair for `<key>`|
-|`--list`|lists all key/value pairs in the specified configuration file|
-
-Usage:
-```c
-$ nasher config [options] --<key>:"<value>"
-```
-Examples
-```c
-$ nasher config --nssFlags:"-n /opts/nwn -owkey"
-$ nasher config --local --nssCompiler:"C:\\Users\\<username>\\Desktop\\Git Repositories\\nwnsc.exe"
-$ nasher config --installDir:"C:\\Users\\<username>\\Documents\\Neverwinter Nights"
+Now share the repo with your team. They can download the repo and build your
+module from the source files:
+```console
+$ git clone https://github.com/myusername/myproject
+$ cd myproject
+$ nasher install
 ```
 
-## nasher.cfg
----
+### Getting Help
 
-This section discusses the capabilities and limitations of the `nasher.cfg` file, which must reside in the project's root directory.
+You can get help for nasher or one of its commands using the `--help` flag:
+```console
+$ nasher --help       # General help
+$ nasher init --help  # Command-specific help
+```
 
-#### Components
-**[Package]** - an optional section, [Package] provides a location to codify a project's author, description, name, version and url.  This data is currently not used by any current nasher commands, but that may change in the future.
+If you're still stuck, you can get assistance in several locations:
+* Neverwinter Vault Discord Server ([invitation](https://discord.gg/pWVqMRX))
+  ([workflow-and-tools
+  channel](https://discord.com/channels/255017439371329537/511127010962046986))
+* NWNX Discord Server ([invitation](https://discord.gg/fNZp2ND)) ([general
+  channel](https://discord.com/channels/382306806866771978/382306806866771980))
+* [nasher GitHub issues](https://github.com/squattingmonk/nasher/issues)
 
-|Key|Description|
-|---|---|
-|`name`|package/project name|
-|`description`|package/project description; """triple quotes""" enables multi-line descriptions|
-|`version`|package/project version|
-|`author`|name/email of the author; this field is repeatable|
-|`url`|web location where the package/project can be downloaded|
-&nbsp;
+## Configuration
 
-**[Sources]** - an optional section, [Sources] describes the locations of all source files to be either included or excluded from a project.  This section uses [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)) matching to identify desired files.  If you do not include any sources in this section, you must include them in the [Target] section or nasher will not have any files to work with.
+### Config Keys
 
-|Key|Description|
-|---|---|
-|`include`|glob pattern matching files to include; this key is repeatable|
-|`exclude`|glob pattern matching files to exclude; this key is repeatable|
-|`filter`|glob pattern matching files to be included for compilation, but excluded from the module file/folder; this key is repeatable|
-|`flags`|command line arguments to send to NWNSC at compile-time; this key is repeatable|
-|`modName`|optional, sets the module name in the `module.ifo` file|
-|`modMinGameVersion`|optional, sets the module's minimum game version in the `module.ifo` file|
-&nbsp;
+Configuration keys can be set using the [`config`](#config) command. These can
+be set on a global, per-package, or per-command basis. See the [keys](#keys)
+section for available settings.
 
-**[Rules]** - an optional section, [Rules] defines a directory structure for extracted files.  During the unpacking processing, these rules will be evaluated, in order, to determine which location a specific file should be unpacked to.  [Rules] take the form `"pattern" = "path"`.  All paths are relative to the root folder.  These rules apply to any unpacked files that do not exist in the source tree (your `myModule` folder).  If there is no catch-all rule (`"*" = "path"`), indeterminate files will be placed in a file called `unknown` for future disposition.
+### nasher.cfg
 
-**[Target]** - a required section, at least one [Target] must be specified.  This section provides a target name, description, output file name and source list.
+A nasher package must have a `nasher.cfg` file in the package root directory.
+This file contains package-specific settings that should be the same across all
+instances of the package. Here is a sample `nasher.cfg` file:
 
-|Key|Description|
-|---|---|
-|`name`|name of the target; must be unique among [Target]s|
-|`file`|name of the file to be created including extension; a path can be included to save the packed file into a specific directory, otherwise the file will be packed in the project root folder|
-|`description`|an optional field that describes the target|
-|`include`|glob pattern matching files to include; this key is repeatable; if used, only files matching target `include` values will be used and the [Sources] section will be ignored|
-|`exclude`|glob pattern matching fiels to exclude; this key is repeatable; if used, only files matching target `exclude` values will be used and the [Sources] section will be ignored|
-|`filter`|glob pattern matching files to be included for compilation, but excluded from the final target file; this key is repeatable; if used, only files matching target `filter` values will be used and the [Sources] section will be ignored|
-|`flags`|command line arguments to send to NWNSC at compile-time|
-|`modName`|optional, sets the module name in the `module.ifo` file for this target|
-|`modMinGameVersion`|optional, sets the module's minimum game version in the `module.ifo` file for this target|
-|`[Rules]`|`"pattern" = "path"` entries, similar to the [Rules] section; these entries will only apply to this target|
-&nbsp;
-
-Notes
-* The [Rules] sections are only referenced during an unpack operation.
-* Path references in include, exclude and [Rules] can be absolute or relative.  If relative, the paths cannot extend above the nasher project root folder.  That is `<folder>/<folder>` is valid, `../<folder` is not.
-
-Best practices
-* If starting with a valid module file, unpack the module to the `src` folder and create your desired folder structure with your favor file explorer application.  It is rarely necessary to have anything more than a single entry in the [Rules] section (`"*" = "src"`).  When a module is packed with nasher, the source location of each file is noted and unpacked back to that location, so a detailed [Rules] section is not necessary.
-* Make the [Sources] section as inclusive as possible and use target `exclude` statements to narrow down the included files
-* If you want to put compiled scripts into the `development` folder (or any other folder) for testing purposes, you can pass the `-b` flag to nwnsc:
-    ```ini
-    [Target]
-    name = "myMod"
-    file = "myMod.mod"
-    flags = "-b"
-    flags = "C:\\Games\\Neverwinter Nights\\development"
-    ```
-* If you use nasher to build your haks, consider having a seprate repo or a subfolder containing all of your hak file content as a separate nasher project.  This allows you to build more detailed hak-only targets and build all of your haks at once with a `nasher install all` command.
-
-## Sample nasher.cfg
----
 ```ini
 [Package]
 name = "Core Framework"
@@ -287,8 +233,9 @@ exclude = "**/test_*.nss"
 "core_*" = "src/Framework"
 "*" = "src"
 
-# The first target is the default target.  If no target is specified, this target will be used
-# This should normally be your most common operation, such as packing your module file
+# The first target is the default target and will be used by most commands when
+# no target has been explicitly passed. This should normally be your most
+# common operation, such as packing your module file.
 [Target]
 name = "demo"
 description = "A demo module showing the system in action"
@@ -296,6 +243,7 @@ file = "core_framework.mod"
 modName = "Core Framework Demo Module"
 modMinGameVersion = "1.69"
 
+# erf, hak, and tlk files can be packed just like a module file.
 [Target]
 name = "framework"
 description = "An importable erf for use in new or existing modules"
@@ -303,8 +251,8 @@ file = "core_framework.erf"
 exclude = "src/demo/**"
 exclude = "**/test_*.nss"
 
-# hak and tlk files can be packed just as a module file is.
-# Filtering optional files, such as .nss, .gic, and .ndb, can greatly reduce packed module file size
+# Filtering optional files, such as .nss, .gic, and .ndb, can greatly reduce
+# packed file size
 [Target]
 name = "scripts"
 description = "A hak file containing compiled scripts"
@@ -319,239 +267,619 @@ file = "myPWtlk.tlk"
 include = "haks/tlk/**/*.json"
 ```
 
-# Commands
-##### [top](#nasher) | [install](#installation-options) | [configuration](#configuration) | [commands](#commands) | [errors](#errors) | [troubleshooting](#troubleshooting)
-&nbsp;
+While you can write your own package file, the [`init`](#init) command will
+create one for you. It will show prompts for each section and provide useful
+defaults. If you don't want to answer the prompts and just want to quickly
+initialize the package, you can pass the `--default` flag when running `init`.
 
-## Arguments
-You can use the following arguments with most nasher commands:
+#### `[Package]`
+
+This section provides a places to note the to codify a package's author,
+description, name, version, and url. This data is currently not used by any
+nasher commands, but that may change in the future.
+
+| Field               | Repeatable | Description                                             |
+| ---                 | ---        | ---                                                     |
+| `name`              | no         | package name                                            |
+| `description`       | no         | package description; """triple quotes for multiline"""  |
+| `version`           | no         | package version                                         |
+| `url`               | no         | web location where the package can be downloaded        |
+| `author`            | yes        | name/email of the author                                |
+
+Some fields, while optional, are inherited from the package by
+[targets](#targets) if set in this section:
+
+| Field               | Repeatable | Description                                             |
+| ---                 | ---        | ---                                                     |
+| `flags`             | yes        | command line arguments to send to nwnsc at compile-time |
+| `modName`           | no         | the name to give a module target file                   |
+| `modMinGameVersion` | no         | the minimum game version to run a module target file    |
+
+#### `[Sources]`
+
+This section tells nasher the locations of all source files for the package. It
+uses [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)) matching
+to identify desired files. These settings are inherited when [targets](#target)
+to not set them, so if you do not include any sources in this section, you must
+include them for all targets or nasher will not have any files to work with.
+
+All of these fields are repeatable.
+
+| Field     | Description                                                         |
+| ---       | ---                                                                 |
+| `include` | glob pattern matching files to include                              |
+| `exclude` | glob pattern matching files to exclude                              |
+| `filter`  | glob pattern matching cached files to be excluded after compilation |
+
+Refer to the [source trees](#source-trees) section to understand how these
+fields are used by targets.
+
+#### `[Rules]`
+
+When you [`unpack`](#unpack) a file, nasher searches the source tree to find
+where to put it. If the file is not found in the source tree, it uses the rules
+in this section.
+
+Rules take the form `"pattern" = "path"`. `pattern` is a glob pattern matching
+a filename. `path` is a directory path in which to place the file. All paths
+are relative to the package root.
+
+A file is compared to the each rule's `pattern`; if it matches, the file is
+placed into the rule's `path` and the next file is evaluated. Files that fail
+to match any rule's pattern are placed into a directory called `unknown` in the
+project root for you to sort manually. To avoid this, use a catch-all rule
+(`"*" = "path"`) at the end to match any files that did not match other rules.
+
+[Targets](#target) can define their own rules. If they don't, the rules used in
+this section will be inherited.
+
+#### `[Target]`
+
+At least one target must be specified. This section provides a target name,
+description, output filename, and source list. Many of these fields can be
+inherited from the [Package](#package), [Sources](#sources), or [Rules](#rules)
+sections if they are not set for this target.
+
+| Field               | Repeatable | Inherited | Description                                                               |
+| ---                 | ---        | ---       | ---                                                                       |
+| `name`              | no         | no        | name of the target; must be unique among targets                          |
+| `file`              | no         | no        | filename including extension be created; can optionally include path info |
+| `description`       | no         | no        | an optional field that describes the target                               |
+| `include`           | yes        | yes       | glob pattern matching files to include                                    |
+| `exclude`           | yes        | yes       | glob pattern matching fiels to exclude                                    |
+| `filter`            | yes        | yes       | glob pattern matching cached files to be excluded after compilation       |
+| `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                   |
+| `modName`           | no         | yes       | the name to give a module target file                                     |
+| `modMinGameVersion` | no         | yes       | the minimum game version to run a module target file                      |
+
+Any fields not recognized are treated as target-specific [rules](#rules). They
+must be in the form `"pattern" = "path"`. These rules will only apply to this
+target.
+
+#### Source Trees
+
+A target's source tree is built from the `include`, `exclude`, and `filter`
+fields. Remember, each of these are inherited from the `[Sources]` section if
+not specified in the `[Target]` section.
+
+1. The `include` patterns are expanded to a source file list.
+2. Each of these files is checked against each `exclude` pattern; matches are
+   removed from the list.
+
+Pack operations ([`convert`](#convert), [`compile`](#compile), [`pack`](#pack),
+[`install`](#install), and [launch](#launch)) commands use the source tree as
+follows:
+
+1. The `convert` and `compile` commands process the source files and output to a
+   cache directory.
+2. Before the `pack` command is run, each cached file is checked against each
+   `filter` pattern; matches are excluded from the final packaged file. Note
+   that filters should not have any path information since they are compared to
+   files in the cache, not the source tree.
+
+[`unpack`](#unpack) uses the source tree as follows:
+
+1. The source tree is converted to a mapping of binary files to source paths
+   (e.g., `module.ifo => src/module.ifo.json`).
+2. The target file is unpacked into a cache directory.
+3. Each file in the cache directory is checked against the map; matching files
+   are copied the corresponding source path.
+4. The remaining files' names are compared to the target's [rules](#rules);
+   matching files are moved to the corresponding source path. Note tat rule
+   patterns should not have any path information since they are compared to
+   files in the cache, not the source tree.
+5. Files not caught by the rules are placed in the `unknown` folder in the
+   package directory.
+
+#### Tips
+
+* [Rules](#rules) are only referenced during an [`unpack`](#unpack) operation.
+* If starting with a valid module file, unpack the module to the `src` folder
+  and create your desired folder structure with your favorite file explorer.
+  It is rarely necessary to have much more than a single entry in the [Rules]
+  section (`"*" = "src"`). When a module is packed with nasher, the source
+  location of each file is noted and unpacked back to that location, so a
+  detailed [Rules] section is not necessary.
+* Make the [Sources](#sources) section as inclusive as possible and use target
+  `exclude` field to narrow down the included files needed by the target
+* If you use nasher to build your haks, consider having a seprate repo or a
+  subfolder containing all of your hak file content as a separate nasher
+  package. This allows you to build more detailed hak-only targets and build
+  all of your haks at once with a `nasher install all` command.
+
+## Commands
+
+The syntax for nasher operation is `nasher <command> [options] [<argument>...]`.
+
+You can use the following options with most nasher commands:
+
+| Option         | Description                                        |
+| ---            | ---                                                |
+| `-h`, `--help` | displays help for nasher or a specific command     |
+| `--yes`        | automatically answer yes to all prompts            |
+| `--no`         | automatically answer no to all prompts             |
+| `--default`    | automatically accept the default answer to prompts |
+| `--verbose`    | increases the feedback verbosity                   |
+| `--debug`      | enable debug logging (implies `--verbose`)         |
+| `--quiet`      | disable all logging except errors                  |
+| `--no-color`   | disable color output                               |
+
+### config
+
+    nasher config [options] [<key> [<value>]]
+    nasher config [options] --<key>[:"<value>"]
+
+Gets, sets, or unsets user-defined configuration options. These options can be
+local (package-specific) or global (across all packages). Regardless, they
+override default nasher settings.
+
+Global configuration is stored in `%APPDATA%\nasher\user.cfg` on Windows or in
+`$XDG_CONFIG/nasher/user.cfg` on Linux and Mac. These values apply to all
+packages.
+
+Local (package-level) configuration is stored in `.nasher/user.cfg` in the
+package root directory. Any values defined here take precedence over those in
+the global config file. This file will be ignored by git.
+
+Global and local configuration options can be overriden on a per-command basis
+by passing the key/value pair as an option to the command.
+
+#### Options
+
+| Option     | Description                                                     |
+| ---        | ---                                                             |
+| `--global` | Apply to all packages (default)                                 |
+| `--local`  | Apply to the current package only                               |
+| `--get`    | Get the value of `<key>` (default when `<value>` is not passed) |
+| `--set`    | Set `<key>` to `<value>` (default when `<value>` is passed)     |
+| `--unset`  | Delete the key/value pair for `<key>`                           |
+| `--list`   | Lists all key/value pairs in the config file                    |
+
+#### Keys
+
+- `userName`: the default name to add to the author section of new packages
+    - default: git user.name
+- `userEmail`: the default email used for the author section
+    - default: git user.email
+- `nssCompiler`: the path to the script compiler
+    - default (Posix): `nwnsc`
+    - default (Windows): `nwnsc.exe`
+- `nssFlags`: the default flags to use on packages
+    - default: `-lowqey`
+- `nssChunks`: the maximum number of scripts to process with one call to nwnsc
+    - default: `500`
+    - note: set this to a lower number if you run into errors about command
+      lengths being too long.
+- `erfUtil`: the path to the erf pack/unpack utility
+    - default (Posix): `nwn_erf`
+    - default (Windows): `nwn_erf.exe`
+- `erfFlags`: additional flags to pass to the erf utility
+    - default: ""
+- `gffUtil`: the path to the gff conversion utility
+    - default (Posix): `nwn_gff`
+    - default (Windows): `nwn_gff.exe`
+- `gffFlags`: additional flags to pass to the gff utility
+    - default: ""
+- `gffFormat`: the format to use to store gff files
+    - default: `json`
+    - supported: `json`
+- `tlkUtil`: the path to the tlk conversion utility
+    - default (Posix): `nwn_gff`
+    - default (Windows): `nwn_gff.exe`
+- `tlkFlags`: additional flags to pass to the tlk utility
+    - default: ""
+- `tlkFormat`: the format to use to store tlk files
+    - default: `json`
+    - supported: `json`
+- `installDir`: the NWN user directory where built files should be installed
+    - default (Linux): `~/.local/share/Neverwinter Nights`
+    - default (Windows and Mac): `~/Documents/Neverwinter Nights`
+- `gameBin`: the path to the nwmain binary (if not using default Steam path)
+- `serverBin`: the path to the nwserver binary (if not using default Steam path)
+- `vcs`: the version control system to use when making new packages
+    - default: `git`
+    - supported: `none`, `git`
+- `removeUnusedAreas`: whether to prevent areas not present in the source files
+  from being referenced in `module.ifo`.
+    - default: `true`
+    - note: you will want to disable this if you have some areas that are
+      present in a hak or override and not the module itself.
+- `useModuleFolder`: whether to use a subdirectory of the `modules` folder to
+  store unpacked module files. This feature is useful only for NWN:EE users.
+    - default: `true` during install; `true` during unpacking unless explicitly
+      specifying a file to unpack
+- `truncateFloats`: the max number of decimal places to allow after floats in
+  gff files. Use this to prevent unneeded updates to files due to insignificant
+  float value changes.
+  - default: `4`
+  - supported: `1` - `32`
+- `modName`: the name for any module file to be generated by the target. This
+  is independent of the filename. Only relevant when `convert` will be called.
+  - default: ""
+- `modMinGameVersion`: the minimum game version that can run any module file
+  generated by the target. Only relevant when `convert` will be called.
+  - default: ""
+  - note: if blank, the version in the `module.ifo` file will be unchanged.
+#### Examples
+
+```console
+$ # Set the path to nwnsc
+$ nasher config nssCompiler ~/.local/bin/nwnsc
+
+$ # Get the path to nwnsc
+$ nasher config nssCompiler
+~/.local/bin/nwnsc
+
+$ # Unset the path to nwnsc
+$ nasher config --unset nssCompiler
+
+$ # List all options set in the config files
+$ nasher config --list          # global
+$ nasher config --list --local  # local
 ```
--h, --help      <-- displays help for nasher or a specific command
--v, --version   <-- displays the nasher version
-    --debug     <-- enable debug logging
-    --verbose   <-- increases the feedback verbosity, useful for debugging
-    --quiet     <-- disable all logging except errors
-    --no-color  <-- disable color output
+
+#### Tips
+* You can pass keys to the config functions using the `<key> <value>` syntax or
+  the `--key:value` syntax. The latter is required if the value contains a word
+  starting with a `-`, such as `--nssFlags:"-n /opt/nwn"`.
+* Keys like `nssCompiler` and `installDir` work best as global options
+* Keys like `modName` or `useModuleFolder` work best as local options
+* `user.cfg` files are intentionally ignored by git. Do not include them in
+  your commits, since other users may require different values than those that
+  work on your machine
+* Some gotchas to watch out for when setting `--nssFlags`:
+    * When using `-n` to tell nwnsc the location of the NWN data directory, use
+      absolute paths. Relative paths are currently
+      [broken](https://github.com/squattingmonk/nasher/issues/55).
+    * Escape spaces in paths passed to `-n`.
+    * Do not include other configurable nwnsc flags, such as `-b` and `-i`.
+      Those flags can be passed to nwnsc per target through nasher.cfg.
+
+### init
+
+    nasher init [options] [<dir> [<file>]]
+
+Creates a new nasher package, launching a dialog to generate a
+[nasher.cfg](#nashercfg) file and initializing the new package as a git
+directory.
+
+#### Options
+
+| Flag            | Description                                          |
+| ---             | ---                                                  |
+| `--default`     | skip the package generation dialog and manually edit |
+| `--vcs:none`    | do not initialize as a git repository                |
+| `--file:<file>` | unpack the contents of `<file>` into the new package |
+
+#### Examples
+
+```console
+$ # Create a new nasher package in the current directory
+$ nasher init
+
+$ # Create a new nasher package in the directory foo
+$ nasher init foo
+
+$ # Create a new nasher package from a module file
+$ nasher init foo --file:"~/Documents/Neverwinter Nights/modules/foobar.mod"
 ```
 
-## Config
-Configuration options are set in two locations, a global `user.cfg` and a local `user.cfg`.  To see which options, if any, are in each:
-```c
-$ nasher config --list            <-- global
-$ nasher config --local --list    <-- local
-```
+### list
 
-Notes
-* All configuration values that are set without using the `--local` argument will be considered global.
+    nasher list [options]
 
-Best practices
-* Set global values, such as `--nssFlags` and `--nssCompiler` as global configuration options.  Set package/project-specific values, such as `--modName` or `useModuleFolder`, with the `--local` argument.
+Lists all available targets defined the in [nasher.cfg](#nashercfg) along with
+their descriptions, source file patterns, and the name of the file that will be
+generated. The first listed target is the default for other commands.
 
-## Init
+#### Options
 
-See [basic configuration](#basic-configuration)
+| Flag      | Description            |
+| ---       | ---                    |
+| `--quiet` | list only target names |
 
-## List
-Lists all available targets as defined in [nasher.cfg](#nasher.cfg).
-```c
-// List all target names, descriptions and details
-$ nasher list
 
-// List only target names
-$ nasher list --quiet
-```
+### unpack
 
-## Unpack
+    nasher unpack [options] [<target> [<file>]]
+
 Unpacks a file into the project source tree for the given target.
 
-If a target is not specified, the first target found in nasher.cfg is used. If a file is not specified, Nasher will search for the target's file in the NWN install directory.
+If a target is not specified, nasher will use the first target found in the
+[nasher.cfg](#nashercfg) file. If a file is not specified, nasher will search
+for the target's file in the NWN install directory.
 
-Each extracted file is checked against the target's source tree (as defined in the [Target] section of the package config). If the file only exists in one location, it is copied there, overwriting the existing file. If the file exists in multiple folders, you will be prompted to select where it should be copied.
+Each extracted file is checked against the target's source tree (as defined in
+the `[Target]` section of the nasher.cfg). If the file only exists in one
+location, it is copied there, overwriting the existing file. If the file exists
+in multiple folders, you will be prompted to select where it should be copied.
 
-If the extracted file does not exist in the source tree already, it is checked against each pattern listed in the [Rules] section of the package config. If a match is found, the file is copied to that location.
+If the extracted file does not exist in the source tree already, it is checked
+against each pattern listed in the `[Rules]` section of the nasher.cfg. If a
+match is found, the file is copied to that location.
 
-If, after checking the source tree and rules, a suitable location has not been found, the file is copied into a folder in the project root called `"unknown"` so you can manually move it later.
+If, after checking the source tree and rules, a suitable location has not been
+found, the file is copied into a folder in the project root called `unknown` so
+you can manually move it later.
 
-If an unpacked source would overwrite an existing source, its `sha1` checksum is checked against that from the last pack/unpack operation. If the sum is different, the file has changed. If the source file has not been updated since the last pack or unpack, the source file will be overwritten by the unpacked file. Otherwise you will be prompted to overwrite the source file. The default answer is to keep the existing source file.
+If an unpacked source would overwrite an existing source, its `sha1` checksum
+is checked against that from the last pack/unpack operation. If the sum is
+different, the file has changed. If the source file has not been updated since
+the last pack or unpack, the source file will be overwritten by the unpacked
+file. Otherwise you will be prompted to overwrite the source file. The default
+answer is to keep the existing source file.
 
-Command Line Options
-|Argument|Description|
-|---|---|
-|`--file`|the file to unpack into the target's source tree|
-|`--yes`|automatically answers yes to all prompts|
-|`--no`|automatically answers no to all prompts|
-|`--default`|automatically accepts the default answer for all prompts|
+#### Options
 
-Usage
-```c
-$ nasher unpack [options] [<target> [<file>]]
-```
+| Flag                    | Description                                                       |
+| --                      | ---                                                               |
+| `--file`                | the file or directory to unpack into the target's source tree     |
+| `--removeDeleted`       | remove source files not present in the file being unpacked        |
+| `--removeDeleted:false` | do not remove source files not present in the file being unpacked |
 
-Examples
-```c
+#### Examples
+
+```console
+$ # Unpack the default target's installed file
+$ nasher unpack
+
+$ # Unpack the target foo's installed file
+$ nasher unpack foo
+
+$ # Unpack the file myModule.mod using the myNWNServer target
 $ nasher unpack myNWNServer --file:myModule.mod
 ```
 
-## Convert
-Converts all JSON sources for `<target>` into their GFF counterparts. If not supplied, `<target>` will default to the first target found in the package file.  The input and output files are placed in `.nasher/cache/<target>`.  Multiple `<target>`s may be specified, separated by spaces.  `<target>` may be the name of the target in `nasher.cfg`, a filename or a directory.
+### convert
 
-Command Line Options
-|Argument|Description|
-|---|---|
-|`--clean`|clears the cache before packing|
-|`--modName`|sets the "Mod_Name" value in module.ifo|
-|`--modMinGameVersion`|sets the "Mod_MinGameVersion" value in module.ifo|
+    nasher convert [options] [(all | <target>...)]
 
-Usage
-```c
-$ nasher convert [options] [<target>...]
+Converts all JSON sources for `<target>` into their GFF counterparts. The
+output files are placed in `.nasher/cache/<target>`.
+
+If not supplied, `<target>` will default to the first target defined in the
+package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
+on all defined targets in a loop. You can also specify multiple targets by
+separatng them with spaces.
+
+*Note*: this command is called by [`pack`](#pack), so you don't need to run it
+separately unless you want to convert files without compiling and packing.
+
+#### Options
+
+| Argument              | Description                                         |
+| ---                   | ---                                                 |
+| `--clean`             | clears the cache before packing                     |
+| `--modName`           | sets the `Mod_Name` value in `module.ifo`           |
+| `--modMinGameVersion` | sets the `Mod_MinGameVersion` value in `module.ifo` |
+
+#### Examples
+
+```console
+$ # Convert the first target in nasher.cfg
+$ nasher convert
+
+$ # Convert the "demo" target
+$ nasher convert demo
+
+$ # Convert the "demo" and "testing" targets
+$ nasher convert demo test
 ```
 
-Examples
-```c
-$ nasher convert                                   <-- converts using first target in nasher.cfg
-$ nasher convert default                           <-- converts using target named "default" in nasher.cfg
-$ nasher convert --file:<path>                     <-- converts a specified directory using the default target in nasher.cfg
-$ nasher convert <target> --file:<path>/<filename> <-- converts a specific file using the target in nasher.cfg
+### compile
+
+    nasher compile [options] [(all | <target>...)]
+
+Compiles all nss sources for `<target>`. The input and output files are placed
+in `.nasher/cache/<target>`. nwnsc is used as the compiler and compilation
+errors will be displayed with reference to filename, line number, and general
+error description.
+
+If not supplied, `<target>` will default to the first target defined in the
+package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
+on all defined targets in a loop. You can also specify multiple targets by
+separatng them with spaces.
+
+nasher will only recompile scripts that have changed since the target was last
+compiled or that include scripts that have changed since the last compile
+(chained includes are followed). This behavior can be overridden with the
+`--clean` flag.
+
+A single file can be compiled with the `--file:<file>` flag. `<file>` can be a
+full path to a script, in which case the script must be within the target's
+source tree. Alternatively, you can pass just a filename, in which case the
+version of the script matched by the target's source rules will be used.
+
+*Note*: this command is called by [`pack`](#pack), so you don't need to run it
+separately unless you want to compile scripts files without packing.
+
+#### Options
+
+| Argument       | Description                             |
+| ---            | ---                                     |
+| `--clean`      | clears the cache before packing         |
+| `-f`, `--file` | compiles specific file; can be repeated |
+
+#### Examples
+
+```console
+$ # Compile the first target in nasher.cfg
+$ nasher compile
+
+$ # Compile the "demo" target
+$ nasher compile demo
+
+$ # Compile a single file used by the default target (by full path)
+$ nasher compile --file:src/nss/myfile.nss
+
+$ # Compile a single file used by a particular target (by filename)
+$ nasher compile demo --file:myfile.nss
 ```
 
-## Compile
-Compiles all nss sources for `<target>`. If `<target>` is not supplied, the first target supplied by the config files will be compiled. The input and output files are placed in `.nasher/cache/<target>`.  NWNSC.exe is used as the compiler and compilation errors will be displayed with reference to filename, line number and general error description.  Default behavior is to place all compiled `.ncs` files into the cache folder associated with the specified target.  Will only compile `.nss` files that contain either a `void main()` or `int StartingConditional()` function as the rest are assumed to be includes.
+### pack
 
-Command Line Options
-|Argument|Description|
-|---|---|
-|`--clean`|clears the cache before packing|
-|`-f`, `--file`|compiles specific file, multiple files can be specified|
-|`--modName`|sets the "Mod_Name" value in module.ifo|
-|`--modMinGameVersion`|sets the "Mod_MinGameVersion" value in module.ifo|
+    nasher pack [options] [(all | <target>...)]
 
-Usage
-```c
-$ nasher compile [options] [<target>...]
+[Converts](#convert), [compiles](#compile), and packs all sources for
+`<target>` into a module, hak, erf, or tlk. The component files are placed in
+`.nasher/cache/<target>`, but the packed file is placed in the package root.
+
+If not supplied, `<target>` will default to the first target defined in the
+package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
+on all defined targets in a loop. You can also specify multiple targets by
+separatng them with spaces.
+
+If the packed file would overwrite an existing file, you will be prompted to
+overwrite the file. The newly packaged file will have a modification time equal
+to the modification time of the newest source file. If the packed file is older
+than the existing file, the default is to keep the existing file.
+
+*Note*: this command is called by [`install`](#install), so you don't need to
+run it separately unless you want to pack files without installing.
+
+#### Options
+
+| Argument                        | Description                                                        |
+| ---                             | ---                                                                |
+| `--clean`                       | clears the cache before packing                                    |
+| `--file:<file>`                 | specify the location for the output file                           |
+| `--noConvert`                   | do not convert updated json files                                  |
+| `--noCompile`                   | do not recompile updated scripts                                   |
+| `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
+| `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
+
+#### Examples
+
+```console
+$ # Pack the first target in nasher.cfg
+$ nasher pack
+
+$ # Clear the cache and convert, compile and pack the "demo" target
+$ nasher pack demo --clean
+
+$ # Pack the "module" target into "modules/mymodule.mod", setting its name to
+$ # "My Module" and its minimum support game version to 1.69
+$ nasher pack module --file:"modules/mymodule.mod" --modName:"My Module" --modMinGameVersion:1.69
 ```
 
-Examples
-```c
-$ nasher compile                                   <-- compiles using first target in nasher.cfg
-$ nasher convert default                           <-- compiles using target named "default" in nasher.cfg
-$ nasher convert --file:<path>                     <-- compiles a specified directory using the default target in nasher.cfg
-$ nasher convert <target> --file:<path>/<filename> <-- compiles a specific file using the target in nasher.cfg
+### install
+
+    nasher install [options] [(all | <target>...)]
+
+[Converts](#convert), [compiles](#compile), and [packs](#pack) all sources for
+`<target>`, then installs the packed file into the NWN installation directory.
+
+If not supplied, `<target>` will default to the first target defined in the
+package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
+on all defined targets in a loop. You can also specify multiple targets by
+separatng them with spaces.
+
+If the file to be installed would overwrite an existing file, you will be
+prompted to overwrite it. The default answer is to keep the newer file. If the
+`useModuleFolder` configuration setting is TRUE or not set, a folder containing
+all converted and compiled files will be installed into the same directory as
+the module (`.mod`) file.
+
+#### Options
+
+| Argument                        | Description                                                        |
+| ---                             | ---                                                                |
+| `--clean`                       | clears the cache before packing                                    |
+| `--noConvert`                   | do not convert updated json files                                  |
+| `--noCompile`                   | do not recompile updated scripts                                   |
+| `--noPack`                      | do not re-pack the file (implies `--noConvert` and `--noCompile`)  |
+| `--file:<file>`                 | specify the file to install                                        |
+| `--installDir:<dir>`            | the location of the NWN user directory                             |
+| `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
+| `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
+
+#### Examples
+```console
+$ # Install the first target in nasher.cfg
+$ nasher install
+
+$ # Install the "demo" target to /opt/nwn without re-packing
+$ nasher install demo --installDir:"/opt/nwn" --noPack
+
+$ # Special case for Docker usage. When issuing the install and launch commands,
+$ # docker requires access to the NWN documents folder, so we attach two volumes:
+$ # - the first volume assigns the nasher project folder (source files)
+$ # - the second volume assigns the NWN user directory
+$ docker run --rm -it -v ${pwd}:/nasher -v "~/Documents/Neverwinter Nights":/nasher/install nwneetoools/nasher:latest install <target> --yes
 ```
 
-## Pack
-[Converts](#convert), [compiles](#compile), and packs all sources for `<target>`. If `<target>` is not supplied, the first target supplied by the config files will be packed. The assembled files are placed in `$PKG_ROOT/.nasher/cache/<target>`, but the packed file is placed in `$PKG_ROOT`.
+### launch
 
-If the packed file would overwrite an existing file, you will be prompted to overwrite the file. The newly packaged file will have a modification time equal to the modification time of the newest source file. If the packed file is older than the existing file, the default is to keep the existing file.
+    nasher (serve|play|test) [options] [<target>...]
 
-Command Line Options
-|Argument|Description|
-|---|---|
-|`--clean`|clears the cache before packing|
-|`--yes`|automatically answers yes to all prompts|
-|`--no`|automatically answers no to all prompts|
-|`--default`|automatically accepts the default answer for all prompts|
-|`--modName`|sets the "Mod_Name" value in module.ifo|
-|`--modMinGameVersion`|sets the "Mod_MinGameVersion" value in module.ifo|
+[Converts](#convert), [compiles](#compile), [packs](#pack) and
+[installs](#install) all sources for `<target>`, installs the packed file into
+the NWN installation directory, then launches NWN and loads the module. This
+command is only valid for module targets.
 
-Usage
-```c
-$ nasher pack [options] [<target>...]
+#### Options
+
+| Argument                        | Description                                                        |
+| ---                             | ---                                                                |
+| `--clean`                       | clears the cache before packing                                    |
+| `--noConvert`                   | do not convert updated json files                                  |
+| `--noCompile`                   | do not recompile updated scripts                                   |
+| `--noPack`                      | do not re-pack the file (implies `--noConvert` and `--noCompile`)  |
+| `--file:<file>`                 | specify the file to install                                        |
+| `--installDir:<dir>`            | the location of the NWN user directory                             |
+| `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
+| `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
+| `--gameBin:<path>`              | path to the `nwmain` binary file                                   |
+| `--serverBin:<path>`            | path to the `nwserver` binary file                                 |
+
+#### Examples
+
+```console
+$ # Install the first target in nasher.cfg and launch with nwserver
+$ nasher serve
+
+$ # Install the "demo" and play in-game
+$ nasher play demo
+
+$ # Install the "demo" target and play using the first character in the localvault
+$ nasher test demo
 ```
 
-Examples
-```c
-$ nasher pack                  <-- packs using first target in nasher.cfg
-$ nasher pack <target> --yes   <-- packs using <target> in nasher.cfg and answers all prompt `yes`
-```
+## Contributing
 
-## Install
-[Converts](#convert), [compiles](#compile), and [packs](#pack) all sources for `<target>`, then installs the packed file into the NWN installation directory. If `<target>` is not supplied, the first target found in the package will be packed and installed.
+Bug fixes and new features are greatly appreciated! Here's how to get started:
+1. Fork the repo: `gh repo fork squattingmonk/nasher && cd nasher`
+2. Create your feature branch: `git checkout -b feature/fooBar`
+3. Commit your changes: `git commit -am 'Add some fooBar'`
+4. Create a new pull request: `gh pr create`
 
-If the file to be installed would overwrite an existing file, you will be prompted to overwrite it. The default answer is to keep the newer file.  If the `useModuleFolder` configuration setting is TRUE or not set, a folder containing all converted and compiled files will be installed into the same directory as the module (`.mod`) file.
+You can also file bug reports and feature requests on the [issues
+page](https://github.com/squattingmonk/nasher/issues).
 
-Command Line Options
-|Argument|Description|
-|---|---|
-|`--clean`|clears the cache before packing|
-|`--yes`|automatically answers yes to all prompts|
-|`--no`|automatically answers no to all prompts|
-|`--default`|automatically accepts the default answer for all prompts|
-|`--modName`|sets the "Mod_Name" value in module.ifo|
-|`--modMinGameVersion`|sets the "Mod_MinGameVersion" value in module.ifo|
+## Changelog
 
-Usage
-```c
-$ nasher install [options] [<target>...]
-```
+You can see the changes between versions in the [changelog](CHANGELOG.md).
 
-Examples
-```c
-$ nasher install                  <-- installs using first target in nasher.cfg
-$ nasher install <target> --yes   <-- installs using <target> in nasher.cfg and answers all prompt `yes`
+## License
 
-// Special case for Docker usage -- with install and launch commands, docker requires access to the NWN
-// documents folder
-$ docker run --rm -it -v ${pwd}:/nasher -v /usr/home/Neverwinter Nights:/nasher/install squattingmonk/nasher:latest install <target> --yes
---> The first volume assigns the nasher project folder (source files)
---> The second volume assigns the documents folder
-```
-
-## Launch
-[Converts](#convert), [compiles](#compile), [packs](#pack) and [installs](#install) all sources for <target>, installs the packed file into the NWN installation directory, then launches NWN and loads the module. This command is only valid for module targets.
-
-Command Line Options
-|Argument|Description|
-|---|---|
-|`--gameBin`|path to the nwnmain binary file|
-|`--serverBin`|path to the nwserver binary file|
-|`--clean`|clears the cache before packing|
-|`--yes`|automatically answers yes to all prompts|
-|`--no`|automatically answers no to all prompts|
-|`--default`|automatically accepts the default answer for all prompts|
-|`--modName`|sets the "Mod_Name" value in module.ifo|
-|`--modMinGameVersion`|sets the "Mod_MinGameVersion" value in module.ifo|
-
-Usage
-```c
-$ nasher (serve|play|test) [options] [<target>...]
-```
-
-Examples
-```
-$ nasher serve <target>  <-- installs <target> and starts nwserver
-$ nasher play <target>   <-- installs <target>, starts NWN and loads the module
-$ nasher test <target>   <-- installs <target>, starts NWN, loads the module and uses the first characater
-```
-
-# Errors
-##### [top](#nasher) | [install](#installation-options) | [configuration](#configuration) | [commands](#commands) | [errors](#errors) | [troubleshooting](#troubleshooting)
-&nbsp;
-
-`"No source files found for target"` - Caused by improper sourcing (`include = `) in either the [Sources] or [Target] section of `nasher.cfg`.  Check your [configuration file](#nasher.cfg).
-
-`"This is not a nasher repository. Please run init"` - Caused by running any nasher command, except `nasher config --global` before running [`nasher init`](#configuration) in the project folder.  Caused by incorrectly referencing the present working directory in the `docker run` command.  The reference can be CLI-specific.  For example, ubuntu/linux wants to see `$(pwd)` while PowerShell requires `${pwd}`.  Lookup the appropriate reference for your CLI.  `%cd%` only works for Windows `cmd.exe`.
-
-`"The following areas do not have matching .git files and will not be accessible in the toolset"` - When the area list is built during the conversion process, nasher matches the list of .are files with .git files.  This warning will list any .are files that do not have matching .git files.
-
-`"This module does not have a valid starting area!"` - A module cannot be packed/installed without a valid starting area.  Either extract a valid starting area into the nasher project folder or manually edit (never recommended!) your `module.ifo` file at the `Mod_Entry_Area` setting.
-
-`"this answer cannot be blank. Aborting..."` - Answer to prompt required, but not provided.
-
-`"not a valid choice. Aborting..."` - User selected an invalid multiple-choice answer.
-
-`"Could not create {outFile}. Is the destination writeable?"` - raised is a destination folder for file conversion does not have write permissions.  Also raised if there is an error converting the file to `.json` format.  If you permissions are set correctly, try using 64-bit versions of minGW and nim.
-
-# Troubleshooting
-##### [top](#nasher) | [install](#installation-options) | [configuration](#configuration) | [commands](#commands) | [errors](#errors) | [troubleshooting](#troubleshooting)
-&nbsp;
-
-**Can nasher `<anything you want here>`?**  Probably.
-
-**Can I use absolute or relative paths?**  Yes.
-
-**Does nasher strip the module ID?**  Yes.
-
-**I really need nasher to do something it doesn't, can you add this function?**  You can ask.  nasher is actively maintained and new features are constantly added.  If your request is a feature that fits within the design criteria for nasher, it can likely be added.  [Add an issue](https://github.com/squattingmonk/nasher.nim/issues) on the [nasher github site](https://github.com/squattingmonk/nasher.nim) and it will be addressed shortly.
-
-**I thought using nasher was supposed to be easy, why is it so difficult?** You're probably doing it wrong.  Read through this document for the command you're trying to use and see if you can self-help.  As a rule of thumb, if you're doing more work after installing nasher than you did before, you're likely missing some key pieces of information and/or configuration that will make your life a lot easier.  If you can't self-help through this document, see the [help sources](#nasher) at the top of this document.
+nasher is fully open-source and released under the [MIT License](LICENSE).
