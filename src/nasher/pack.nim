@@ -98,6 +98,14 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
         info("Filtering", file)
         removeFile(packDir / file)
 
+    for cacheFile in walkFiles(packDir / "*"):
+      if (cacheFile.splitFile.name.len > 16):
+        error(fmt"Cannot pack {cacheFile.extractFilename}: filename is longer than 16 characters.")
+        if askIf("Continue packing anyway?"):
+          removeFile(cacheFile)
+        else:
+          return cmd != "pack"
+
     createErf(packDir, file, bin, args)
 
   for file in walkFiles(cacheDir / "*"):
