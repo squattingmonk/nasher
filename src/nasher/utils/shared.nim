@@ -1,4 +1,4 @@
-import os, times, strtabs
+import os, times, strtabs, tables
 from sequtils import toSeq
 from strutils import unindent, strip
 from unicode import toLower
@@ -87,3 +87,21 @@ proc expandPath*(path: string, keepUnknownKeys = false): string =
   ## rather than replacing them with an empty string.
   let flags = {useEnvironment, if keepUnknownKeys: useKey else: useEmpty}
   result = `%`(path.expandTilde, newStringTable(modeCaseSensitive), flags)
+
+proc outFile(srcFile: string): string =
+  ## Returns the filename of the converted source file
+  let (_, name, ext) = srcFile.splitFile
+  if ext == ".json": name else: name & ext
+
+type
+  FileMap* = Table[string, seq[string]]
+
+proc outFiles*(srcFiles: seq[string]): FileMap =
+  ## Returns a table mapping an output file with source files. Used to determine
+  ## if there is more than one file in the target's source tree that can be used
+  ## to generate the output file.
+  for srcFile in srcFiles:
+    let outFile = srcFile.outFile.normalizeFilename
+    if result.hasKeyOrPut(outFile, @[srcFile]):
+      result[outFile].add(srcFile)
+

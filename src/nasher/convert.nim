@@ -1,4 +1,4 @@
-import os, strtabs, strutils, strformat, sequtils
+import os, strtabs, strutils, strformat, sequtils, tables
 import utils/[cli, manifest, nwn, options, shared]
 
 const
@@ -29,11 +29,6 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc outFile(srcFile: string): string =
-  ## Returns the filename of the converted source file
-  let (_, name, ext) = srcFile.splitFile
-  if ext == ".json": name else: name & ext
-
 proc convert*(opts: Options, pkg: PackageRef): bool =
   setCurrentDir(getPackageRoot())
 
@@ -58,7 +53,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
     tlkFlags = opts.get("tlkFlags")
     tlkFormat = opts.get("tlkFormat", "json")
     srcFiles = getSourceFiles(target.includes, target.excludes)
-    outFiles = srcFiles.map(outFile)
+    outFiles = srcFiles.outFiles
 
   display(category.capitalizeAscii, "target " & target.name)
   if srcFiles.len == 0:
@@ -88,20 +83,22 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
         else:
           name & ext
 
-    if fileName.extractFilename notin outFiles:
+    if not outFiles.hasKey(fileName.extractFilename):
       info("Removing", name & ext)
       file.removeFile
 
   # Copy newer files
-  for file in srcFiles:
-    # Ensure filenames are lowercase before converting to avoid collisions
-    let
-      srcFile = file.normalizeFilename
-      outFile = cacheDir / srcFile.outFile
+  for cacheFile, inFiles in outFiles.pairs:
+    assert inFiles.len > 0
 
-    if file != srcFile:
-      info("Renaming", fmt"{file.extractFilename} to {srcFile.extractFilename}")
-      file.moveFile(srcFile)
+    let
+      outFile = cacheDir / cacheFile
+      srcFile =
+        if inFiles.len > 1:
+          choose(fmt"Multiple sources found for {outFile}. " &
+                 "Which one do you wish to use?", inFiles)
+        else:
+          inFiles[0]
 
     if manifest.getFilesChanged(srcFile, outFile):
       let
@@ -128,7 +125,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
       manifest.add(srcFile, outFile)
 
   manifest.write
-  
+
   # Update the module's .ifo file
   if cmd != "compile":
     updateIfo(cacheDir, gffUtil, gffFlags, opts, target)

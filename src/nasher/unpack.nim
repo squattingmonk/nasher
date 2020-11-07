@@ -54,10 +54,7 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-type
-  SourceMap = Table[string, seq[string]]
-
-proc genSrcMap(files: seq[string]): SourceMap =
+proc genSrcMap(files: seq[string]): FileMap =
   ## Generates a table mapping unconverted source files to the proper directory.
   ## Each file has a sequence of locations (in case it exists in more than one
   ## directory).
@@ -68,7 +65,7 @@ proc genSrcMap(files: seq[string]): SourceMap =
     if result.hasKeyOrPut(fileName, @[dir]):
       result[fileName].add(dir)
 
-proc mapSrc(file, ext, target: string, srcMap: SourceMap, rules: seq[Rule]): string =
+proc mapSrc(file, ext, target: string, srcMap: FileMap, rules: seq[Rule]): string =
   ## Maps a file to the proper directory, first searching existing source files
   ## and then matching it to each pattern in rules. Returns the directory.
   var choices = srcMap.getOrDefault(file)
