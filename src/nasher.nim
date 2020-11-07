@@ -37,6 +37,7 @@ const
     --quiet        Disable all logging except errors
     --no-color     Disable color output (automatic if not a tty)
   """
+
 proc ctrlCQuit {.noconv.} =
   quit(QuitFailure)
 

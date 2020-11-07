@@ -183,7 +183,9 @@ proc parseCmdLine(opts: Options) =
       else:
         if key in nasherCommands:
           opts["command"] = key
-        else: break
+        else:
+          opts["help"] = true
+          break
     of cmdLongOption, cmdShortOption:
       case key
       of "h", "help", "command":
