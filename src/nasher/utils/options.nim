@@ -296,7 +296,7 @@ proc verifyBinaries*(opts: Options) =
 
   for bin in bins[start..^1]:
     if opts.hasKeyOrPut(bin.flag, findExe(bin.default, root)):
-      opts[bin.flag] = opts[bin.flag].expandPath
+      opts[bin.flag] = opts[bin.flag].expandPath.absolutePath
 
     let path = opts[bin.flag]
     info("Located", bin.desc & " at " & path)
