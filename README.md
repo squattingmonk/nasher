@@ -119,7 +119,7 @@ document, you can replace it with the docker command. So the following are
 equivalent:
 ```console
 $ nasher <command>
-$ docker run --rm -it -v ${pwd}:/nasher nwneetools/nasher:latest <command>
+$ docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
 ```
 
 #### Tips
@@ -823,7 +823,7 @@ $ # Special case for Docker usage. When issuing the install and launch commands,
 $ # docker requires access to the NWN documents folder, so we attach two volumes:
 $ # - the first volume assigns the nasher project folder (source files)
 $ # - the second volume assigns the NWN user directory
-$ docker run --rm -it -v ${pwd}:/nasher -v "~/Documents/Neverwinter Nights":/nasher/install nwneetoools/nasher:latest install <target> --yes
+$ docker run --rm -it -v ${pwd}:/nasher -v "~/Documents/Neverwinter Nights":/nasher/install nwntools/nasher:latest install <target> --yes
 ```
 
 ### launch
