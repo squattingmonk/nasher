@@ -1,5 +1,52 @@
 # nasher changelog
 
+## 0.13.0: November 07, 2020
+
+### Display an error message when a resource filename is > 16 characters \
+([#59](https://github.com/squattingmonk/nasher.nim/issues/59)).
+
+When a file being packed into a module, erf, or hak is > 16 characters long
+(not including the file extension), nasher will now emit an error and ask if
+the user wants to continue packing.
+
+### Ask which file to pack when mulitple copies exist \
+([#58](https://github.com/squattingmonk/nasher.nim/issues/58))
+
+When the `convert` command finds multiple versions of the same source file
+within the target's source directory, it will now ask which one the user wishes
+to use.
+
+This change also stops nasher from automatically making the source filenames
+lowercase. Previously, if the user had both src/foo.nss and src/FOO.NSS in the
+source tree, the latter would be renamed to the former, wiping out any
+differences between the two. The converted file will still be lowercase, so the
+user must choose which file to use in this case.
+
+### Other fixes
+- Passing relative paths to the `-nssCompiler`, `--gffUtil`, `--tlkUtil`, and
+  `--erfUtil` flags now works correctly
+  ([#55](https://github.com/squattingmonk/nasher.nim/issues/55))
+- A help message is shown if an unknown command is passed. Previously, nasher
+  would attempt to verify that required binaries were installed before checking
+  if the command the user issued was valid. This caused a KeyError and
+  prevented the help message from being shown.
+- Bump required version of [niv's
+  tools](https://github.com/niv/neverwinter.nim) to `1.4.0`. Previous versions
+  would not compile on `nim >= 1.4.0`.
+- Issues with [glob](https://github.com/citycide/glob) and [`regex
+  0.17.0`](https://github.com/nitely/nim-regex) have been fixed upstream.
+  Nasher no longer requires an old version of `regex` to work.
+- The readme has been rewritten and is hopefully more welcoming to new users
+  ([#53](https://github.com/squattingmonk/nasher.nim/pull/53)). Thanks,
+  @tinygiant98!.
+- The docker image is now being built against alpine rather than ubuntu. This
+  should result in a faster build and smaller download for docker users.
+
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.12.3...0.13.0
+
+
 ## 0.12.3: October 21, 2020
 
 This release fixes problems with compilation of neverwinter.nim and the

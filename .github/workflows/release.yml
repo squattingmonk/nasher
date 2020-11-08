@@ -7,9 +7,9 @@ on:
 
 env:
   APP_NAME: 'nasher'
-  NIM_VERSION: '1.2.0'
+  NIM_VERSION: '1.4.0'
   MAINTAINER: 'Michael A. Sinclair <squattingmonk@gmail.com>'
-  RELEASE_FILES: nasher LICENSE README.*
+  RELEASE_FILES: nasher LICENSE README.md CHANGELOG.md
 
 jobs:
   build-artifact:

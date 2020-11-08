@@ -17,7 +17,7 @@ it has some key differences:
   launch them in-game
 * nasher uses json rather than yaml for storing gff files
 
-This guide is current as of nasher release 0.12.3.
+This guide is current as of nasher release 0.13.0.
 
 * [Installation Options](#installation-options)
     * [Binary Releases](#binary-releases)
