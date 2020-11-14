@@ -1,7 +1,7 @@
-import json, os, osproc, strformat, strutils, math, streams
+import json, os, osproc, strformat, strutils, math, streams, tables
 from sequtils import mapIt, toSeq
 
-import neverwinter/gff
+import neverwinter/gffjson, neverwinter/gff
 from nwnt import toNwnt, gffRootFromNwnt
 
 import cli, options
@@ -38,24 +38,30 @@ proc truncateFloats(j: var JsonNode, precision: range[1..32] = 4, bearing: bool 
   else:
     discard
 
+proc postProcessJson(j: JsonNode) =
+  ## Post-process json before emitting: We make sure to re-sort.
+  if j.kind == JObject:
+    for k, v in j.fields: postProcessJson(v)
+    j.fields.sort do (a, b: auto) -> int: cmpIgnoreCase(a[0], b[0])
+  elif j.kind == JArray:
+    for e in j.elems: postProcessJson(e)
+
 proc gffToJson(file, bin, args: string, precision: range[1..32] = 4): JsonNode =
   ## Converts ``file`` to json, stripping the module ID if ``file`` is
   ## module.ifo.
-  let
-    cmd = join([bin, args, "-i", file.escape, "-k json -p"], " ")
-    (output, errCode) = execCmdEx(cmd, Options)
+  let input  = openFileStream(file)
+  var state = input.readGffRoot(false)
 
-  if errCode != 0:
-    fatal(fmt"Could not parse {file}: {output}")
+  if file.extractFilename == "module.ifo" and state.hasField("Mod_ID", GffVoid):
+    state.del("Mod_ID")
+  elif file.splitFile.ext == ".are" and state.hasField("Version", GffDword):
+    state.del("Version")
 
-  result = output.parseJson
+  result = state.toJson()
+  result.postProcessJson()
+  result.truncateFloats()
+  input.close()
 
-  result.truncateFloats(precision)
-
-  if file.extractFilename == "module.ifo" and result.hasKey("Mod_ID"):
-    result.delete("Mod_ID")
-  elif file.splitFile.ext == ".are" and result.hasKey("Version"):
-    result.delete("Version")
 
 proc gffToNwnt(inFile, outFile: string, precision: range[1..32] = 4) =
   ## Converts ``file`` to nwnt, stripping the module ID if ``file`` is
@@ -81,6 +87,13 @@ proc convertFile(inFile, outFile, bin, args: string) =
     let input  = openFileStream(inFile)
     let output = openFileStream(outFile, fmWrite)
     var state = input.gffRootFromNwnt()
+    output.write(state)
+    input.close()
+    output.close()
+  of ".json":
+    let input  = openFileStream(inFile)
+    let output = openFileStream(outFile, fmWrite)
+    var state = input.parseJson(inFile).gffRootFromJson()
     output.write(state)
     input.close()
     output.close()

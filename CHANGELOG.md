@@ -10,7 +10,13 @@ the libraries of those tools for a custom output language instead of json.
 The output language is designed to be similar to Json that has been put through
 gron. A standalone conversion tool is also available at the project page.
 
-To enable, use `nasher config gffFormat nwnt`
+To enable, use `nasher config gffFormat nwnt` (remember `--local` to only affect
+current package)
+
+### Change to nwn.nim lib calls for gffConvert
+
+Nasher calls neverwinter.nim as library, instead of deferring to the binaries.
+Only applies to gff format conversion, excluding .tlk
 
 ## 0.13.0: November 07, 2020
 
