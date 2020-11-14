@@ -480,7 +480,7 @@ by passing the key/value pair as an option to the command.
     - default: ""
 - `gffFormat`: the format to use to store gff files
     - default: `json`
-    - supported: `json`
+    - supported: `json, nwnt`
 - `tlkUtil`: the path to the tlk conversion utility
     - default (Posix): `nwn_gff`
     - default (Windows): `nwn_gff.exe`

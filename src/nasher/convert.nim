@@ -1,4 +1,4 @@
-import os, strtabs, strutils, strformat, sequtils, tables
+import os, strtabs, strutils, strformat, tables
 import utils/[cli, manifest, nwn, options, shared]
 
 const

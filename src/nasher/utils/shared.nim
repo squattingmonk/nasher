@@ -91,7 +91,9 @@ proc expandPath*(path: string, keepUnknownKeys = false): string =
 proc outFile(srcFile: string): string =
   ## Returns the filename of the converted source file
   let (_, name, ext) = srcFile.splitFile
-  if ext == ".json": name else: name & ext
+  if ext == ".json" or ext == ".nwnt": name
+  else: name & ext
+
 
 type
   FileMap* = Table[string, seq[string]]

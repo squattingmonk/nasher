@@ -1,5 +1,8 @@
-import json, os, osproc, strformat, strutils, math
+import json, os, osproc, strformat, strutils, math, streams
 from sequtils import mapIt, toSeq
+
+import neverwinter/gff
+from nwnt import toNwnt, gffRootFromNwnt
 
 import cli, options
 
@@ -54,14 +57,40 @@ proc gffToJson(file, bin, args: string, precision: range[1..32] = 4): JsonNode =
   elif file.splitFile.ext == ".are" and result.hasKey("Version"):
     result.delete("Version")
 
+proc gffToNwnt(inFile, outFile: string, precision: range[1..32] = 4) =
+  ## Converts ``file`` to nwnt, stripping the module ID if ``file`` is
+  ## module.ifo.
+  let input  = openFileStream(inFile)
+  let output = openFileStream(outFile, fmWrite)
+  var state = input.readGffRoot(false)
+
+  if inFile.extractFilename == "module.ifo" and state.hasField("Mod_ID", GffVoid):
+    state.del("Mod_ID")
+  elif inFile.splitFile.ext == ".are" and state.hasField("Version", GffDword):
+    state.del("Version")
+
+  output.toNwnt(state, precision)
+  input.close()
+  output.close()
+
 proc convertFile(inFile, outFile, bin, args: string) =
   ## Converts a ``inFile`` to ``outFile``.
-  let
-    cmd = join([bin, args, "-i", inFile.escape, "-o", outFile.escape], " ")
-    (output, errCode) = execCmdEx(cmd, Options)
+  let inFormat = inFile.splitFile.ext
+  case inFormat
+  of ".nwnt":
+    let input  = openFileStream(inFile)
+    let output = openFileStream(outFile, fmWrite)
+    var state = input.gffRootFromNwnt()
+    output.write(state)
+    input.close()
+    output.close()
+  else:
+    let
+      cmd = join([bin, args, "-i", inFile.escape, "-o", outFile.escape], " ")
+      (output, errCode) = execCmdEx(cmd, Options)
 
-  if errCode != 0:
-    fatal(fmt"Could not convert {inFile}: {output}")
+    if errCode != 0:
+      fatal(fmt"Could not convert {inFile}: {output}")
 
 proc gffConvert*(inFile, outFile, bin, args: string, precision: range[1..32] = 4) =
   ## Converts ``inFile`` to ``outFile``
@@ -69,7 +98,7 @@ proc gffConvert*(inFile, outFile, bin, args: string, precision: range[1..32] = 4
     (dir, name, ext) = outFile.splitFile
     fileType = ext.strip(chars = {'.'})
     outFormat = if fileType in GffExtensions: "gff" else: fileType
-    category = if outFormat in ["json", "gff", "tlk"]: "Converting" else: "Copying"
+    category = if outFormat in ["json", "nwnt", "gff", "tlk"]: "Converting" else: "Copying"
 
   info(category, "$1 -> $2" % [inFile.extractFilename, name & ext])
 
@@ -90,6 +119,11 @@ proc gffConvert*(inFile, outFile, bin, args: string, precision: range[1..32] = 4
       else:
         let text = gffToJson(inFile, bin, args, precision).pretty & "\c\L"
         writeFile(outFile, text)
+    of "nwnt":
+      if inFile.splitFile.ext == ".tlk":
+        convertFile(inFile, outFile, bin, args & " -p")
+      else:
+        gffToNwnt(inFile, outFile, precision) #does filewrite in-proc
     of "gff", "tlk":
       convertFile(inFile, outFile, bin, args)
     else:
@@ -103,7 +137,7 @@ proc isValid(version: string): bool =
 
   if decomp.len < 2 or decomp.len > 4:
     return false
-  
+
   for section in decomp:
     try:
       discard section.parseUInt
@@ -112,7 +146,7 @@ proc isValid(version: string): bool =
       return false
 
 proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.Target) =
-  ## Updates the areas listing in module.ifo, checks for matching .git files,          
+  ## Updates the areas listing in module.ifo, checks for matching .git files,
   ## and sets module name and min version, if specified
   let
     fileGff = dir / "module.ifo"
@@ -154,7 +188,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
 
     ifoJson["Mod_Area_list"]["value"] = %ifoAreas
     success(fmt"area list updated --> {areas.len} area{plurality} listed")
-  
+
   # Module Name Update
   if moduleName.len > 0 and moduleName != ifoJson["Mod_Name"]["value"]["0"].getStr:
     ifoJson["Mod_Name"]["value"]["0"] = %moduleName
@@ -174,7 +208,7 @@ proc updateIfo*(dir, bin, args: string, opts: options.Options, target: options.T
     else:
       error(fmt"requested min game version '{moduleVersion}' is not valid")
       display("Skipping", "setting module min game version")
-    
+
   writeFile(fileJson, $ifoJson)
   convertFile(fileJson, fileGff, bin, args)
   removeFile(fileJson)

@@ -1,5 +1,17 @@
 # nasher changelog
 
+## 0.14.0:
+
+### Enable NWNT Custom output language
+https://github.com/WilliamDraco/NWNT
+
+Based on nwn_gff from the neverwinter.nim tools, this output format utilises
+the libraries of those tools for a custom output language instead of json.
+The output language is designed to be similar to Json that has been put through
+gron. A standalone conversion tool is also available at the project page.
+
+To enable, use `nasher config gffFormat nwnt`
+
 ## 0.13.0: November 07, 2020
 
 ### Display an error message when a resource filename is > 16 characters \
