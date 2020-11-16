@@ -59,9 +59,8 @@ proc gffToJson(file, bin, args: string, precision: range[1..32] = 4): JsonNode =
 
   result = state.toJson()
   result.postProcessJson()
-  result.truncateFloats()
+  result.truncateFloats(precision)
   input.close()
-
 
 proc gffToNwnt(inFile, outFile: string, precision: range[1..32] = 4) =
   ## Converts ``file`` to nwnt, stripping the module ID if ``file`` is
