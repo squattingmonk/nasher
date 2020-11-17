@@ -60,8 +60,8 @@ proc branch(repo: string, default = ""): string =
     execCmdEx("git rev-parse --abbrev-ref HEAD").output.strip
 
 proc checkout(branch: string, repo: string, create = false, throw = false): bool = 
-  ## Checkout desired branch, if it exists.  If not, prompts for creation or
-  ## uses of current branch.  If can't checkout because of an error, do something else?
+  ## Checkout desired branch, if it exists. If not, prompts for creation or
+  ## uses of current branch. If can't checkout because of an error, do something else?
   var
     flag = ""
     suffix = ""
@@ -75,7 +75,7 @@ proc checkout(branch: string, repo: string, create = false, throw = false): bool
         choiceQuit = "Abort the operation"
         
       let 
-        question = fmt"This operation will create a branch from {repo.branch} instead of master.  What would you like to do?"
+        question = fmt"This operation will create a branch from {repo.branch} instead of master. What would you like to do?"
         choices = [choiceMaster, choiceCurrent, choiceQuit]
 
       case choose(question, choices)
@@ -99,14 +99,13 @@ proc gitSetBranch*(repo = getCurrentDir(), branch: string): string =
   ## Called if the branch option was specified in configuration or command line
   if repo.exists:
     if branch.exists(repo):
-      echo "branch exists"
       if repo.branch == branch:
         result = branch
       else:
         if branch.checkout(repo, throw = true):
           result = repo.branch
         else:
-          fatal(fmt"{branch} could not be checked out.  Resolve all git repo errors before continuing.")
+          fatal(fmt"{branch} could not be checked out. Resolve all git repo errors before continuing.")
     else:
       if repo.empty:
         let question = "Nasher cannot determine the status of this repo because there have not been any commits. " &
