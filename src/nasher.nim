@@ -1,5 +1,6 @@
+import os, strformat
 import nasher/[init, list, config, unpack, convert, compile, pack, install, launch]
-import nasher/utils/[cli, options, shared]
+import nasher/utils/[cli, git, options, shared]
 
 const
   NimblePkgVersion {.strdefine.} = "devel"
@@ -47,11 +48,13 @@ when isMainModule:
     var
       opts = getOptions()
       pkg = new(PackageRef)
+      branch = opts.get("branch", "none")
 
     let
       cmd = opts.get("command")
       help = opts.get("help", false)
       version = opts.get("version", false)
+      dir = opts.getOrPut("directory", getCurrentDir())
 
     if version:
       echo "nasher " & NimblePkgVersion
@@ -91,6 +94,11 @@ when isMainModule:
       let targets = pkg.getTargets(opts.get("targets"))
       for target in targets:
         opts["target"] = target.name
+        if branch == "none":
+          branch = target.branch
+        if branch.len > 0:
+          display("VCS Branch:", gitSetBranch(dir, branch))
+
         if convert(opts, pkg) and
            compile(opts, pkg) and
            pack(opts, pkg) and

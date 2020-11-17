@@ -9,7 +9,7 @@ type
   Options* = StringTableRef
 
   Package = object
-    name*, description*, version*, url*, modName*, modMinGameVersion*: string
+    name*, description*, version*, url*, modName*, modMinGameVersion*, branch*: string
     authors*, includes*, excludes*, filters*, flags*, updated*: seq[string]
     targets*: seq[Target]
     rules*: seq[Rule]
@@ -17,7 +17,7 @@ type
   PackageRef* = ref Package
 
   Target* = object
-    name*, file*, description*, modName*, modMinGameVersion*: string
+    name*, file*, description*, modName*, modMinGameVersion*, branch*: string
     includes*, excludes*, filters*, flags*: seq[string]
     rules*: seq[Rule]
 
@@ -340,6 +340,8 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       target.flags = pkg.flags
     if target.rules.len == 0:
       target.rules = pkg.rules
+    if target.branch.len == 0:
+      target.branch = pkg.branch
     if target.modName.len == 0:
       target.modName = pkg.modName
     if target.modMinGameVersion.len == 0:
@@ -385,6 +387,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "flags": pkg.flags.add(e.value)
         of "modName": pkg.modName = e.value
         of "modMinGameVersion": pkg.modMinGameVersion = e.value
+        of "branch": pkg.branch = e.value
         else:
           pkg.rules.add((e.key, e.value))
       of "target":
@@ -398,6 +401,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         of "flags": target.flags.add(e.value)
         of "modName": target.modName = e.value
         of "modMinGameVersion": target.modMinGameVersion = e.value
+        of "branch": target.branch = e.value
         else:
           target.rules.add((e.key, e.value))
       of "rules":
