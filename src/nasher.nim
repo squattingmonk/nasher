@@ -52,7 +52,7 @@ when isMainModule:
 
     let
       cmd = opts.get("command")
-      help = opts.get("help", false)
+      help = opts.get("help", not opts.hasKey("command"))
       version = opts.get("version", false)
       dir = opts.getOrPut("directory", getCurrentDir())
 
