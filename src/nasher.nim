@@ -1,4 +1,4 @@
-import os, strformat
+import os
 import nasher/[init, list, config, unpack, convert, compile, pack, install, launch]
 import nasher/utils/[cli, git, options, shared]
 
