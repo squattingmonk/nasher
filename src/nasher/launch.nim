@@ -52,7 +52,6 @@ proc getServerBin: string =
     result = binDir / "linux-x86" / "nwserver-linux"
   elif defined(Windows):
     result = binDir / "win32" / "nwserver.exe"
-    result = "${PROGRAMFILES(X86)}" / SteamPath / "win32" / "nwmain.exe"
   elif defined(MacOS):
     result = binDir / "macos" / "nwserver-macos"
   else:
