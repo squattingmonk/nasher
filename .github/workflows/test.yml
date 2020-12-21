@@ -20,7 +20,7 @@ jobs:
           - windows-latest
           - macOS-latest
         nim:
-          - 1.2.0
+          - 1.4.2
           - stable
     name: Nim ${{ matrix.nim }} (${{ matrix.os }})
     steps:
@@ -35,6 +35,10 @@ jobs:
       - uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: ${{ matrix.nim }}
+      - name: Print Nim version
+        run: nim -v
+      - name: Print Nimble version
+        run: nimble -v
       - name: Nimble build
         run: nimble build -y
       - name: Nimble test
