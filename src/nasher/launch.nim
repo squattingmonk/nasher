@@ -41,7 +41,7 @@ proc getGameBin: string =
     result = binDir / "linux-x86" / "nwmain-linux"
   elif defined(Windows):
     result = binDir / "win32" / "nwmain.exe"
-  elif defined(MacOS):
+  elif defined(MacOSX):
     result = binDir / "macos" / "nwmain.app" / "Contents" / "MacOS" / "nwmain"
   else:
     raise newException(ValueError, "Cannot find nwmain: unsupported OS")
@@ -52,7 +52,7 @@ proc getServerBin: string =
     result = binDir / "linux-x86" / "nwserver-linux"
   elif defined(Windows):
     result = binDir / "win32" / "nwserver.exe"
-  elif defined(MacOS):
+  elif defined(MacOSX):
     result = binDir / "macos" / "nwserver-macos"
   else:
     raise newException(ValueError, "Cannot find nwserver: unsupported OS")

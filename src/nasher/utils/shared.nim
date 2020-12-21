@@ -80,7 +80,7 @@ proc getNwnRootDir*: string =
   const steamPath = "Steam" / "steamapps" / "common" / "Neverwinter Nights"
   when defined(Linux):
     path = getHomeDir() / ".local" / "share" / steamPath
-  elif defined(MacOS):
+  elif defined(MacOSX):
     path = getHomeDir() / "Library" / "Application Support" / steamPath
   elif defined(Windows):
     path = getEnv("PROGRAMFILES(X86)") / steamPath
@@ -99,9 +99,10 @@ proc getNwnRootDir*: string =
   const
     settings = "Beamdog Client" / "settings.json"
     releases = ["00829", "00785"]
+
   when defined(Linux):
     let settingsFile = getConfigDir() / settings
-  elif defined(MacOS):
+  elif defined(MacOSX):
     let settingsFile = getHomeDir() / "Library" / "Application Support" / settings
   elif defined(Windows):
     let settingsFile = getHomeDir() / "AppData" / "Roaming" / settings
@@ -118,7 +119,7 @@ proc getNwnRootDir*: string =
         return folder
 
   # GOG Install
-  when defined(Linux) or defined(MacOS):
+  when defined(Linux) or defined(MacOSX):
     path = getHomeDir() / "GOG Games" / "Neverwinter Nights Enhanced Edition"
   elif defined(Windows):
     path = getEnv("PROGRAMFILES(X86)") / "GOG Galaxy" / "Games" / "Neverwinter Nights Enhanced Edition"
