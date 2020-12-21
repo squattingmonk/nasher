@@ -106,14 +106,16 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
         srcExt = srcFile.getFileExt
         fileName = outFile.extractFilename
 
-      if srcExt in [gffFormat, tlkFormat]:
+      if srcExt in ["json", "nwnt", tlkFormat]:
         if cmd == "compile":
           continue
 
         if fileName.getFileExt == "tlk":
-          gffConvert(srcFile, outFile, tlkUtil, tlkFlags)
+          info("Converting", fmt"{srcFile} -> {fileName}")
+          convertFile(srcFile, outFile, tlkUtil, tlkFlags)
         else:
-          gffConvert(srcFile, outFile, gffUtil, gffFlags)
+          info("Converting", fmt"{srcFile} -> {fileName}")
+          srcFile.toGFF(outFile)
       else:
         info("Copying", srcFile & " -> " & fileName)
         copyFile(srcFile, outFile)
@@ -129,7 +131,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
 
   # Update the module's .ifo file
   if cmd != "compile":
-    updateIfo(cacheDir, gffUtil, gffFlags, opts, target)
+    updateIfo(cacheDir, opts, target)
 
   # Prevent falling through to the next function if we were called directly
   return cmd != "convert"

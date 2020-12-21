@@ -62,7 +62,7 @@ proc genSrcMap(files: seq[string]): FileMap =
   for file in files:
     let
       (dir, name, ext) = splitFile(file)
-      fileName = if ext == ".json": name else: name.addFileExt(ext)
+      fileName = if ext in [".json", ".nwnt"]: name else: name.addFileExt(ext)
     if result.hasKeyOrPut(fileName, @[dir]):
       result[fileName].add(dir)
 
@@ -220,7 +220,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   for file in sourceFiles:
     let
       (_, name, ext) = splitFile(file)
-      fileName = if ext == ".json": name else: name.addFileExt(ext)
+      fileName = if ext in [".json", ".nwnt"]: name else: name.addFileExt(ext)
 
     if not fileExists(tmpDir / fileName) and
       (removeDeleted or
@@ -268,9 +268,15 @@ proc unpack*(opts: Options, pkg: PackageRef) =
             continue
 
     if fileType == "tlk":
-      gffConvert(filePath, outFile, tlkUtil, tlkFlags)
+      info("Converting", fmt"{filePath} -> outFile")
+      convertFile(filePath, outFile, tlkUtil, tlkFlags)
+    elif file.fileName.getFileExt in GffExtensions:
+      info("Converting", fmt"{filePath} -> outFile")
+      filePath.fromGff(outFile, precision)
     else:
-      gffConvert(filePath, outFile, gffUtil, gffFlags, precision)
+      createDir(outFile.splitFile.dir)
+      info("Copying", fmt"{filePath} -> outFile")
+      copyFile(filePath, outFile)
 
     outFile.setLastModificationTime(packTime)
     manifest.update(file.fileName, file.fileSum, packTime)
