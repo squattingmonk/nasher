@@ -36,7 +36,7 @@ jobs:
         with:
           nim-version: ${{ matrix.nim }}
       - name: Nimble build
-        run: nimble build
+        run: nimble build -y
       - name: Nimble test
         run: nimble test
 
