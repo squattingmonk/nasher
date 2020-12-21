@@ -2,11 +2,21 @@ name: test
 
 on:
   push:
+    branches:
+      - master
     paths-ignore:
       - 'LICENSE'
       - '*.md'
+      - '.github/**'
   pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - reopened
+      - synchronize
     paths-ignore:
+      - '.github/**'
       - 'LICENSE'
       - '*.md'
 
@@ -32,15 +42,15 @@ jobs:
           path: ~/.nimble
           key: ${{ runner.os }}-nimble-${{ matrix.nim }}
         if: runner.os != 'Windows'
-      - uses: jiro4989/setup-nim-action@v1
+      - name: Set up Nim
+        uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: ${{ matrix.nim }}
       - name: Print Nim version
         run: nim -v
       - name: Print Nimble version
         run: nimble -v
-      - name: Nimble build
+      - name: Run Nimble tests
+        run: nimble test -y
+      - name: Build with Nimble
         run: nimble build -y
-      - name: Nimble test
-        run: nimble test
-
