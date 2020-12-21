@@ -30,6 +30,10 @@ current package).
 
 Thanks to @WilliamDraco for his hard work on this feature.
 
+---
+
+Details: https://github.com/squattingmonk/nasher.nim/compare/0.13.0...0.14.0
+
 ## 0.13.0: November 07, 2020
 
 ### Display an error message when a resource filename is > 16 characters
