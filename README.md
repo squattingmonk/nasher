@@ -15,7 +15,8 @@ it has some key differences:
   directories based on category)
 * nasher can install built targets into the NWN installation directory or
   launch them in-game
-* nasher uses json rather than yaml for storing gff files
+* nasher uses json or [nwnt](https://github.com/WillamDraco/nwnt) rather than
+  yaml for storing gff files
 
 This guide is current as of nasher release 0.13.0.
 
@@ -290,6 +291,7 @@ Some fields, while optional, are inherited from the package by
 | Field               | Repeatable | Description                                             |
 | ---                 | ---        | ---                                                     |
 | `flags`             | yes        | command line arguments to send to nwnsc at compile-time |
+| `branch`            | no         | the git branch to use for source files                  |
 | `modName`           | no         | the name to give a module target file                   |
 | `modMinGameVersion` | no         | the minimum game version to run a module target file    |
 
@@ -347,6 +349,7 @@ sections if they are not set for this target.
 | `exclude`           | yes        | yes       | glob pattern matching files to exclude                                    |
 | `filter`            | yes        | yes       | glob pattern matching cached files to be excluded after compilation       |
 | `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                   |
+| `branch`            | no         | yes       | the git branch to use for source files                                    |
 | `modName`           | no         | yes       | the name to give a module target file                                     |
 | `modMinGameVersion` | no         | yes       | the minimum game version to run a module target file                      |
 

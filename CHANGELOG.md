@@ -1,33 +1,45 @@
 # nasher changelog
 
-## 0.14.0:
+## 0.14.0: December 20, 2020
 
-### Enable NWNT Custom output language
-https://github.com/WilliamDraco/NWNT
+### Support for git branch-based workflow
+([#54](https://github.com/squattingmonk/nasher.nim/pull/54))
 
-Based on nwn_gff from the neverwinter.nim tools, this output format utilises
-the libraries of those tools for a custom output language instead of json.
-The output language is designed to be similar to Json that has been put through
-gron. A standalone conversion tool is also available at the project page.
+You can now specify a git branch to use when packing or unpacking a target. You
+can do this as a command-line parameter using `--branch:foo` or within your
+`nasher.cfg` using the `branch` field. The `branch` field can be used by the
+package or by targets. If a target does not have a branch specified, it will
+use that of the package. If neither has a branch specified, nasher will use
+whatever branch is currently checked out. The `--branch` command-line flag
+overrides any setting in `nasher.cfg`.
+
+Thanks to @tinygiant98 for his hard work on this feature.
+
+### Support for NWNT format
+([#60](https://github.com/squattingmonk/nasher.nim/pull/60))
+
+Nasher now supports the [nwnt](https://github.com/WilliamDraco/nwnt) file
+format. Based on nwn_gff from the neverwinter.nim tools, this output format
+utilises the libraries of those tools for a custom output language instead of
+json. The output language is designed to be similar to json that has been put
+through [gron](https://github.com/tomnomnom/gron). A standalone conversion tool
+is also available at the project page.
 
 To enable, use `nasher config gffFormat nwnt` (remember `--local` to only affect
-current package)
+current package).
 
-### Change to nwn.nim lib calls for gffConvert
-
-Nasher calls neverwinter.nim as library, instead of deferring to the binaries.
-Only applies to gff format conversion, excluding .tlk
+Thanks to @WilliamDraco for his hard work on this feature.
 
 ## 0.13.0: November 07, 2020
 
-### Display an error message when a resource filename is > 16 characters \
-([#59](https://github.com/squattingmonk/nasher.nim/issues/59)).
+### Display an error message when a resource filename is > 16 characters
+([#59](https://github.com/squattingmonk/nasher.nim/issues/59))
 
 When a file being packed into a module, erf, or hak is > 16 characters long
 (not including the file extension), nasher will now emit an error and ask if
 the user wants to continue packing.
 
-### Ask which file to pack when mulitple copies exist \
+### Ask which file to pack when mulitple copies exist
 ([#58](https://github.com/squattingmonk/nasher.nim/issues/58))
 
 When the `convert` command finds multiple versions of the same source file
