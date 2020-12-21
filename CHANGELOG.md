@@ -1,5 +1,14 @@
 # nasher changelog
 
+## 0.14.1: December 21, 2020
+
+Increased the required nim version to 1.4.0 to avoid conflict with nwnt.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.14.0...0.14.1
+
+
 ## 0.14.0: December 20, 2020
 
 ### Support for git branch-based workflow
