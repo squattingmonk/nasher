@@ -1,5 +1,16 @@
 # nasher changelog
 
+## 0.14.2: December 29, 2020
+
+Increased the required nwnt version to 1.3.0. This is required because previous
+versions of nwnt ignored empty lists, leaving some files unable to be opened by
+the toolset.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.14.1...0.14.2
+
+
 ## 0.14.1: December 21, 2020
 
 Increased the required nim version to 1.4.0 to avoid conflict with nwnt.

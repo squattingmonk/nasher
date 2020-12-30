@@ -18,7 +18,7 @@ it has some key differences:
 * nasher uses json or [nwnt](https://github.com/WillamDraco/nwnt) rather than
   yaml for storing gff files
 
-This guide is current as of nasher release 0.14.1.
+This guide is current as of nasher release 0.14.x.
 
 * [Installation Options](#installation-options)
     * [Binary Releases](#binary-releases)
