@@ -1,10 +1,13 @@
 # nwnsc compiler
 FROM nwneetools/nwnsc:latest as nwnsc
 # nim image
-FROM nimlang/nim:alpine as nasher
+FROM nimlang/nim:latest as nasher
 COPY --from=nwnsc usr/local/bin/nwnsc usr/local/bin/nwnsc
 COPY --from=nwnsc /nwn /nwn
-RUN apk add --no-cache bash pcre
+RUN dpkg --add-architecture i386 \
+    && apt update \
+    && apt upgrade -y \
+    && apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 -y
 ARG NASHER_VERSION="0.14.2"
 ENV PATH="/root/.nimble/bin:$PATH"
 RUN nimble install nasher@#${NASHER_VERSION} -y
