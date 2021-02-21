@@ -39,7 +39,7 @@ proc install*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
     file = opts["file"]
-    dir = opts.getOrPut("installDir", getNwnHomeDir()).expandPath
+    dir = opts.getOrPut("installDir", getEnv("NWN_ROOT")).expandPath
 
   if opts.get("noInstall", false):
     return cmd != "install"

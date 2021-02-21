@@ -36,7 +36,7 @@ const
   """
 
 proc getGameBin: string =
-  let binDir = getNwnRootDir() / "bin"
+  let binDir = getEnv("NWN_ROOT") / "bin"
   when defined(Linux):
     result = binDir / "linux-x86" / "nwmain-linux"
   elif defined(Windows):
@@ -47,7 +47,7 @@ proc getGameBin: string =
     raise newException(ValueError, "Cannot find nwmain: unsupported OS")
 
 proc getServerBin: string =
-  let binDir = getNwnRootDir() / "bin"
+  let binDir = getEnv("NWN_ROOT") / "bin"
   when defined(Linux):
     result = binDir / "linux-x86" / "nwserver-linux"
   elif defined(Windows):

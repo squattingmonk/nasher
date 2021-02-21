@@ -144,6 +144,28 @@ template withDir*(dir: string, body: untyped): untyped =
   finally:
     setCurrentDir(curDir)
 
+template withEnv*(envs: openarray[(string, string)], body: untyped): untyped =
+  ## Executes ``body`` with all environment variables in ``envs``, then returns
+  ## the environment variables to their previous values.
+  var
+    prevValues: seq[(string, string)]
+    noValues: seq[string]
+  for (name, value) in envs:
+    if existsEnv(name):
+      prevValues.add((name, getEnv(name)))
+    else:
+      noValues.add(name)
+    putEnv(name, value)
+
+  body
+
+  for (name, value) in prevValues:
+    putEnv(name, value)
+  for name in noValues:
+    delEnv(name)
+
+
+
 proc findExe*(exe, baseDir: string): string =
   ## As findExe, but uses baseDir as the current directory.
   withDir(baseDir):

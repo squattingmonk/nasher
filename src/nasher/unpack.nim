@@ -103,7 +103,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   # If the user has specified a file to unpack, use that. Otherwise, look for
   # the installed target file.
   let
-    installDir = opts.get("installDir", getNwnHomeDir()).expandPath
+    installDir = opts.get("installDir", getEnv("NWN_HOME")).expandPath
     target = pkg.getTarget(opts.get("target"))
     file =
       if opts.hasKey("file"): opts.get("file").expandPath.absolutePath
