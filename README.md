@@ -120,7 +120,12 @@ document, you can replace it with the docker command. So the following are
 equivalent:
 ```console
 $ nasher <command>
-$ docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
+$ docker run --rm -it -v ${pwd}:/nasher squattingmonk/nasher:latest <command>
+```
+
+You can also create an alias in your .bashrc and just use nasher <command>
+```console
+alias nasher='docker run --rm -it -v ${pwd}:/nasher squattingmonk/nasher:latest '
 ```
 
 #### Tips
