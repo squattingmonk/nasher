@@ -272,7 +272,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       convertFile(filePath, outFile, tlkUtil, tlkFlags)
     elif file.fileName.getFileExt in GffExtensions:
       info("Converting", fmt"{filePath} -> outFile")
-      filePath.fromGff(outFile, precision)
+      case gffFormat
+      of "json": gffToJson(filePath, outFile, gffUtil, gffFlags, precision)
+      of "nwnt": gffToNwnt(filePath, outFile, precision)
+      else: fatal(fmt"Unsupported output format: {gffFormat}")
     else:
       createDir(outFile.splitFile.dir)
       info("Copying", fmt"{filePath} -> outFile")
