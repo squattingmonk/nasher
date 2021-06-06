@@ -123,7 +123,7 @@ $ nasher <command>
 $ docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
 ```
 
-You can also create an alias in your .bashrc and just use nasher <command>
+You can also create an alias in your .bashrc and just use nasher <command>:
 ```console
 alias nasher='docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest '
 ```
@@ -136,24 +136,34 @@ Frozen North](https://github.com/b5635/the-frozen-north) GitHub repository.
 ## Getting Started
 
 ### First-Time Setup
-nasher will detect nwnsc if it is in your `PATH`, and it will detect NWN if it
-was installed by Steam to the default location for your OS (other installations
-are not [supported](https://github.com/squattingmonk/nasher/issues/40) yet). If
-you are having issues, try setting the following config options to appropriate
-values for your use case:
-
+nasher will detect nwnsc and the neverwinter.nim tools if they are in your
+`PATH`. You can also use nasher's `config` command to set the proper locations:
 ```console
-$ # Set the NWN user directory (i.e., where to install modules, haks, etc.)
-$ nasher config --installDir:"%USERPROFILE%/Neverwinter Nights"  # Windows
-$ nasher config --installDir:"~/Documents/Neverwinter Nights"    # Posix
-
 $ # Set the path to nwnsc
 $ nasher config --nssCompiler:"%USERPROFILE%/bin/nwnsc.exe"      # Windows
 $ nasher config --nssCompiler:"~/.local/bin/nwnsc"               # Posix
 
-$ # Tell nwnsc where to look for NWN's data files
-$ nasher config --nssFlags:'-n "C:/Program Files/NWN"'           # Windows
-$ nasher config --nssFlags:'-n /opt/nwn'                         # Posix
+$ # Set the path to nwn_erf
+$ nasher config --erfUtil:"%USERPROFILE%/bin/nwn_erf.exe"        # Windows
+$ nasher config --erfUtil:"~/.local/bin/nwn_erf"                 # Posix
+
+$ # Set the path to nwn_gff
+$ nasher config --gffUtil:"%USERPROFILE%/bin/nwn_gff.exe"        # Windows
+$ nasher config --gffUtil:"~/.local/bin/nwn_gff"                 # Posix
+
+$ # Set the path to nwn_tlk
+$ nasher config --tlkUtil:"%USERPROFILE%/bin/nwn_tlk.exe"        # Windows
+$ nasher config --tlkUtil:"~/.local/bin/nwn_tlk"                 # Posix
+```
+nasher will also detect NWN if it was installed by Steam, Beamdog, or GOG. If
+you are having issues getting nasher to recognize your NWN install, you can set
+the `NWN_ROOT` environment variable to the path. Similarly, the `NWN_HOME`
+environment variable should point to the local of your NWN user directory
+(i.e., where to install modules, haks, etc.). For example:
+```bash
+# In your .bashrc
+export NWN_ROOT="$HOME/.local/share/Steam/steamapps/common/Neverwinter Nights"
+export NWN_HOME="$HOME/Documents/Neverwinter Nights"
 ```
 Further information on configuration can be found [below](#configuration).
 
@@ -278,9 +288,9 @@ initialize the package, you can pass the `--default` flag when running `init`.
 
 #### `[Package]`
 
-This section provides a places to note the to codify a package's author,
-description, name, version, and url. This data is currently not used by any
-nasher commands, but that may change in the future.
+This section provides a places to note the package's author, description, name,
+version, and url. This data is currently not used by any nasher commands, but
+that may change in the future.
 
 | Field         | Repeatable | Description                                                          |
 | ---           | ---        | ---                                                                  |
@@ -472,6 +482,11 @@ by passing the key/value pair as an option to the command.
     - default (Windows): `nwnsc.exe`
 - `nssFlags`: the default flags to use on packages
     - default: `-lowqey`
+    - note: since nwnsc can read the `NWN_ROOT` environment variable to find
+      your NWN install, it is preferable to use that rather than passing the
+      location through `nssFlags`. If `NWN_ROOT` is set (or if nasher can find
+      your NWN install without it), nwnsc should work fine using the default
+      values of `-lowqey`.
 - `nssChunks`: the maximum number of scripts to process with one call to nwnsc
     - default: `500`
     - note: set this to a lower number if you run into errors about command
@@ -500,8 +515,17 @@ by passing the key/value pair as an option to the command.
 - `installDir`: the NWN user directory where built files should be installed
     - default (Linux): `~/.local/share/Neverwinter Nights`
     - default (Windows and Mac): `~/Documents/Neverwinter Nights`
-- `gameBin`: the path to the nwmain binary (if not using default Steam path)
+    - note: It is recommended  you use the `NWN_HOME` environment variable
+      instead as this can be read by other programs. If `NWN_HOME` is not set,
+      nasher will use the value from this flag to populate it.
+- `gameBin`: the path to the nwmain binary
+    - note: nasher should be able to find the binary without setting this.
+      Setting the `NWN_ROOT` environment variable to the location of your NWN
+      install makes this setting obsolete for most users.
 - `serverBin`: the path to the nwserver binary (if not using default Steam path)
+    - note: nasher should be able to find the binary without setting this.
+      Setting the `NWN_ROOT` environment variable to the location of your NWN
+      install makes this setting obsolete for most users.
 - `vcs`: the version control system to use when making new packages
     - default: `git`
     - supported: `none`, `git`
@@ -554,12 +578,13 @@ $ nasher config --list --local  # local
   your commits, since other users may require different values than those that
   work on your machine
 * Some gotchas to watch out for when setting `--nssFlags`:
-    * When using `-n` to tell nwnsc the location of the NWN data directory, use
-      absolute paths. Relative paths are currently
-      [broken](https://github.com/squattingmonk/nasher/issues/55).
     * Escape spaces in paths passed to `-n`.
     * Do not include other configurable nwnsc flags, such as `-b` and `-i`.
       Those flags can be passed to nwnsc per target through nasher.cfg.
+    * It's better to use the `NWN_ROOT` environment variable with the default
+      `-lowqey` value rather than the `-n /path/to/NWN/install` method. This
+      ensures that nasher, nwnsc, and the neverwinter.nim tools are always
+      using the same NWN install location.
 
 ### init
 
