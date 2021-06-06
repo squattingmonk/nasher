@@ -123,6 +123,11 @@ $ nasher <command>
 $ docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
 ```
 
+You can also create an alias in your .bashrc and just use nasher <command>
+```console
+alias nasher='docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest '
+```
+
 #### Tips
 Create batch/script files to run your most common nasher commands since the
 docker commands can be rather verbose. An excellent example of this is in [The
