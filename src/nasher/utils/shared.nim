@@ -1,5 +1,5 @@
 import os, times, strtabs, tables, json
-from sequtils import toSeq
+from sequtils import toSeq, deduplicate
 from strutils import unindent, strip
 from unicode import toLower
 from sequtils import mapIt
@@ -32,7 +32,7 @@ iterator walkSourceFiles*(includes, excludes: seq[string]): string =
 proc getSourceFiles*(includes, excludes: seq[string]): seq[string] =
   ## Returns all files in the source tree matching include patterns while not
   ## matching exclude patterns.
-  toSeq(walkSourceFiles(includes, excludes))
+  toSeq(walkSourceFiles(includes, excludes)).deduplicate
 
 proc getTimeDiff*(a, b: Time): int =
   ## Compares two times and returns the difference in seconds. If 0, the files
