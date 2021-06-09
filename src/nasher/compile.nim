@@ -1,5 +1,5 @@
 from sequtils import distribute, apply
-import os, tables, strtabs, strutils, pegs
+import os, tables, strtabs, strutils, pegs, sequtils
 
 import utils/[cli, compiler, options, shared]
 
@@ -128,10 +128,29 @@ proc getUpdated(pkg: PackageRef, files: seq[string]): seq[string] =
 
   pkg.updated = result
 
+proc confirmCompilation(dir: string, executables: seq[string]) =
+  let
+    compiled = toSeq(walkFiles(dir / "*.ncs")).mapIt(it.splitFile.name) 
+
+  var
+    unmatchedNcs: seq[string]
+
+  for executable in executables:
+    if executable.changeFileExt("ncs") notin compiled:
+      unmatchedNcs.add(executable.changeFileExt("nss"))
+
+  if unmatchedNcs.len > 0:
+    warning("The following scripts do not have matching .ncs files due to an unknown nwnsc error: " & unmatchedNcs.join(", "))
+  else:
+    success("All raw scripts have a matching compiled script");
+
 proc compile*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
     target = pkg.getTarget(opts["target"])
+
+  var
+    executables: seq[string]
 
   if opts.get("noCompile", false):
     return cmd != "compile"
@@ -161,7 +180,10 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
 
       for file in walkFiles("*.nss"):
         files.add(file)
-        if file notin pkg.updated and file.executable:
+        if file.executable:
+          executables.add(file)
+        
+        if file notin pkg.updated:
           let compiled = file.changeFileExt("ncs")
           if not fileExists(compiled) or file.fileNewer(compiled):
             debug("Recompiling", "executable script " & file)
@@ -192,6 +214,8 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       success("compiled " & $scripts.len & " scripts")
     else:
       display("Skipping", "compilation: nothing to compile")
+
+    confirmCompilation(opts["directory"], executables)
 
   # Prevent falling through to the next function if we were called directly
   return cmd != "compile"

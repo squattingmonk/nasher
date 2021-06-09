@@ -108,15 +108,16 @@ proc getNwnRootDir*: string =
     let settingsFile = getHomeDir() / "AppData" / "Roaming" / settings
   else:
     raise newException(ValueError, "Could not locate NWN root: unsupported OS")
-  let data = json.parseFile(settingsFile)
-  doAssert(data.hasKey("folders"))
-  doAssert(data["folders"].kind == JArray)
+  if fileExists(settingsFile):
+    let data = json.parseFile(settingsFile)
+    doAssert(data.hasKey("folders"))
+    doAssert(data["folders"].kind == JArray)
 
-  for release in releases:
-    for folder in data["folders"].getElems.mapIt(it.getStr / release):
-      if dirExists(folder / "data"):
-        info("Located", "Beamdog installation at " & folder)
-        return folder
+    for release in releases:
+      for folder in data["folders"].getElems.mapIt(it.getStr / release):
+        if dirExists(folder / "data"):
+          info("Located", "Beamdog installation at " & folder)
+          return folder
 
   # GOG Install
   when defined(Linux) or defined(MacOSX):
