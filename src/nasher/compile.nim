@@ -140,9 +140,9 @@ proc confirmCompilation(dir: string, executables: seq[string]) =
       unmatchedNcs.add(executable.changeFileExt("nss"))
 
   if unmatchedNcs.len > 0:
-    warning("The following scripts do not have matching .ncs files due to an unknown nwnsc error: " & unmatchedNcs.join(", "))
+    warning("The following executable scripts do not have matching .ncs files due to an unknown nwnsc error: " & unmatchedNcs.join(", "))
   else:
-    success("All raw scripts have a matching compiled script");
+    success("All executable scripts have a matching compiled (.ncs) script");
 
 proc compile*(opts: Options, pkg: PackageRef): bool =
   let
@@ -183,11 +183,11 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
         if file.executable:
           executables.add(file)
         
-        if file notin pkg.updated:
-          let compiled = file.changeFileExt("ncs")
-          if not fileExists(compiled) or file.fileNewer(compiled):
-            debug("Recompiling", "executable script " & file)
-            pkg.updated.add(file)
+          if file notin pkg.updated:
+            let compiled = file.changeFileExt("ncs")
+            if not fileExists(compiled) or file.fileNewer(compiled):
+              debug("Recompiling", "executable script " & file)
+              pkg.updated.add(file)
 
       scripts = pkg.getUpdated(files)
 
