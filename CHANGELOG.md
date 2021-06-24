@@ -1,5 +1,62 @@
 # nasher changelog
 
+## 0.15.0: June 23, 2021
+
+### Support for Beamdog and GOG installs
+([#65](https://github.com/squattingmonk/nasher/pull/65))
+
+nasher should now work without without additional configuration for those who
+installed NWN using the Beamdog client, GOG, or non-default Steam locations.
+The preferred way of setting the install location is to set the `$NWN_ROOT`
+environment variable as this variable is also read by nwnsc and niv's tools. In
+the case of nwnsc, it allows the user to run with the default `-l` flag instead
+of having to set `--nssFlags:"-n '/path/to/nwn/data'"`.
+
+When nwnsc is called with the `-l` flag, it first checks the `$NWN_ROOT`
+environment variable to get the location of the NWN install. This value is also
+checked by the neverwinter.nim tools. If the variable has not been set by the
+user, nasher will check for Steam, Beamdog, and GOG installs and set the
+`NWN_ROOT` variable accordingly. This means users should be able to just use
+the default nwnsc flags `(-lowqey)` and it will find the NWN install without
+issue.
+
+Similarly, the `$NWN_HOME` directory is used for the path in which modules,
+haks, etc. will be stored. If the `--installDir` flag was not passed, the
+environment variable will be checked. If the environment variable was not set,
+it will fall back to `~/Documents/Neverwinter Nights` or
+`~/.local/share/Neverwinter Nights`, depending on the OS.
+
+### `gffFlags` support re-enabled
+([#75](https://github.com/squattingmonk/nasher/issues/75))
+
+nasher returned to calling the `nwn_gff` binary when converting to and from
+json. This re-enables the `--gffFlags` setting, allowing (among other things)
+setting of alternate file encodings.
+
+### Allowed `--key value` parameter syntax
+
+nasher now allows options to be passed to nasher using the `--key value` syntax
+rather than just `--key:value` and `--key=value`. The old way still works, but
+this will be more familiar to terminal users.
+
+### Executable scripts now checked after compilation
+([#81](https://github.com/squattingmonk/nasher/pull/81))
+
+Added a warning if compilation of an executable script does not yield a
+matching `.ncs` file, This helps to prevent nasher from reporting successful
+compilation in case of an uncaught nwnsc error. Thanks, @tinygiant98!
+
+### Fixed duplicate choices in source list
+([#79](https://github.com/squattingmonk/nasher/issues/79))
+
+nasher no longer asks the user to choose a file when multiple targets match the
+same file.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.14.2...0.15.0
+
+
 ## 0.14.2: December 29, 2020
 
 Increased the required nwnt version to 1.3.0. This is required because previous
