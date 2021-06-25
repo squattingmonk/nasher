@@ -91,7 +91,7 @@ proc gffToJson*(inFile, outFile, bin, args: string, precision: range[1..32] = 4)
     fatal(fmt"Could not convert {inFile}: {output}")
 
   var j = output.parseJson
-  
+
   # Strip the module ID. This is an unused field that nwn_gff sometimes has
   # trouble parsing back.
   if (inFormat == "ifo" and j.hasKey("Mod_ID")):
@@ -165,10 +165,10 @@ proc nwntToGff*(inFile, outFile: string) =
   let
     inFormat = getFileExt(inFile)
     outFormat = getFileExt(outFile)
-  if inFormat notin GffExtensions:
-    fatal(fmt"{inFormat} is not a valid gff filetype")
-  if outFormat != "nwnt":
-    fatal(fmt"{outFormat} is not a supported source type")
+  if inFormat != "nwnt":
+    fatal(fmt"{inFormat} is not a supported source type")
+  if outFormat notin GffExtensions:
+    fatal(fmt"{outFormat} is not a valid gff filetype")
 
   try:
     createOutDir(outFile)
@@ -208,7 +208,7 @@ proc updateIfo*(dir: string, opts: options.Options, target: options.Target) =
 
   if not fileExists(ifoFile):
     return
-  
+
   let
     input = openFileStream(ifoFile)
     state = input.readGffRoot(false)
@@ -267,7 +267,7 @@ proc updateIfo*(dir: string, opts: options.Options, target: options.Target) =
       error(fmt"requested min game version '{moduleVersion}' is not valid")
       display("Skipping", "setting module min game version")
 
-  let 
+  let
     output = openFileStream(ifoFile, fmWrite)
 
   ifoJson.postProcessJson
