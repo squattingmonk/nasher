@@ -128,22 +128,6 @@ proc getUpdated(pkg: PackageRef, files: seq[string]): seq[string] =
 
   pkg.updated = result
 
-proc confirmCompilation(dir: string, executables: seq[string]) =
-  let
-    compiled = toSeq(walkFiles(dir / "*.ncs")).mapIt(it.splitFile.name) 
-
-  var
-    unmatchedNcs: seq[string]
-
-  for executable in executables:
-    if executable.changeFileExt("ncs") notin compiled:
-      unmatchedNcs.add(executable.changeFileExt("nss"))
-
-  if unmatchedNcs.len > 0:
-    warning("The following executable scripts do not have matching .ncs files due to an unknown nwnsc error: " & unmatchedNcs.join(", "))
-  else:
-    success("All executable scripts have a matching compiled (.ncs) script");
-
 proc compile*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
@@ -215,7 +199,12 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
     else:
       display("Skipping", "compilation: nothing to compile")
 
-    confirmCompilation(opts["directory"], executables)
+    let unmatchedNcs = executables.filterIt(not fileExists(it.changeFileExt("ncs")))
+    if unmatchedNcs.len > 0:
+      warning("The following executable scripts do not have matching .ncs " &
+        "files due to an unknown nwnsc error: " & unmatchedNcs.join(", "))
+    else:
+      success("All executable scripts have a matching compiled (.ncs) script");
 
   # Prevent falling through to the next function if we were called directly
   return cmd != "compile"
