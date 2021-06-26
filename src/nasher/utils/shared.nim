@@ -132,8 +132,7 @@ proc getNwnRootDir*: string =
     info("Located", "GOG installation at " & path)
     return path
 
-  raise newException(ValueError,
-    "Could not locate NWN root. Try setting the NWN_ROOT environment " &
+  warning("Could not locate NWN root. Try setting the NWN_ROOT environment " &
     "variable to the path of your NWN installation.")
 
 
