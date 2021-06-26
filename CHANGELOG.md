@@ -1,5 +1,21 @@
 # nasher changelog
 
+## 0.15.1: June 25, 2021
+
+- Corrected a copy-paste error in format checking that prevented nwnt files
+  from being properly converted.
+  ([#82](https://github.com/squattingmonk/nasher/pull/82))
+- Fixed an issue that prevented `.ncs` files from being detected after
+  compilation.
+- Files are now properly installed to `$NWN_HOME` rather than `$NWN_ROOT`.
+- Nasher now warns if it can't resolve the `$NWN_ROOT` environment variable
+  rather than erroring out. This prevented the docker build from compiling.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.15.0...0.15.1
+
+
 ## 0.15.0: June 23, 2021
 
 ### Support for Beamdog and GOG installs
