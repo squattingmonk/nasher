@@ -48,7 +48,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
   let
     category = (if cmd == "compile": "compiling" else: cmd & "ing")
     gffUtil = opts.get("gffUtil")
-    gffFlags = opts.get("gffFlags")
+    gffFlags = opts.get("gffFlags", "-p")
     gffFormat = opts.get("gffFormat", "json")
     tlkUtil = opts.get("tlkUtil")
     tlkFlags = opts.get("tlkFlags")
@@ -110,12 +110,13 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
         if cmd == "compile":
           continue
 
-        if fileName.getFileExt == "tlk":
-          info("Converting", fmt"{srcFile} -> {fileName}")
+        info("Converting", fmt"{srcFile} -> {fileName}")
+        if srcExt == "nwnt":
+          nwntToGff(srcFile, outFile)
+        elif fileName.getFileExt == "tlk":
           convertFile(srcFile, outFile, tlkUtil, tlkFlags)
         else:
-          info("Converting", fmt"{srcFile} -> {fileName}")
-          srcFile.toGFF(outFile)
+          jsonToGff(srcFile, outFile, gffUtil, gffFlags)
       else:
         info("Copying", srcFile & " -> " & fileName)
         copyFile(srcFile, outFile)

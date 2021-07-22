@@ -49,16 +49,6 @@ proc postProcessJson(j: JsonNode) =
   elif j.kind == JArray:
     for e in j.elems: postProcessJson(e)
 
-proc convertFile*(inFile, outFile, bin, args: string) =
-  let
-    inFileName = inFile.extractFilename
-    outFileName = outFile.extractFilename
-    cmd = join([bin, args, "-i", inFile.escape, "-o", outFile.escape], " ")
-    (output, errCode) = execCmdEx(cmd, Options)
-
-  if errCode != 0:
-    fatal(fmt"Could not convert {inFileName} to {outFileName}: {output}")
-
 proc createOutDir(file: string) =
   let dir = splitPath(file).head
   try:
@@ -69,59 +59,86 @@ proc createOutDir(file: string) =
   except:
     fatal(getCurrentExceptionMsg())
 
-proc toGff*(inFile, outFile: string) =
-  ## Converts the nwnt or json source ``inFile`` into a gff ``outFile``.
+proc convertFile*(inFile, outFile, bin, args: string) =
+  createOutDir(outFile)
+  let
+    inFileName = inFile.extractFilename
+    outFileName = outFile.extractFilename
+    cmd = join([bin, args, "-i", inFile.escape, "-o", outFile.escape], " ")
+    (output, errCode) = execCmdEx(cmd, Options)
+
+  if errCode != 0:
+    fatal(fmt"Could not convert {inFileName} to {outFileName}: {output}")
+
+proc gffToJson*(inFile, outFile, bin, args: string, precision: range[1..32] = 4) =
+  ## Converts the GFF ``inFile`` to a json ``outFile`` using ``bin``.
   let
     inFormat = getFileExt(inFile)
     outFormat = getFileExt(outFile)
+  if inFormat notin GffExtensions:
+    fatal(fmt"{inFormat} is not a valid gff filetype")
+  if outFormat != "json":
+    fatal(fmt"{outFormat} is not a supported source type")
 
+  # Convert the file, capturing the output for post-processing. We do this
+  # instead of manipulating the GFF file directly because otherwise we can't
+  # handle alternate encodings or other gffFlags.
+  let
+    cmd = join([bin, args, "-i", inFile.escape, "-k json"], " ")
+    (output, errCode) = execCmdEx(cmd, Options)
+
+  if errCode != 0:
+    fatal(fmt"Could not convert {inFile}: {output}")
+
+  var j = output.parseJson
+
+  # Strip the module ID. This is an unused field that nwn_gff sometimes has
+  # trouble parsing back.
+  if (inFormat == "ifo" and j.hasKey("Mod_ID")):
+    j.delete("Mod_ID")
+
+  # Strip the area version. This is incremented each time the area is saved in
+  # the toolset and can lead to unnecessary file diffs.
+  elif (inFormat == "are" and j.hasKey("Version")):
+    j.delete("Version")
+
+  j.postProcessJson
+  j.truncateFloats(precision)
   try:
-    if inFormat notin ["json", "nwnt"]:
-      raise newException(FileTypeError, fmt"{inFormat} is not a supported source type")
-    if outFormat notin GffExtensions:
-      raise newException(FileTypeError, fmt"{outFormat} is not a valid gff filetype")
-
     createOutDir(outFile)
-
-    let
-      input = openFileStream(inFile)
-      output = openFileStream(outFile, fmWrite)
-
-    try:
-      case inFormat
-      of "nwnt":
-        output.write(input.gffRootFromNwnt())
-      of "json":
-        output.write(input.parseJson(inFile).gffRootFromJson())
-      else:
-        assert false
-    except:
-      raise
-    finally:
-      input.close()
-      output.close()
-  except FileTypeError:
-    raise
+    writeFile(outFile, j.pretty() & "\c\L")
   except:
     let msg = getCurrentExceptionMsg()
-    fatal(fmt"Could not convert {inFile} to {outFile.extractFilename}: {msg}")
+    fatal(fmt"Could not convert {inFile} to {outFile}: {msg}")
 
-proc fromGff*(inFile, outFile: string, precision: range[1..32] = 4) =
-  ## Converts the gff file ``inFile`` to an nwnt or json ``outFile``. Any floats
-  ## in the resulting data structure are truncated to ``precision`` places. This
-  ## also strips the module ID (an unused field which nwn_gff has trouble
-  ## read back) and any area version info (to reduce unnecessary diffs).
+proc jsonToGff*(inFile, outFile, bin, args: string) =
   let
     inFormat = getFileExt(inFile)
     outFormat = getFileExt(outFile)
 
-  createOutDir(outFile)
+  if inFormat != "json":
+    fatal(fmt"{inFormat} is not a supported source type")
+  if outFormat notin GffExtensions:
+    fatal(fmt"{outFormat} is not a valid gff filetype")
+
+  convertFile(inFile, outFile, bin, args)
+
+proc gffToNwnt*(inFile, outFile: string, precision: range[1..32] = 4) =
+  ## Converts the gff file ``inFile`` to an nwnt ``outFile``. Any floats
+  ## in the resulting data structure are truncated to ``precision`` places. This
+  ## also strips the module ID (an unused field which nwn_gff has trouble
+  ## reading back) and any area version info (to reduce unnecessary diffs).
+  let
+    inFormat = getFileExt(inFile)
+    outFormat = getFileExt(outFile)
+
+  if inFormat notin GffExtensions:
+    fatal(fmt"{inFormat} is not a valid gff filetype")
+  if outFormat != "nwnt":
+    fatal(fmt"{outFormat} is not a supported source type")
 
   try:
-    if inFormat notin GffExtensions:
-      raise newException(FileTypeError, fmt"{inFormat} is not a valid gff filetype")
-    if outFormat notin ["json", "nwnt"]:
-      raise newException(FileTypeError, fmt"{outFormat} is not a supported source type")
+    createOutDir(outFile)
 
     let
       input = openFileStream(inFile)
@@ -129,29 +146,40 @@ proc fromGff*(inFile, outFile: string, precision: range[1..32] = 4) =
     var
       state = input.readGffRoot(false)
 
+    # NWNT does not support alternate encodings (yet!) so we don't need to take
+    # the roundabout way we did when converting to json above.
     if inFormat == "ifo" and state.hasField("Mod_ID", GffVoid):
       state.del("Mod_ID")
     elif inFormat == "are" and state.hasField("Version", GffDword):
       state.del("Version")
 
-    try:
-      case outFormat
-      of "nwnt":
-        output.toNwnt(state, precision) # does writeFile in-proc
-      of "json":
-        var j = state.toJson()
-        j.postProcessJson()
-        j.truncateFloats(precision)
-        output.write(j.pretty() & "\c\L")
-      else:
-        assert false
-    except:
-      raise
-    finally:
-      input.close()
-      output.close()
-  except FileTypeError:
-    raise
+    output.toNwnt(state, precision) # does writeFile in-proc
+    input.close()
+    output.close()
+  except:
+    let msg = getCurrentExceptionMsg()
+    fatal(fmt"Could not convert {inFile} to {outFile}: {msg}")
+
+proc nwntToGff*(inFile, outFile: string) =
+  ## Converts the nwnt or json source ``inFile`` into a gff ``outFile``.
+  let
+    inFormat = getFileExt(inFile)
+    outFormat = getFileExt(outFile)
+  if inFormat != "nwnt":
+    fatal(fmt"{inFormat} is not a supported source type")
+  if outFormat notin GffExtensions:
+    fatal(fmt"{outFormat} is not a valid gff filetype")
+
+  try:
+    createOutDir(outFile)
+
+    let
+      input = openFileStream(inFile)
+      output = openFileStream(outFile, fmWrite)
+
+    output.write(input.gffRootFromNwnt())
+    input.close()
+    output.close()
   except:
     let msg = getCurrentExceptionMsg()
     fatal(fmt"Could not convert {inFile} to {outFile.extractFilename}: {msg}")
@@ -180,7 +208,7 @@ proc updateIfo*(dir: string, opts: options.Options, target: options.Target) =
 
   if not fileExists(ifoFile):
     return
-  
+
   let
     input = openFileStream(ifoFile)
     state = input.readGffRoot(false)
@@ -239,7 +267,7 @@ proc updateIfo*(dir: string, opts: options.Options, target: options.Target) =
       error(fmt"requested min game version '{moduleVersion}' is not valid")
       display("Skipping", "setting module min game version")
 
-  let 
+  let
     output = openFileStream(ifoFile, fmWrite)
 
   ifoJson.postProcessJson

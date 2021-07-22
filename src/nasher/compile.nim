@@ -1,5 +1,5 @@
 from sequtils import distribute, apply
-import os, tables, strtabs, strutils, pegs
+import os, tables, strtabs, strutils, pegs, sequtils
 
 import utils/[cli, compiler, options, shared]
 
@@ -133,6 +133,9 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
     cmd = opts["command"]
     target = pkg.getTarget(opts["target"])
 
+  var
+    executables: seq[string]
+
   if opts.get("noCompile", false):
     return cmd != "compile"
 
@@ -161,11 +164,14 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
 
       for file in walkFiles("*.nss"):
         files.add(file)
-        if file notin pkg.updated and file.executable:
-          let compiled = file.changeFileExt("ncs")
-          if not fileExists(compiled) or file.fileNewer(compiled):
-            debug("Recompiling", "executable script " & file)
-            pkg.updated.add(file)
+        if file.executable:
+          executables.add(file)
+        
+          if file notin pkg.updated:
+            let compiled = file.changeFileExt("ncs")
+            if not fileExists(compiled) or file.fileNewer(compiled):
+              debug("Recompiling", "executable script " & file)
+              pkg.updated.add(file)
 
       scripts = pkg.getUpdated(files)
 
@@ -192,6 +198,13 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       success("compiled " & $scripts.len & " scripts")
     else:
       display("Skipping", "compilation: nothing to compile")
+
+    let unmatchedNcs = executables.filterIt(not fileExists(it.changeFileExt("ncs")))
+    if unmatchedNcs.len > 0:
+      warning("The following executable scripts do not have matching .ncs " &
+        "files due to an unknown nwnsc error: " & unmatchedNcs.join(", "))
+    else:
+      success("All executable scripts have a matching compiled (.ncs) script");
 
   # Prevent falling through to the next function if we were called directly
   return cmd != "compile"

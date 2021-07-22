@@ -103,7 +103,7 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   # If the user has specified a file to unpack, use that. Otherwise, look for
   # the installed target file.
   let
-    installDir = opts.get("installDir", getNwnInstallDir()).expandPath
+    installDir = opts.get("installDir", getEnv("NWN_HOME")).expandPath
     target = pkg.getTarget(opts.get("target"))
     file =
       if opts.hasKey("file"): opts.get("file").expandPath.absolutePath
@@ -272,7 +272,10 @@ proc unpack*(opts: Options, pkg: PackageRef) =
       convertFile(filePath, outFile, tlkUtil, tlkFlags)
     elif file.fileName.getFileExt in GffExtensions:
       info("Converting", fmt"{filePath} -> outFile")
-      filePath.fromGff(outFile, precision)
+      case gffFormat
+      of "json": gffToJson(filePath, outFile, gffUtil, gffFlags, precision)
+      of "nwnt": gffToNwnt(filePath, outFile, precision)
+      else: fatal(fmt"Unsupported output format: {gffFormat}")
     else:
       createDir(outFile.splitFile.dir)
       info("Copying", fmt"{filePath} -> outFile")

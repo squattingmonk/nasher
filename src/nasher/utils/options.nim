@@ -61,7 +61,7 @@ proc getOrPut*[T: string|bool](opts: Options, key: string, value: T): T =
 
 proc getBoolOrDefault(opts: Options, key: string, default = false): bool =
   ## Returns the boolean value located at opts[key]; "" is treated as true. If
-  ## there is no value or it cannot be conveted to a bool, returns default.
+  ## there is no value or it cannot be converted to a bool, returns default.
   result = default
   if opts.contains(key):
     try:
@@ -72,7 +72,7 @@ proc getBoolOrDefault(opts: Options, key: string, default = false): bool =
 
 proc getIntOrDefault(opts: Options, key: string, default = 0): int =
   ## Returns the integer value located at opts[key]. If there is no value or it
-  ## cannot be conveted to an int, returns ``default``.
+  ## cannot be converted to an int, returns ``default``.
   result = default
   if opts.contains(key):
     try:
@@ -165,7 +165,13 @@ proc putKeyOrHelp(opts: Options, keys: varargs[string], value: string) =
 
 proc parseCmdLine(opts: Options) =
   ## Parses the command line and stores the user input into opts.
-  for kind, key, val in getopt():
+  let
+    shortFlags = {'y', 'n', 'h', 'v', 'g', 's', 'u', 'l'}
+    longFlags = @[ "help", "version", "no-color", "debug", "verbose", "quiet",
+      "yes", "no", "default", "get", "set", "unset", "list", "global", "local",
+      "clean", "noConvert", "noCompile", "noPack", "removeDeleted",
+      "removeUnusedAreas", "useModuleFolder" ]
+  for kind, key, val in getopt(shortNoVal = shortFlags, longNoVal = longFlags):
     case kind
     of cmdArgument:
       case opts.get("command")
@@ -225,7 +231,7 @@ proc parseCmdLine(opts: Options) =
             if opts.hasKeyOrPut("files", val):
               opts["files"] = opts["files"] & ";" & val
           else:
-            opts[key]= val
+            opts[key] = val
         else:
           opts[key] = val
     else: discard

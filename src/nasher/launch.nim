@@ -35,25 +35,27 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-
-const
-  SteamPath = joinPath("Steam", "steamapps", "common", "Neverwinter Nights", "bin")
-
 proc getGameBin: string =
+  let binDir = getEnv("NWN_ROOT") / "bin"
   when defined(Linux):
-    result = "~/.local/share" / SteamPath / "linux-x86/nwmain-linux"
-  when defined(Windows):
-    result = "${PROGRAMFILES(X86)}" / SteamPath / "win32" / "nwmain.exe"
-  when defined(MacOS):
-    result = "~/Library/Application Support" / SteamPath / "macos/nwmain.app/Contents/MacOS/nwmain"
+    result = binDir / "linux-x86" / "nwmain-linux"
+  elif defined(Windows):
+    result = binDir / "win32" / "nwmain.exe"
+  elif defined(MacOSX):
+    result = binDir / "macos" / "nwmain.app" / "Contents" / "MacOS" / "nwmain"
+  else:
+    raise newException(ValueError, "Cannot find nwmain: unsupported OS")
 
 proc getServerBin: string =
+  let binDir = getEnv("NWN_ROOT") / "bin"
   when defined(Linux):
-    result = "~/.local/share" / SteamPath / "linux-x86/nwserver-linux"
-  when defined(Windows):
-    result = "${PROGRAMFILES(X86)}" / SteamPath / "win32" / "nwmain.exe"
-  when defined(MacOS):
-    result = "~/Library/Application Support" / SteamPath / "macos/nwserver-macos"
+    result = binDir / "linux-x86" / "nwserver-linux"
+  elif defined(Windows):
+    result = binDir / "win32" / "nwserver.exe"
+  elif defined(MacOSX):
+    result = binDir / "macos" / "nwserver-macos"
+  else:
+    raise newException(ValueError, "Cannot find nwserver: unsupported OS")
 
 proc launch*(opts: Options) =
   let

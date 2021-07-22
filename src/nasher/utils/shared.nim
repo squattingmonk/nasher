@@ -1,9 +1,15 @@
-import os, times, strtabs, tables
-from sequtils import toSeq
+import os, times, strtabs, tables, json
+from sequtils import toSeq, deduplicate
 from strutils import unindent, strip
 from unicode import toLower
+from sequtils import mapIt
+
+when defined(Windows):
+  import registry
 
 from glob import walkGlob
+
+import cli
 
 proc help*(helpMessage: string, errorCode = QuitSuccess) =
   ## Quits with a formatted help message, sending errorCode
@@ -26,7 +32,7 @@ iterator walkSourceFiles*(includes, excludes: seq[string]): string =
 proc getSourceFiles*(includes, excludes: seq[string]): seq[string] =
   ## Returns all files in the source tree matching include patterns while not
   ## matching exclude patterns.
-  toSeq(walkSourceFiles(includes, excludes))
+  toSeq(walkSourceFiles(includes, excludes)).deduplicate
 
 proc getTimeDiff*(a, b: Time): int =
   ## Compares two times and returns the difference in seconds. If 0, the files
@@ -53,11 +59,82 @@ proc fileNewer*(file: string, time: Time): bool =
     getTimeDiff(time, file.getLastModificationTime) < 0
   else: false
 
-proc getNwnInstallDir*: string =
-  when defined(Linux):
-    getHomeDir() / ".local" / "share" / "Neverwinter Nights"
+proc getNwnHomeDir*: string =
+  if existsEnv("NWN_HOME"):
+    getEnv("NWN_HOME")
   else:
-    getHomeDir() / "Documents" / "Neverwinter Nights"
+    when defined(Linux):
+      getHomeDir() / ".local" / "share" / "Neverwinter Nights"
+    else:
+      getHomeDir() / "Documents" / "Neverwinter Nights"
+
+proc getNwnRootDir*: string =
+  if existsEnv("NWN_ROOT"):
+    result = getEnv("NWN_ROOT")
+    if dirExists(result / "data"):
+      info("Located", "$NWN_ROOT at " & result)
+      return result
+
+  # Steam Install
+  var path: string
+  const steamPath = "Steam" / "steamapps" / "common" / "Neverwinter Nights"
+  when defined(Linux):
+    path = getHomeDir() / ".local" / "share" / steamPath
+  elif defined(MacOSX):
+    path = getHomeDir() / "Library" / "Application Support" / steamPath
+  elif defined(Windows):
+    path = getEnv("PROGRAMFILES(X86)") / steamPath
+    if not dirExists(path / "data"):
+      path = getUnicodeValue(r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath", HKEY_LOCAL_MACHINE)
+      path = path / "steamapps" / "common" / "Neverwinter Nights"
+  else:
+    raise newException(ValueError, "Could not locate NWN root: unsupported OS")
+  if dirExists(path / "data"):
+    info("Located", "Steam installation at " & path)
+    return path
+
+  # Beamdog Install
+  # 00785: Stable
+  # 00829: Development
+  const
+    settings = "Beamdog Client" / "settings.json"
+    releases = ["00829", "00785"]
+
+  when defined(Linux):
+    let settingsFile = getConfigDir() / settings
+  elif defined(MacOSX):
+    let settingsFile = getHomeDir() / "Library" / "Application Support" / settings
+  elif defined(Windows):
+    let settingsFile = getHomeDir() / "AppData" / "Roaming" / settings
+  else:
+    raise newException(ValueError, "Could not locate NWN root: unsupported OS")
+  if fileExists(settingsFile):
+    let data = json.parseFile(settingsFile)
+    doAssert(data.hasKey("folders"))
+    doAssert(data["folders"].kind == JArray)
+
+    for release in releases:
+      for folder in data["folders"].getElems.mapIt(it.getStr / release):
+        if dirExists(folder / "data"):
+          info("Located", "Beamdog installation at " & folder)
+          return folder
+
+  # GOG Install
+  when defined(Linux) or defined(MacOSX):
+    path = getHomeDir() / "GOG Games" / "Neverwinter Nights Enhanced Edition"
+  elif defined(Windows):
+    path = getEnv("PROGRAMFILES(X86)") / "GOG Galaxy" / "Games" / "Neverwinter Nights Enhanced Edition"
+    if not dirExists(path / "data"):
+      path = getUnicodeValue(r"SOFTWARE\WOW6432Node\GOG.com\Games\1097893768", "path", HKEY_LOCAL_MACHINE)
+  else:
+    raise newException(ValueError, "Could not locate NWN root: unsupported OS")
+  if dirExists(path / "data"):
+    info("Located", "GOG installation at " & path)
+    return path
+
+  warning("Could not locate NWN root. Try setting the NWN_ROOT environment " &
+    "variable to the path of your NWN installation.")
+
 
 template withDir*(dir: string, body: untyped): untyped =
   let curDir = getCurrentDir()
@@ -66,6 +143,28 @@ template withDir*(dir: string, body: untyped): untyped =
     body
   finally:
     setCurrentDir(curDir)
+
+template withEnv*(envs: openarray[(string, string)], body: untyped): untyped =
+  ## Executes ``body`` with all environment variables in ``envs``, then returns
+  ## the environment variables to their previous values.
+  var
+    prevValues: seq[(string, string)]
+    noValues: seq[string]
+  for (name, value) in envs:
+    if existsEnv(name):
+      prevValues.add((name, getEnv(name)))
+    else:
+      noValues.add(name)
+    putEnv(name, value)
+
+  body
+
+  for (name, value) in prevValues:
+    putEnv(name, value)
+  for name in noValues:
+    delEnv(name)
+
+
 
 proc findExe*(exe, baseDir: string): string =
   ## As findExe, but uses baseDir as the current directory.

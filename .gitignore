@@ -1,4 +1,6 @@
+# Ignore binaries
 /nasher
+nasher.exe
 
 # Ignore tests
 /tests/test_*

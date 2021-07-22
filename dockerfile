@@ -7,8 +7,9 @@ COPY --from=nwnsc /nwn /nwn
 RUN dpkg --add-architecture i386 \
     && apt update \
     && apt upgrade -y \
-    && apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 -y
-ARG NASHER_VERSION="0.14.2"
+    && apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386 -y \
+    && rm -fr /var/lib/apt/lists/* /root/.cache/* /usr/share/doc/* /var/cache/man/*
+ARG NASHER_VERSION="0.15.1"
 RUN adduser nasher --disabled-password --gecos "" --uid 1000
 RUN echo "nasher ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && usermod -aG sudo nasher
 WORKDIR /nasher
