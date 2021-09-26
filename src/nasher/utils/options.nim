@@ -364,7 +364,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
 
   var
     p: CfgParser
-    section, key: string
+    section: string
     target: Target
 
   open(p, fileStream, file)
@@ -377,11 +377,10 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
       debug("Section:", fmt"[{e.section}]")
       section = e.section.toLower
     of cfgKeyValuePair, cfgOption:
-      key = e.key.toLower
-      debug("Option:", fmt"{key} = {e.value}")
+      debug("Option:", fmt"{e.key} = {e.value}")
       case section
       of "package", "sources":
-        case key
+        case e.key
         of "name": pkg.name = e.value
         of "description": pkg.description = e.value
         of "version": pkg.version = e.value
@@ -397,7 +396,7 @@ proc parsePackageFile(pkg: PackageRef, file: string) =
         else:
           pkg.rules.add((e.key, e.value))
       of "target":
-        case key
+        case e.key
         of "name": target.name = e.value.toLower
         of "description": target.description = e.value
         of "file": target.file = e.value
