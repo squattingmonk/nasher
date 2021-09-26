@@ -1,5 +1,15 @@
 # nasher changelog
 
+## 0.15.2: September 26, 2021
+
+Fixed an issue that prevented nasher from reading the `modName` and
+`modMinGameVersion` fields from `nasher.cfg`.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.15.1...0.15.2
+
+
 ## 0.15.1: June 25, 2021
 
 - Corrected a copy-paste error in format checking that prevented nwnt files
