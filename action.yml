@@ -1,0 +1,14 @@
+name: 'nasher'
+branding:
+  icon: 'plus-circle'
+  color: 'gray-dark'
+description: "Nasher is a command-line tool for converting a Neverwinter Nights module to text-based source files and vice versa. This allows git-based version control and team collaboration."
+inputs:
+  nasher_command:
+    description: "The command to execute with balena"
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.balena_command }}
