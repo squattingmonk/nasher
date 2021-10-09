@@ -77,60 +77,69 @@ proc getNwnRootDir*: string =
 
   # Steam Install
   var path: string
-  const steamPath = "Steam" / "steamapps" / "common" / "Neverwinter Nights"
-  when defined(Linux):
-    path = getHomeDir() / ".local" / "share" / steamPath
-  elif defined(MacOSX):
-    path = getHomeDir() / "Library" / "Application Support" / steamPath
-  elif defined(Windows):
-    path = getEnv("PROGRAMFILES(X86)") / steamPath
-    if not dirExists(path / "data"):
-      path = getUnicodeValue(r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath", HKEY_LOCAL_MACHINE)
-      path = path / "steamapps" / "common" / "Neverwinter Nights"
-  else:
-    raise newException(ValueError, "Could not locate NWN root: unsupported OS")
-  if dirExists(path / "data"):
-    info("Located", "Steam installation at " & path)
-    return path
+  block steam:
+    const steamPath = "Steam" / "steamapps" / "common" / "Neverwinter Nights"
+    when defined(Linux):
+      path = getHomeDir() / ".local" / "share" / steamPath
+    elif defined(MacOSX):
+      path = getHomeDir() / "Library" / "Application Support" / steamPath
+    elif defined(Windows):
+      path = getEnv("PROGRAMFILES(X86)") / steamPath
+      if not dirExists(path / "data"):
+        try:
+          path = getUnicodeValue(r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath", HKEY_LOCAL_MACHINE)
+          path = path / "steamapps" / "common" / "Neverwinter Nights"
+        except OSError:
+          break steam
+    else:
+      raise newException(ValueError, "Could not locate NWN root: unsupported OS")
+    if dirExists(path / "data"):
+      info("Located", "Steam installation at " & path)
+      return path
 
   # Beamdog Install
   # 00785: Stable
   # 00829: Development
-  const
-    settings = "Beamdog Client" / "settings.json"
-    releases = ["00829", "00785"]
+  block beamdog:
+    const
+      settings = "Beamdog Client" / "settings.json"
+      releases = ["00829", "00785"]
 
-  when defined(Linux):
-    let settingsFile = getConfigDir() / settings
-  elif defined(MacOSX):
-    let settingsFile = getHomeDir() / "Library" / "Application Support" / settings
-  elif defined(Windows):
-    let settingsFile = getHomeDir() / "AppData" / "Roaming" / settings
-  else:
-    raise newException(ValueError, "Could not locate NWN root: unsupported OS")
-  if fileExists(settingsFile):
-    let data = json.parseFile(settingsFile)
-    doAssert(data.hasKey("folders"))
-    doAssert(data["folders"].kind == JArray)
+    when defined(Linux):
+      let settingsFile = getConfigDir() / settings
+    elif defined(MacOSX):
+      let settingsFile = getHomeDir() / "Library" / "Application Support" / settings
+    elif defined(Windows):
+      let settingsFile = getHomeDir() / "AppData" / "Roaming" / settings
+    else:
+      raise newException(ValueError, "Could not locate NWN root: unsupported OS")
+    if fileExists(settingsFile):
+      let data = json.parseFile(settingsFile)
+      doAssert(data.hasKey("folders"))
+      doAssert(data["folders"].kind == JArray)
 
-    for release in releases:
-      for folder in data["folders"].getElems.mapIt(it.getStr / release):
-        if dirExists(folder / "data"):
-          info("Located", "Beamdog installation at " & folder)
-          return folder
+      for release in releases:
+        for folder in data["folders"].getElems.mapIt(it.getStr / release):
+          if dirExists(folder / "data"):
+            info("Located", "Beamdog installation at " & folder)
+            return folder
 
   # GOG Install
-  when defined(Linux) or defined(MacOSX):
-    path = getHomeDir() / "GOG Games" / "Neverwinter Nights Enhanced Edition"
-  elif defined(Windows):
-    path = getEnv("PROGRAMFILES(X86)") / "GOG Galaxy" / "Games" / "Neverwinter Nights Enhanced Edition"
-    if not dirExists(path / "data"):
-      path = getUnicodeValue(r"SOFTWARE\WOW6432Node\GOG.com\Games\1097893768", "path", HKEY_LOCAL_MACHINE)
-  else:
-    raise newException(ValueError, "Could not locate NWN root: unsupported OS")
-  if dirExists(path / "data"):
-    info("Located", "GOG installation at " & path)
-    return path
+  block gog:
+    when defined(Linux) or defined(MacOSX):
+      path = getHomeDir() / "GOG Games" / "Neverwinter Nights Enhanced Edition"
+    elif defined(Windows):
+      path = getEnv("PROGRAMFILES(X86)") / "GOG Galaxy" / "Games" / "Neverwinter Nights Enhanced Edition"
+      if not dirExists(path / "data"):
+        try:
+          path = getUnicodeValue(r"SOFTWARE\WOW6432Node\GOG.com\Games\1097893768", "path", HKEY_LOCAL_MACHINE)
+        except OSError:
+          break gog
+    else:
+      raise newException(ValueError, "Could not locate NWN root: unsupported OS")
+    if dirExists(path / "data"):
+      info("Located", "GOG installation at " & path)
+      return path
 
   warning("Could not locate NWN root. Try setting the NWN_ROOT environment " &
     "variable to the path of your NWN installation.")
