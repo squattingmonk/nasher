@@ -1,5 +1,15 @@
 # nasher changelog
 
+## 0.15.3: October 15, 2021
+
+Fixed an issue that caused an `OSError` on Windows when nasher could not find a
+Steam or GOG install. ([#87](https://github.com/squattingmonk/nasher/issues/87))
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.15.2...0.15.3
+
+
 ## 0.15.2: September 26, 2021
 
 Fixed an issue that prevented nasher from reading the `modName` and
