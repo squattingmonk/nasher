@@ -1,5 +1,27 @@
 # nasher changelog
 
+## 0.16.0: October 24, 2021
+
+### Added `--onMultipleSources` option
+
+Previously, when trying to pack a target that had multiple files of the same
+name within its source tree, nasher would ask the user to choose which file to
+use.  This was easy to miss if the `--yes` flag was passed.
+
+This adds the `--onMultipleSources` option with possible values of `choose`
+(manually choose a file), `default` (automatically select the first file
+found), or `error` (abort with an error message). The default value is `choose`
+in order to preserve the existing behavior.
+
+This option is supported for packing operations only. The `unpack` command will
+still require users to choose where to extract a file when multiple options are
+found.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.15.3...0.16.0
+
+
 ## 0.15.3: October 15, 2021
 
 Fixed an issue that caused an `OSError` on Windows when nasher could not find a
