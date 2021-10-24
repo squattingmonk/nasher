@@ -46,6 +46,12 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
     return cmd != "convert"
 
   let
+    multiSrcChoices = ["choose", "default", "error"]
+    multiSrcAction = opts.get("onMultipleSources", multiSrcChoices[0])
+  if multiSrcAction notin multiSrcChoices:
+    fatal("--onMultipleSources must be one of [$#]" % join(multiSrcChoices, ", "))
+
+  let
     category = (if cmd == "compile": "compiling" else: cmd & "ing")
     gffUtil = opts.get("gffUtil")
     gffFlags = opts.get("gffFlags", "-p")
@@ -92,15 +98,18 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
   for cacheFile, inFiles in outFiles.pairs:
     assert inFiles.len > 0
 
-    let
-      outFile = cacheDir / cacheFile
-      srcFile =
-        if inFiles.len > 1:
-          choose(fmt"Multiple sources found for {outFile}. " &
-                 "Which one do you wish to use?", inFiles)
-        else:
-          inFiles[0]
+    var srcFile = inFiles[0]
+    if inFiles.len > 1:
+      case multiSrcAction
+      of "error":
+        fatal("Multiple sources found for $1:\n$2" % [cacheFile, join(inFiles, "\n")])
+      of "choose":
+        srcFile = choose(fmt"Multiple sources found for {cacheFile}. " &
+                    "Which one do you wish to use?", inFiles)
+      of "default": discard
+      else: assert false
 
+    let outFile = cacheDir / cacheFile
     if manifest.getFilesChanged(srcFile, outFile):
       let
         srcExt = srcFile.getFileExt
