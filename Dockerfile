@@ -1,9 +1,16 @@
+ARG NWSERVER_IMAGE=beamdog/nwserver:latest
+ARG NWDATA_PATH=/nwn
+
+# nw data source
+FROM $NWSERVER_IMAGE as nwserver
+
 # nwnsc compiler
 FROM nwneetools/nwnsc:latest as nwnsc
+
 # nim image
 FROM nimlang/nim:latest as nasher
 COPY --from=nwnsc usr/local/bin/nwnsc usr/local/bin/nwnsc
-COPY --from=nwnsc /nwn /nwn
+COPY --from=nwserver $NWDATA_PATH /nwn
 RUN dpkg --add-architecture i386 \
     && apt update \
     && apt upgrade -y \
