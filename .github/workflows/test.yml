@@ -30,7 +30,7 @@ jobs:
           - windows-latest
           - macOS-latest
         nim:
-          - 1.4.8
+          - 1.6.0
           - stable
     name: Nim ${{ matrix.nim }} (${{ matrix.os }})
     steps:
