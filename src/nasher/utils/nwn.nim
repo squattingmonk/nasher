@@ -2,6 +2,9 @@ import json, os, osproc, strformat, strutils, math, streams, tables
 from sequtils import mapIt, toSeq
 
 import neverwinter/gffjson, neverwinter/gff
+from neverwinter/game import GffExtensions
+export GffExtensions
+
 from nwnt import toNwnt, gffRootFromNwnt
 
 import cli, options
@@ -9,11 +12,6 @@ from shared import getFileExt
 
 const
   Options = {poUsePath, poStdErrToStdOut}
-
-  GffExtensions* = @[
-    "utc", "utd", "ute", "uti", "utm", "utp", "uts", "utt", "utw", "git", "are",
-    "gic", "ifo", "fac", "dlg", "itp", "bic", "jrl", "gff", "gui"
-  ]
 
 type
   FileTypeError* = object of CatchableError
