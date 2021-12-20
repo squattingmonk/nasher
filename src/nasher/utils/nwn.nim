@@ -106,7 +106,7 @@ proc gffToJson*(inFile, outFile, bin, args: string, precision: range[1..32] = 4)
   j.truncateFloats(precision)
   try:
     createOutDir(outFile)
-    writeFile(outFile, j.pretty() & "\c\L")
+    writeFile(outFile, j.pretty() & "\n")
   except:
     let msg = getCurrentExceptionMsg()
     fatal(fmt"Could not convert {inFile} to {outFile}: {msg}")
