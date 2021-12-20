@@ -1,5 +1,24 @@
 # nasher changelog
 
+## 0.16.2:
+
+- json output no longer uses carriage returns at line endings
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.16.1...0.16.2
+
+
+## 0.16.1: December 18, 2021
+
+- nasher now requires nim 1.6.0 and neverwinter.nim 1.5.4
+- added build args to configure the version of nwserver and nwn data location
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.16.0...0.16.1
+
+
 ## 0.16.0: October 24, 2021
 
 ### Added `--onMultipleSources` option
