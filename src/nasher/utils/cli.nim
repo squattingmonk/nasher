@@ -231,7 +231,7 @@ proc choose*(question: string, choices: openarray[string]): string =
     except IOError:
       result = choices[0]
       echo result
-    except ValueError:
+    except ValueError, IndexDefect:
       if stdin.isatty:
         error("not a valid choice")
         result = choose(question, choices)
