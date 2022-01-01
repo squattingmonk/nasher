@@ -1,5 +1,16 @@
 # nasher changelog
 
+## 0.16.3: January 01, 2022
+
+Added error handling for out-of-range int values on choice prompts. Previously,
+choice prompts only covered non-int values and out-of-range int values would
+throw an exception. ([#91](https://github.com/squattingmonk/nasher/issues/91))
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.16.2...0.16.3
+
+
 ## 0.16.2:
 
 - json output no longer uses carriage returns at line endings
