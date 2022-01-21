@@ -2,11 +2,12 @@ import os, times, strtabs, tables, json
 from sequtils import mapIt, toSeq, deduplicate
 from strutils import unindent, strip, `%`
 from unicode import toLower
+from sugar import collect
 
 when defined(Windows):
   import registry
 
-from glob import walkGlob
+from glob import walkGlob, defaultGlobOptions, GlobOption
 
 import cli, target, options
 export cli, target, options
@@ -47,9 +48,14 @@ proc matchesAny*(s: string, patterns: seq[string]): bool =
 iterator walkSourceFiles*(includes, excludes: seq[string]): string =
   ## Yields all files in the source tree matching include patterns while not
   ## matching exclude patterns.
+  const globOpts = defaultGlobOptions - {GlobOption.DirLinks} + {GlobOption.Absolute}
+  let excluded = collect:
+    for pattern in excludes:
+      for file in walkGlob(pattern, options = globOpts):
+        file
   for pattern in includes:
-    for file in glob.walkGlob(pattern):
-      if not file.matchesAny(excludes):
+    for file in walkGlob(pattern, options = globOpts):
+      if file notin excluded:
         yield file
 
 proc getSourceFiles*(includes, excludes: seq[string]): seq[string] =
