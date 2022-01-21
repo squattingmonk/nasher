@@ -192,8 +192,12 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
 
       if errors:
         warning("Errors encountered during compilation (see above)")
-        if cmd in ["pack", "install", "serve", "test", "play"] and not
-          askIf("Do you want to continue $#ing?" % [cmd]):
+        if cmd in ["pack", "install", "serve", "test", "play"]:
+          let forced = getForceAnswer()
+          if opts.get("abortOnCompileError", false):
+            setForceAnswer(No)
+          if not askIf("Do you want to continue to $#?" % [cmd]):
+            setForceAnswer(forced)
             return false
       success("compiled " & $scripts.len & " scripts")
     else:

@@ -21,10 +21,11 @@ const
     is older than the existing file, the default is to keep the existing file.
 
   Options:
-    --clean            Clears the cache directory before packing
-    --yes, --no        Automatically answer yes/no to prompts
-    --default          Automatically accept the default answer to prompts
-    --branch:<branch>  Selects git branch before operation.
+    --clean                Clears the cache directory before packing
+    --yes, --no            Automatically answer yes/no to prompts
+    --default              Automatically accept the default answer to prompts
+    --branch:<branch>      Selects git branch before operation
+    --abortOnCompileError  Automatically abort packing if compilation fails
 
   Global Options:
     -h, --help     Display help for nasher or one of its commands

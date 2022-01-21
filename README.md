@@ -559,6 +559,10 @@ by passing the key/value pair as an option to the command.
     `pack`, `install`, `play`, `test`, and `serve` commands. The `unpack`
     command still makes you choose where to unpack a file if multiple options
     are found.
+- `abortOnCompileError`: whether to automatically abort packing, installing, or
+   testing a target if `nwnsc` encounters errors.
+   default: `false`
+   supported: `true`, `false`
 
 #### Examples
 
@@ -808,6 +812,7 @@ run it separately unless you want to pack files without installing.
 | `--noCompile`                   | do not recompile updated scripts                                   |
 | `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
 | `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
+| `--abortOnCompileError`         | abort packing if errors encountered during compilation             |
 
 #### Examples
 
@@ -853,6 +858,7 @@ the module (`.mod`) file.
 | `--installDir:<dir>`            | the location of the NWN user directory                             |
 | `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
 | `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
+| `--abortOnCompileError`         | abort installation if errors encountered during compilation        |
 
 #### Examples
 ```console
@@ -890,6 +896,7 @@ command is only valid for module targets.
 | `--installDir:<dir>`            | the location of the NWN user directory                             |
 | `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
 | `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
+| `--abortOnCompileError`         | abort launching if errors encountered during compilation           |
 | `--gameBin:<path>`              | path to the `nwmain` binary file                                   |
 | `--serverBin:<path>`            | path to the `nwserver` binary file                                 |
 
