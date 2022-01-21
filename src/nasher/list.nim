@@ -1,5 +1,5 @@
 from strutils import join
-import utils/[cli, options]
+import utils/[cli, options, shared]
 
 const
   helpList* = """
@@ -34,6 +34,8 @@ proc list*(opts: Options, pkg: PackageRef) =
       display("Includes:", target.includes.join("\n"))
       display("Excludes:", target.excludes.join("\n"))
       display("Filters:", target.filters.join("\n"))
+      if isLogging(LowPriority):
+        info("Source Files:", getSourceFiles(target.includes, target.excludes).join("\n"))
 
       for pattern, dir in target.rules.items:
         display("Rule:", pattern & " -> " & dir)
