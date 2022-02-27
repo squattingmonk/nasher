@@ -15,7 +15,7 @@ it has some key differences:
   directories based on category)
 * nasher can install built targets into the NWN installation directory or
   launch them in-game
-* nasher uses json or [nwnt](https://github.com/WillamDraco/nwnt) rather than
+* nasher uses json or [NWNT](https://github.com/WilliamDraco/NWNT) rather than
   yaml for storing gff files
 
 This guide is current as of nasher release 0.14.x.
