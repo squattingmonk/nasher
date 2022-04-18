@@ -131,6 +131,11 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
   let
     cmd = opts["command"]
     target = pkg.getTarget(opts["target"])
+    abortOnCompileError =
+      if opts.hasKey("abortOnCompileError"):
+        if opts.get("abortOnCompileError", false): Answer.No
+        else: Answer.Yes
+      else: Answer.None
 
   var
     executables: seq[string]
@@ -191,9 +196,9 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
           warning("Errors encountered during compilation (see above)")
           if chunk + 1 < chunks:
             let forced = getForceAnswer()
-            if opts.get("abortOnCompileError", false):
-              setForceAnswer(No)
-            if not askIf("Do you want to continue to $#?" % [cmd]):
+            if abortOnCompileError != Answer.None:
+              setForceAnswer(abortOnCompileError)
+            if not askIf("Do you want to continue compiling?"):
               setForceAnswer(forced)
               return false
     else:
@@ -207,8 +212,8 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
         [$(scripts.len - unmatchedNcs.len), $scripts.len, unmatchedNcs.join(", ")])
       if cmd in ["pack", "install", "serve", "test", "play"]:
         let forced = getForceAnswer()
-        if opts.get("abortOnCompileError", false):
-          setForceAnswer(No)
+        if abortOnCompileError != Answer.None:
+          setForceAnswer(abortOnCompileError)
         if not askIf("Do you want to continue to $#?" % [cmd]):
           setForceAnswer(forced)
           return false
