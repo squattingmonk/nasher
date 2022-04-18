@@ -198,6 +198,7 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
             let forced = getForceAnswer()
             if abortOnCompileError != Answer.None:
               setForceAnswer(abortOnCompileError)
+            hint("This was chunk $1 out of $2" % [$(chunk + 1), $chunks])
             if not askIf("Do you want to continue compiling?"):
               setForceAnswer(forced)
               return false
