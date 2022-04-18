@@ -1,5 +1,48 @@
 # nasher changelog
 
+## 0.17.0: April 18, 2022
+
+### Added `--abortOnCompileError` option
+
+Added a new option to auto-answer the "Do you wish to continue compiling?"
+prompt when errors were encountered on compilation. Now you can force-answer
+`no` to the prompt by passing `--abortOnCompileError` and force-answer `yes` to
+the prompt by passing `--abortOnCompileError=false`. This will reduce the number
+of prompts to answer without having to pass `--yes` or `--no`.
+([#84](https://github.com/squattingmonk/nasher/issues/84))
+
+### Prompt to continue compiling on error now shown after each chunk
+
+The user will now receive a prompt if there were errors in compilation after
+each chunk of scripts is run. Previously, if the user were to compile a large
+number of scripts, they would have to wait until the end of compilation to be
+notified. These prompts respect the `--abortOnCompileError` flag to allow an
+early exit. As a convenience, a hint is shown to let the user know how many
+chunks of scripts are remaining.
+
+**Note**: if the `-y` flag is not in `--nssFlags`, nwnsc will stop compiling
+scripts in the current chunk. If the user chooses to continue compiling, the
+remaining scripts from that chunk will not have been compiled and will show no
+errors to indicate why.
+
+### `nasher list --verbose` now lists source files
+    
+This will make it easier to see which files will be included in a target without
+having to build and check the cache.
+
+### Other
+
+- Bumped required nim version to 1.6.4, neverwinter.nim version to 1.5.5, and
+  nwnt version to 1.3.3.
+- Bumped required glob version to 0.11.1. The newer version allows negative
+  pattern matching (i.e., `!(pattern)`) which may be helpful for include
+  directives or unpack rules.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.16.3...0.17.0
+
+
 ## 0.16.3: January 01, 2022
 
 Added error handling for out-of-range int values on choice prompts. Previously,
