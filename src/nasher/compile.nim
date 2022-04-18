@@ -1,4 +1,3 @@
-from sequtils import distribute, apply
 import os, tables, strtabs, strutils, pegs, sequtils
 
 import utils/[cli, compiler, options, shared]
@@ -180,35 +179,43 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
 
     if scripts.len > 0:
-      var errors = false
       let
         chunkSize = opts.get("nssChunks", 500)
         chunks = scripts.len div chunkSize + 1
       display("Compiling", $scripts.len & " scripts")
-      for chunk in distribute(scripts, chunks):
-        let args = userFlags & target.flags & chunk
+      for chunk, scripts in distribute(scripts, chunks):
+        if chunks > 1:
+          info("Compiling", "$1 scripts (chunk $2/$3)" % [$scripts.len, $(chunk + 1), $chunks])
+        let args = userFlags & target.flags & scripts
         if runCompiler(compiler, args) != 0:
-          errors = true
-
-      if errors:
-        warning("Errors encountered during compilation (see above)")
-        if cmd in ["pack", "install", "serve", "test", "play"]:
-          let forced = getForceAnswer()
-          if opts.get("abortOnCompileError", false):
-            setForceAnswer(No)
-          if not askIf("Do you want to continue to $#?" % [cmd]):
-            setForceAnswer(forced)
-            return false
-      success("compiled " & $scripts.len & " scripts")
+          warning("Errors encountered during compilation (see above)")
+          if chunk + 1 < chunks:
+            let forced = getForceAnswer()
+            if opts.get("abortOnCompileError", false):
+              setForceAnswer(No)
+            if not askIf("Do you want to continue to $#?" % [cmd]):
+              setForceAnswer(forced)
+              return false
     else:
       display("Skipping", "compilation: nothing to compile")
 
     let unmatchedNcs = executables.filterIt(not fileExists(it.changeFileExt("ncs")))
     if unmatchedNcs.len > 0:
-      warning("The following executable scripts do not have matching .ncs " &
-        "files due to an unknown nwnsc error: " & unmatchedNcs.join(", "))
+      warning("""
+        Compiled only $1 of $2 scripts. The following executable scripts do not
+        have matching .ncs files due to an nwnsc error: $3""".dedent %
+        [$(scripts.len - unmatchedNcs.len), $scripts.len, unmatchedNcs.join(", ")])
+      if cmd in ["pack", "install", "serve", "test", "play"]:
+        let forced = getForceAnswer()
+        if opts.get("abortOnCompileError", false):
+          setForceAnswer(No)
+        if not askIf("Do you want to continue to $#?" % [cmd]):
+          setForceAnswer(forced)
+          return false
     else:
-      success("All executable scripts have a matching compiled (.ncs) script");
+      success("All executable scripts have a matching compiled (.ncs) script", LowPriority);
+      if scripts.len > 0:
+        success("Compiled $1 scripts" % $scripts.len)
 
   # Prevent falling through to the next function if we were called directly
   return cmd != "compile"
