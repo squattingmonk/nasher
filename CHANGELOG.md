@@ -1,5 +1,17 @@
 # nasher changelog
 
+## 0.17.1: April 18, 2022
+
+Hotfix: `--abortOnCompileError` no longer consumes the following argument or
+option as its value. Previously, `nasher compile --abortOnCompileError --clean`
+caused `--clean` to be treated as the value of `--abortOnCompileError`. You can
+explicitly pass a value: `--abortOnCompileError=false`.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.17.0...0.17.1
+
+
 ## 0.17.0: April 18, 2022
 
 ### Added `--abortOnCompileError` option
