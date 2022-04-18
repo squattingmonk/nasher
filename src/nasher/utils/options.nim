@@ -170,7 +170,7 @@ proc parseCmdLine(opts: Options) =
     longFlags = @[ "help", "version", "no-color", "debug", "verbose", "quiet",
       "yes", "no", "default", "get", "set", "unset", "list", "global", "local",
       "clean", "noConvert", "noCompile", "noPack", "removeDeleted",
-      "removeUnusedAreas", "useModuleFolder" ]
+      "removeUnusedAreas", "useModuleFolder", "abortOnCompileError" ]
   for kind, key, val in getopt(shortNoVal = shortFlags, longNoVal = longFlags):
     case kind
     of cmdArgument:
