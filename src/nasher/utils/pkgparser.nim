@@ -8,7 +8,7 @@ type
   PackageError* = object of CatchableError
     ## Raised when the package parser encounters an error
 
-const validTargetChars = Letters + Digits + {'_', '-'}
+const validTargetChars = {'\32'..'\64', '\91'..'\126'} - invalidFileNameChars
 
 proc raisePackageError(msg: string) =
   ## Raises a `PackageError` with the given message.
@@ -92,9 +92,13 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
         case e.key
         of "name":
           if section == "target":
-            if e.value == "all" or not e.value.allCharsInSet(validTargetChars):
-              p.raisePackageError("invalid target name $1" % e.value.escape)
-            elif result.anyIt(it.name == e.value):
+            if e.value == "all":
+              p.raisePackageError("invalid target name \"all\"")
+            for c in e.value:
+              if c notin validTargetChars:
+                p.raisePackageError("invalid character $1 in target name $2" %
+                                    [escape($c), e.value.escape])
+            if result.anyIt(it.name == e.value):
               p.raisePackageError("duplicate target name $1" % e.value.escape)
             else:
               target.name = e.value
