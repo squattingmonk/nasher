@@ -326,15 +326,19 @@ proc verifyBinaries*(opts: Options) =
 proc initTarget: Target =
   result.name = ""
 
-proc validTargetChars(name: string): bool =
-  name.allCharsInSet({'a'..'z', '0'..'9', '_', '-'})
+const validTargetChars = {'\32'..'\64', '\91'..'\126'} - invalidFileNameChars
 
 proc addTarget(pkg: PackageRef, target: var Target) =
   ## Adds target to pkg's list of targets. If target has no items in the include
   ## or exclude list, that list is copied from pkg.
   if target.name.len() > 0:
-    if target.name == "all" or not target.name.validTargetChars:
-      fatal("Illegal target name " & target.name.escape)
+    if target.name == "all":
+      fatal("Invalid target name \"all\"")
+    
+    for c in target.name:
+      if c notin validTargetChars:
+        fatal("Invalid character $1 in target name: $2" %
+              [escape($c, "", ""), target.name.escape])
 
     if target.includes.len == 0:
       target.includes = pkg.includes
