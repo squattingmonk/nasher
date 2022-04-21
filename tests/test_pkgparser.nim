@@ -205,10 +205,10 @@ suite "nasher.cfg parsing":
         """)
 
     expect PackageError:
-      checkErrorMsg "invalid target name":
+      checkErrorMsg "invalid character \"F\" in target name \"Foo\"":
         discard parsePackageString("""
         [target]
-        name = "$sm-utils"
+        name = "Foo"
         """)
 
   test "Error on duplicate target name":
