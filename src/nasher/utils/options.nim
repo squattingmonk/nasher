@@ -1,5 +1,5 @@
 import os, parseopt, parsecfg, streams, strformat, strtabs, strutils
-from sequtils import toSeq
+from sequtils import toSeq, anyIt
 from algorithm import sorted
 export strtabs
 
@@ -339,6 +339,9 @@ proc addTarget(pkg: PackageRef, target: var Target) =
       if c notin validTargetChars:
         fatal("Invalid character $1 in target name: $2" %
               [escape($c, "", ""), target.name.escape])
+
+    if pkg.targets.anyIt(it.name == target.name):
+      fatal("Duplicate target name: $1" % target.name.escape)
 
     if target.includes.len == 0:
       target.includes = pkg.includes
