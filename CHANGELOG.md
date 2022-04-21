@@ -1,5 +1,17 @@
 # nasher changelog
 
+## 0.17.2: April 21, 2022
+
+- An error is now generated if multiple targets in nasher.cfg have the same name.
+- Target names can now include all printable ascii characters except the
+  following characters which are invalid in filenames: `/\:*?\"<>|^`. Note:
+  target names are automatically converted to lowercase to avoid issues
+  with case-sensitive OSes.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.17.1...0.17.2
+
 ## 0.17.1: April 18, 2022
 
 Hotfix: `--abortOnCompileError` no longer consumes the following argument or
