@@ -1,5 +1,15 @@
 # nasher changelog
 
+## 0.17.3: May 6, 2022
+
+`unpack` no longer causes a duplicate target error.
+([#98](https://github.com/squattingmonk/nasher/issues/98))
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.17.2...0.17.3
+
+
 ## 0.17.2: April 21, 2022
 
 - An error is now generated if multiple targets in nasher.cfg have the same name.

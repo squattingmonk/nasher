@@ -86,7 +86,7 @@ when isMainModule:
       of "config":
         config(opts)
       of "init":
-        if init(opts, pkg):
+        if init(opts, pkg) and loadPackageFile(pkg, getPackageFile()):
           unpack(opts, pkg)
       of "unpack":
         unpack(opts, pkg)
