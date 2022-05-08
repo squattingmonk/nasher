@@ -38,12 +38,24 @@ proc init*(opts: Options, pkg: PackageRef): bool =
   display("Initializing", "into " & dir)
 
   try:
-    display("Creating", "package file at " & file)
     createDir(dir)
-    writeFile(file, genPackageText(opts))
-    success("created package file")
-  except:
+  except OSError:
+    fatal("Could not create package directory: " & getCurrentExceptionMsg())
+  except IOError:
+    fatal("Could not create package directory: a file named " & dir & " already exists")
+
+  display("Creating", "package file at " & file)
+  var f: File
+  if open(f, file, fmWrite):
+    try:
+      f.write(genPackageText(opts))
+    finally:
+      f.close
+  else:
+    error("Cannot open " & file)
     fatal("Could not create package file at " & file)
+    writeFile(file, genPackageText(opts))
+  success("created package file")
 
   # TODO: support hg
   if opts.getOrPut("vcs", "git") == "git":
