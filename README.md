@@ -67,6 +67,7 @@ file in your [`PATH` environment variable](https://superuser.com/a/284351).
 In addition, you will need the following tools:
 * [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.3.1
 * [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.2
+* [git](https://git-scm.com/downloads)
 
 #### Tips
 * Keep the binaries for nasher, neverwinter.nim, and nwnsc in the same
@@ -85,6 +86,7 @@ First, install the following:
     * [Windows](https://nim-lang.org/install_windows.html)
     * [Linux and Mac](https://nim-lang.org/install_unix.html)
 * [nwnsc](https://github.com/nwneetools/nwnsc) >= 1.1.2
+* [git](https://git-scm.com/downloads)
 
 *Note: when building nasher, nimble will download and install neverwinter.nim
 automatically. You do not need to install it yourself.*
