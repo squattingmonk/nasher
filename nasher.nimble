@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.17.3"
+version       = "0.17.4"
 author        = "Michael A. Sinclair"
 description   = "A build tool for Neverwinter Nights projects"
 license       = "MIT"

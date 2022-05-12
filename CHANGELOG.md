@@ -1,5 +1,17 @@
 # nasher changelog
 
+## 0.17.4: May 12, 2022
+
+Added better error handling for the `init` command. It now shows the error
+message from the OS if a directory could not be created and will error out if it
+cannot open the file before showing the package generation wizard. Other errors
+will show a stack trace.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.17.3...0.17.4
+
+
 ## 0.17.3: May 6, 2022
 
 `unpack` no longer causes a duplicate target error.
