@@ -1,15 +1,15 @@
 import os, times, strtabs, tables, json
-from sequtils import toSeq, deduplicate
+from sequtils import mapIt, toSeq, deduplicate
 from strutils import unindent, strip
 from unicode import toLower
-from sequtils import mapIt
 
 when defined(Windows):
   import registry
 
 from glob import walkGlob
 
-import cli
+import cli, target, options
+export cli, target, options
 
 proc getPackageRoot*(baseDir = getCurrentDir()): string =
   ## Returns the first parent of baseDir that contains a nasher config
