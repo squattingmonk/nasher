@@ -114,9 +114,18 @@ proc warning*(msg: string, priority: Priority = MediumPriority) =
   ## Convenience proc for displaying warnings
   display("Warning:", msg, displayType = Warning, priority = priority)
 
+proc error*(category, msg: string) =
+  ## Convenience proc for displaying errors
+  display(category, msg, displayType = Error, priority = HighPriority)
+
 proc error*(msg: string) =
   ## Convenience proc for displaying errors
-  display("Error:", msg, displayType = Error, priority = HighPriority)
+  error("Error:", msg)
+
+proc fatal*(category, msg: string) =
+  ## Displays an error message and quits
+  error(category, msg)
+  quit(QuitFailure)
 
 proc fatal*(msg: string) =
   ## Displays an error message and quits
