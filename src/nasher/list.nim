@@ -1,5 +1,5 @@
-from strutils import join
-import utils/[cli, options, shared]
+from strutils import join, capitalizeAscii
+import utils/shared
 
 const
   helpList* = """
@@ -22,23 +22,31 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc list*(opts: Options, pkg: PackageRef) =
-  if pkg.targets.len > 0:
-    var hasRun = false
-    for target in pkg.targets:
-      if hasRun:
-        stdout.write("\n")
-      display("Target:", target.name, priority = HighPriority)
-      display("Description:", target.description)
-      display("File:", target.file)
-      display("Includes:", target.includes.join("\n"))
-      display("Excludes:", target.excludes.join("\n"))
-      display("Filters:", target.filters.join("\n"))
-      if isLogging(LowPriority):
-        info("Source Files:", getSourceFiles(target.includes, target.excludes).join("\n"))
+proc displayField(field, val: string) =
+  display(capitalizeAscii(field) & ":", val)
 
-      for pattern, dir in target.rules.items:
-        display("Rule:", pattern & " -> " & dir)
-      hasRun = true
-  else:
+proc list* =
+  let targets = parsePackageFile(getPackageFile())
+  if targets.len == 0:
     fatal("No targets found. Please check your nasher.cfg.")
+
+  var hasRun = false
+  for target in targets.filter("all"):
+    if hasRun:
+      stdout.write("\n")
+    display("Target:", target.name, priority = HighPriority)
+    for field, val in fieldPairs(target[]):
+      when val is string:
+        if field != "name":
+          displayField(field, val)
+      elif val is seq[string]:
+        displayField(field, val.join("\n"))
+      else:
+        discard
+
+    if isLogging(LowPriority):
+      info("Source Files:", getSourceFiles(target.includes, target.excludes).join("\n"))
+
+    for pattern, dir in target.rules.items:
+      display("Rule:", pattern & " -> " & dir)
+    hasRun = true

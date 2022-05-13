@@ -1,4 +1,5 @@
 import os, parsecfg, streams, strutils, tables
+from sequtils import anyIt
 export tables
 
 type
@@ -30,6 +31,25 @@ proc `[]`*(t: OrderedTableRef[string, Target]; index: Natural): Target =
     if idx == index:
       return value
     idx.inc
+
+iterator filter*(t: OrderedTableRef[string, Target], names = ""): Target =
+  ## Iterates over each target in `t` named in the semicolon-delimited list
+  ## `names`. If `names` is "", yields the first target in `t`. If any name in
+  ## `names` is "all", yields all targets in `t`. Raises a `KeyError` if any
+  ## target is not in `t`.
+  if names == "":
+    yield t[0]
+  else:
+    let wanted = names.split(';')
+    if wanted.anyIt(it == "all"):
+      for target in t.values:
+        yield target
+    else:
+      for name in wanted:
+        if name in t:
+          yield t[name]
+        else:
+          raise newException(KeyError, "Unknown target " & name)
 
 proc raisePackageError(msg: string) =
   ## Raises a `PackageError` with the given message.
