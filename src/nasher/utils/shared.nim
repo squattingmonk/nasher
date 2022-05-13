@@ -11,6 +11,29 @@ from glob import walkGlob
 
 import cli
 
+proc getPackageRoot*(baseDir = getCurrentDir()): string =
+  ## Returns the first parent of baseDir that contains a nasher config
+  result = baseDir.absolutePath()
+
+  for dir in parentDirs(result):
+    if fileExists(dir / "nasher.cfg"):
+      return dir
+
+proc getConfigFile*(pkgDir = ""): string =
+  ## Returns the configuration file for the package owning `pkgDir`, or the
+  ## global configuration file if `pkgDir` is blank.
+  if pkgDir.len > 0:
+    getPackageRoot(pkgDir) / ".nasher" / "user.cfg"
+  else:
+    getConfigDir() / "nasher" / "user.cfg"
+
+proc getPackageFile*(baseDir = getCurrentDir()): string =
+  getPackageRoot(baseDir) / "nasher.cfg"
+
+proc existsPackageFile*(dir = getCurrentDir()): bool =
+  fileExists(getPackageFile(dir))
+
+
 proc help*(helpMessage: string, errorCode = QuitSuccess) =
   ## Quits with a formatted help message, sending errorCode
   quit(helpMessage.unindent(2), errorCode)

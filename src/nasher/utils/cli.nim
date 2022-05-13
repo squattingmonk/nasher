@@ -1,6 +1,8 @@
 import sequtils, strutils, terminal
 import std/wordwrap
 
+export isatty
+
 type
   CLI = ref object
     showColor: bool
@@ -16,8 +18,6 @@ type
 
   Answer* = enum
     None, No, Yes, Default
-
-  NasherError* = object of CatchableError
 
 const
   colWidth = len("Initializing")
@@ -36,11 +36,17 @@ var cli = CLI(showColor: stdout.isatty, logLevel: MediumPriority, forceAnswer: N
 proc setLogLevel*(level: Priority) =
   cli.logLevel = level
 
+proc getLogLevel*: Priority =
+  cli.logLevel
+
 proc isLogging*(level: Priority): bool =
   cli.logLevel <= level
 
 proc setShowColor*(val: bool) =
   cli.showColor = val
+
+proc getShowColor*: bool =
+  cli.showColor
 
 proc setForceAnswer*(val: Answer) =
   cli.forceAnswer = val
@@ -113,10 +119,12 @@ proc error*(msg: string) =
   display("Error:", msg, displayType = Error, priority = HighPriority)
 
 proc fatal*(msg: string) =
-  ## Raises a ``NasherError`` exception with message ``msg``.
-  raise newException(NasherError, msg)
+  ## Displays an error message and quits
+  error(msg)
+  quit(QuitFailure)
 
 proc success*(msg: string, priority: Priority = MediumPriority) =
+  ## Convenience proc for displaying a success message
   display("Success:", msg, displayType = Success, priority = priority)
 
 proc hint*(msg: string) =
