@@ -17,7 +17,7 @@
 ## options can be supplied at access time when the user has not supplied them.
 import os, parsecfg, streams, strtabs, strutils
 from sequtils import toSeq
-from algorithm import sortedByIt
+from algorithm import sorted
 
 import blarg
 import cli
@@ -187,11 +187,17 @@ proc parseFile*(opts: Options, file: string) =
   else:
     raise newException(ValueError, "Unable to determine config parser for $1" % file)
 
+iterator sortedPairs*(opts: Options): tuple[key, value: string] =
+  ## Iterates over every key-value pair in `opts` sorted by key.
+  for key in toSeq(opts.keys).sorted(cmpIgnoreStyle):
+    yield (key, opts[key])
+
 proc writeFile*(opts: Options, file: string) =
   ## Converts `opts` into a config file named `file` which can be read with
   ## `parseConfigFile`. Raises an `IOError` if `file` cannot be written to.
   var s = openFileStream(file, fmWrite)
-  for (key, value) in toSeq(opts.pairs).sortedByIt(it.key):
+  defer: s.close
+  for (key, value) in opts.sortedPairs:
     s.writeLine("$1 = $2" % [key, value.escape])
 
 # --- Command-line parsing
