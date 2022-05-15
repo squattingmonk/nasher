@@ -86,7 +86,7 @@ proc mapSrc(file, ext, target: string, srcMap: FileMap, rules: seq[Rule]): strin
       choose(fmt"Cannot decide where to extract {file}. Please choose:",
              choices)
 
-proc unpack*(opts: Options, pkg: PackageRef) =
+proc unpack*(opts: Options, target: Target) =
   let
     dir = opts.get("directory", getPackageRoot())
     precision = opts.get("truncateFloats", 4)
@@ -101,7 +101,6 @@ proc unpack*(opts: Options, pkg: PackageRef) =
   # the installed target file.
   let
     installDir = opts.get("installDir", getEnv("NWN_HOME")).expandPath
-    target = pkg.getTarget(opts.get("target"))
     file =
       if opts.hasKey("file"): opts.get("file").expandPath.absolutePath
       else:
