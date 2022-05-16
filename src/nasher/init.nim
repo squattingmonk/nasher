@@ -29,7 +29,7 @@ const
 
 proc genPackageText(opts: Options): string
 
-proc init*(opts: Options) =
+proc init*(opts: Options): bool =
   let
     dir = opts.getOrPut("directory", getCurrentDir())
     file = dir / "nasher.cfg"
@@ -72,9 +72,7 @@ proc init*(opts: Options) =
   success("project initialized")
 
   # Check if we should unpack a file
-  if opts.hasKey("file"):
-    # TODO
-    discard
+  return opts.hasKey("file")
 
 proc addLine(s: var string, line = "") =
   s.add(line & "\n")
