@@ -1,6 +1,6 @@
 import os, strformat
 
-import utils/[cli, nwn, options, shared]
+import utils/[nwn, shared]
 
 const
   helpInstall* = """
@@ -36,10 +36,10 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc install*(opts: Options, pkg: PackageRef): bool =
+proc install*(opts: Options, target: Target): bool =
   let
     cmd = opts["command"]
-    file = opts["file"]
+    file = target.file
     dir = opts.getOrPut("installDir", getNwnHomeDir()).expandPath
 
   if opts.get("noInstall", false):
@@ -85,7 +85,7 @@ proc install*(opts: Options, pkg: PackageRef): bool =
   if (ext == ".mod" and opts.get("useModuleFolder", true)):
     let
       modFolder = installDir / name
-      erfUtil = opts.get("erfUtil")
+      erfUtil = opts.findBin("erfUtil", "nwn_erf", "erf utility")
       erfFlags = opts.get("erfFlags")
 
     if not dirExists(modFolder):
