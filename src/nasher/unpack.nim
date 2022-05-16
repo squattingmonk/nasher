@@ -1,7 +1,7 @@
 import tables, os, strformat, strutils, times
 from glob import walkGlob
 
-import utils/[cli, git, manifest, nwn, options, shared]
+import utils/[git, manifest, nwn, shared]
 
 const
   helpUnpack* = """
@@ -127,7 +127,7 @@ proc unpack*(opts: Options, target: Target) =
     fileType = file.getFileExt
     (_, name, ext) = file.splitFile
     shortFile = file.extractFilename
-    erfUtil = opts.get("erfUtil")
+    erfUtil = opts.findBin("erfUtil", "nwn_erf", "erf utility")
     erfFlags = opts.get("erfFlags")
     useFolder =
       ext == ".mod" and
@@ -178,10 +178,10 @@ proc unpack*(opts: Options, target: Target) =
     askRemove = not opts.hasKey("removeDeleted")
 
   let
-    gffUtil = opts.get("gffUtil")
+    gffUtil = opts.findBin("gffUtil", "nwn_gff", "gff utility")
     gffFlags = opts.get("gffFlags")
     gffFormat = opts.get("gffFormat", "json")
-    tlkUtil = opts.get("tlkUtil")
+    tlkUtil = opts.findBin("tlkUtil", "nwn_tlk", "tlk utility")
     tlkFlags = opts.get("tlkFlags")
     tlkFormat = opts.get("tlkFormat", "json")
 
@@ -274,7 +274,7 @@ proc unpack*(opts: Options, target: Target) =
       else: fatal(fmt"Unsupported output format: {gffFormat}")
     else:
       createDir(outFile.splitFile.dir)
-      info("Copying", fmt"{filePath} -> outFile")
+      info("Copying", fmt"{filePath} -> {outFile}")
       copyFile(filePath, outFile)
 
     outFile.setLastModificationTime(packTime)
