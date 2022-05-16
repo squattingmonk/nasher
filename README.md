@@ -1,24 +1,22 @@
 # nasher
 
-Nasher is a command-line tool for converting a Neverwinter Nights module to
-text-based source files and vice versa. This allows git-based version control
-and team collaboration.
+nasher is a command-line tool for converting a Neverwinter Nights module, hak,
+or erf file into text-based source files and vice versa. This allows git-based
+version control and team collaboration.
 
-Nasher is similar to [nwn-devbase](https://github.com/jakkn/nwn-devbase), but
-it has some key differences:
-* nasher and the tools it uses are written in nim rather than Ruby, so they are
-  much faster (handy for large projects) and can be distributed in binary form
+* nasher and the tools it uses are written in [Nim](https://nim-lang.org). They
+  are fast (handy for large projects) and can be distributed in binary form.
 * nasher supports non-module projects (including erfs, tlks, and haks)
 * nasher supports multiple build targets (e.g., an installable erf and a demo
-  module) from the same code base
+  module) from the same code base.
 * nasher supports custom source tree layouts (e.g., dividing scripts into
-  directories based on category)
+  directories based on category).
 * nasher can install built targets into the NWN installation directory or
-  launch them in-game
-* nasher uses json or [NWNT](https://github.com/WilliamDraco/NWNT) rather than
-  yaml for storing gff files
+  launch them in-game.
+* nasher uses json or [NWNT](https://github.com/WilliamDraco/NWNT) for its text
+  file format.
 
-This guide is current as of nasher release 0.14.x.
+This guide is current as of nasher release 0.17.x.
 
 * [Installation Options](#installation-options)
     * [Binary Releases](#binary-releases)
@@ -65,8 +63,8 @@ of nasher for your OS and place a pointer to the location of the executable
 file in your [`PATH` environment variable](https://superuser.com/a/284351).
 
 In addition, you will need the following tools:
-* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.3.1
-* [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.2
+* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.5.5
+* [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.3
 * [git](https://git-scm.com/downloads)
 
 #### Tips
@@ -82,10 +80,9 @@ In addition, you will need the following tools:
 *Note: this method is harder to set up, but makes it easier to update.*
 
 First, install the following:
-* [nim](https://nim-lang.org) and its package manager, `nimble`:
-    * [Windows](https://nim-lang.org/install_windows.html)
-    * [Linux and Mac](https://nim-lang.org/install_unix.html)
-* [nwnsc](https://github.com/nwneetools/nwnsc) >= 1.1.2
+* [nim](https://nim-lang.org) and it package manager `nimble`. The easy way to
+  install is to use [choosenim](https://github.com/dom96/choosenim).
+* [nwnsc](https://github.com/nwneetools/nwnsc) >= 1.1.3
 * [git](https://git-scm.com/downloads)
 
 *Note: when building nasher, nimble will download and install neverwinter.nim
@@ -100,7 +97,7 @@ $ # Install the latest version from the master branch
 $ nimble install nasher@#head
 
 $ # Install a specific tagged version
-$ nimble install nasher@#0.11.6
+$ nimble install nasher@#0.17.4
 ```
 
 Alternatively, you can clone the repo and build it yourself (handy if you want
@@ -231,28 +228,28 @@ instances of the package. It does not vary for different users.
 
 Here is a sample `nasher.cfg` file:
 
-```ini
-[Package]
+```toml
+[package]
 name = "Core Framework"
 description = "An extensible event management system for Neverwinter Nights"
 version = "0.1.0"
 author = "Squatting Monk <squattingmonk@gmail.com>"
 url = "https://github.com/squattingmonk/nwn-core-framework"
 
-[Sources]
-include = "sm-utils/src/*.nss"
-include = "src/**/*.{nss,json}"
-exclude = "**/test_*.nss"
+  [package.sources]
+  include = "sm-utils/src/*.nss"
+  include = "src/**/*.{nss,json}"
+  exclude = "**/test_*.nss"
 
-[Rules]
-"hook_*.nss" = "src/Hooks"
-"core_*" = "src/Framework"
-"*" = "src"
+  [package.rules]
+  "hook_*.nss" = "src/Hooks"
+  "core_*" = "src/Framework"
+  "*" = "src"
 
 # The first target is the default target and will be used by most commands when
 # no target has been explicitly passed. This should normally be your most
 # common operation, such as packing your module file.
-[Target]
+[target]
 name = "demo"
 description = "A demo module showing the system in action"
 file = "core_framework.mod"
@@ -260,27 +257,33 @@ modName = "Core Framework Demo Module"
 modMinGameVersion = "1.69"
 
 # erf, hak, and tlk files can be packed just like a module file.
-[Target]
+[target]
 name = "framework"
 description = "An importable erf for use in new or existing modules"
 file = "core_framework.erf"
-exclude = "src/demo/**"
-exclude = "**/test_*.nss"
+
+  [target.sources]
+  exclude = "src/demo/**"
+  exclude = "**/test_*.nss"
 
 # Filtering optional files, such as .nss, .gic, and .ndb, can greatly reduce
 # packed file size
-[Target]
+[target]
 name = "scripts"
 description = "A hak file containing compiled scripts"
 file = "core_scripts.hak"
-include = "src/**/*.nss"
-filter = "*.nss"
 
-[Target]
+  [target.sources]
+  include = "src/**/*.nss"
+  filter = "*.nss"
+
+[target]
 name = "tlk"
 description = "Custom talk file for PW"
 file = "myPWtlk.tlk"
-include = "haks/tlk/**/*.json"
+
+  [target.sources]
+  include = "haks/tlk/**/*.json"
 ```
 
 While you can write your own package file, the [`init`](#init) command will
@@ -288,7 +291,7 @@ create one for you. It will show prompts for each section and provide useful
 defaults. If you don't want to answer the prompts and just want to quickly
 initialize the package, you can pass the `--default` flag when running `init`.
 
-#### `[Package]`
+#### `[package]`
 
 This section provides a places to note the package's author, description, name,
 version, and url. This data is currently not used by any nasher commands, but
@@ -305,20 +308,36 @@ that may change in the future.
 Some fields, while optional, are inherited from the package by
 [targets](#target) if set in this section:
 
-| Field               | Repeatable | Description                                             |
-| ---                 | ---        | ---                                                     |
-| `flags`             | yes        | command line arguments to send to nwnsc at compile-time |
-| `branch`            | no         | the git branch to use for source files                  |
-| `modName`           | no         | the name to give a module target file                   |
-| `modMinGameVersion` | no         | the minimum game version to run a module target file    |
+| Field               | Repeatable | Description                                                               |
+| ---                 | ---        | ---                                                                       |
+| `file`              | no         | filename including extension be created; can optionally include path info |
+| `flags`             | yes        | command line arguments to send to nwnsc at compile-time                   |
+| `branch`            | no         | the git branch to use for source files                                    |
+| `modName`           | no         | the name to give a module target file                                     |
+| `modMinGameVersion` | no         | the minimum game version to run a module target file                      |
 
-#### `[Sources]`
+#### `[target]`
 
-This section tells nasher the locations of all source files for the package. It
-uses [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)) matching
-to identify desired files. These settings are inherited when [targets](#target)
-to not set them, so if you do not include any sources in this section, you must
-include them for all targets or nasher will not have any files to work with.
+At least one target must be specified. This section provides a target name,
+description, and output filename. Many of these fields will be inherited from
+the [`[package]`](#package) section if they are not set for this target.
+
+| Field               | Repeatable | Inherited | Description                                                               |
+| ---                 | ---        | ---       | ---                                                                       |
+| `name`              | no         | no        | name of the target; must be unique among targets                          |
+| `description`       | no         | no        | an optional field that describes the target                               |
+| `file`              | no         | yes       | filename including extension be created; can optionally include path info |
+| `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                   |
+| `branch`            | no         | yes       | the git branch to use for source files                                    |
+| `modName`           | no         | yes       | the name to give a module target file                                     |
+| `modMinGameVersion` | no         | yes       | the minimum game version to run a module target file                      |
+
+#### `[*.sources]`
+
+The sources subsection tells nasher the locations of the source files needed for
+a target. It can be set at the package level (i.e., `[package.rules]`) or at the
+target level (i.e., `[target.rules]`). If a target is missing one of these
+fields, it will be inherited from the package.
 
 All of these fields are repeatable.
 
@@ -331,15 +350,16 @@ All of these fields are repeatable.
 Refer to the [source trees](#source-trees) section to understand how these
 fields are used by targets.
 
-#### `[Rules]`
+#### `[*.rules]`
 
 When you [`unpack`](#unpack) a file, nasher searches the source tree to find
-where to put it. If the file is not found in the source tree, it uses the rules
-in this section.
+where to put it each of its source files. If the file is not found in the source
+tree, it uses the rules in this section.
 
 Rules take the form `"pattern" = "path"`. `pattern` is a glob pattern matching
 a filename. `path` is a directory path in which to place the file. All paths
-are relative to the package root.
+are relative to the package root (i.e., the directory where your `nasher.cfg` is
+located).
 
 A file is compared to the each rule's `pattern`; if it matches, the file is
 placed into the rule's `path` and the next file is evaluated. Files that fail
@@ -347,38 +367,18 @@ to match any rule's pattern are placed into a directory called `unknown` in the
 project root for you to sort manually. To avoid this, use a catch-all rule
 (`"*" = "path"`) at the end to match any files that did not match other rules.
 
-[Targets](#target) can define their own rules. If they don't, the rules used in
-this section will be inherited.
-
-#### `[Target]`
-
-At least one target must be specified. This section provides a target name,
-description, output filename, and source list. Many of these fields can be
-inherited from the [Package](#package), [Sources](#sources), or [Rules](#rules)
-sections if they are not set for this target.
-
-| Field               | Repeatable | Inherited | Description                                                               |
-| ---                 | ---        | ---       | ---                                                                       |
-| `name`              | no         | no        | name of the target; must be unique among targets                          |
-| `file`              | no         | no        | filename including extension be created; can optionally include path info |
-| `description`       | no         | no        | an optional field that describes the target                               |
-| `include`           | yes        | yes       | glob pattern matching files to include                                    |
-| `exclude`           | yes        | yes       | glob pattern matching files to exclude                                    |
-| `filter`            | yes        | yes       | glob pattern matching cached files to be excluded after compilation       |
-| `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                   |
-| `branch`            | no         | yes       | the git branch to use for source files                                    |
-| `modName`           | no         | yes       | the name to give a module target file                                     |
-| `modMinGameVersion` | no         | yes       | the minimum game version to run a module target file                      |
-
-Any fields not recognized are treated as target-specific [rules](#rules). They
-must be in the form `"pattern" = "path"`. These rules will only apply to this
-target.
+[Targets](#target) can define their own `[target.rules]` section. If they don't
+they will inherit the `[package.rules]` section.
 
 #### Source Trees
 
 A target's source tree is built from the `include`, `exclude`, and `filter`
-fields. Remember, each of these are inherited from the `[Sources]` section if
-not specified in the `[Target]` section.
+fields. Remember, each of these are inherited from the `[package.sources]`
+section if not specified in the `[target.sources]` section.
+
+nasher uses [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming))
+matching to identify desired files (e.g., `src/**/*.{nss,json}` matches all
+`.nss` or `.json` files in subdirectories of `src`).
 
 1. The `include` patterns are expanded to a source file list.
 2. Each of these files is checked against each `exclude` pattern; matches are
@@ -413,17 +413,18 @@ follows:
 
 * [Rules](#rules) are only referenced during an [`unpack`](#unpack) operation.
 * If starting with a valid module file, unpack the module to the `src` folder
-  and create your desired folder structure with your favorite file explorer.
-  It is rarely necessary to have much more than a single entry in the [Rules]
+  and create your desired folder structure with your favorite file explorer. It
+  is rarely necessary to have much more than a single entry in the `[*.rules]`
   section (`"*" = "src"`). When a module is packed with nasher, the source
   location of each file is noted and unpacked back to that location, so a
-  detailed [Rules] section is not necessary.
-* Make the [Sources](#sources) section as inclusive as possible and use target
-  `exclude` field to narrow down the included files needed by the target
+  detailed `[*.rules]` section is not necessary.
+* Make the [`[package.sources]`](#sources) section as inclusive as possible and
+  use the `[target.sources]` `exclude` field to narrow down the included files
+  needed by the target.
 * If you use nasher to build your haks, consider having a separate repo or a
   subfolder containing all of your hak file content as a separate nasher
-  package. This allows you to build more detailed hak-only targets and build
-  all of your haks at once with a `nasher install all` command.
+  package. This allows you to build more detailed hak-only targets and build all
+  of your haks at once with a `nasher install all` command.
 
 ## Commands
 
