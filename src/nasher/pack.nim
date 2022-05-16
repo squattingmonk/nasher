@@ -2,7 +2,7 @@ import os, strformat
 
 import glob
 
-import utils/[cli, manifest, nwn, options, shared]
+import utils/[manifest, nwn, shared]
 
 const
   helpPack* = """
@@ -50,7 +50,7 @@ proc getNewestFile(dir: string): string =
       # This is the first file we've checked
       result = file
 
-proc pack*(opts: Options, pkg: PackageRef): bool =
+proc pack*(opts: Options, target: Target): bool =
   let
     cmd = opts["command"]
 
@@ -58,12 +58,11 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     return cmd != "pack"
 
   let
-    file = opts["file"]
-    target = opts["target"]
-    cacheDir = opts["directory"]
+    file = target.file
+    cacheDir = ".nasher" / "cache" / target.name
     fileTime = getNewestFile(cacheDir).getLastModificationTime
 
-  display("Packing", fmt"files for target {target} into {file}")
+  display("Packing", fmt"files for target {target.name} into {file}")
 
   if fileExists(file):
     let
@@ -78,11 +77,11 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     file.parentDir.createDir
 
   let
-    bin = opts.get("erfUtil")
+    bin = opts.findBin("erfUtil", "nwn_erf", "erf utility")
     args = opts.get("erfFlags")
 
   var
-    manifest = newManifest(target)
+    manifest = newManifest(target.name)
 
   if file.getFileExt == "tlk":
     let fileName = file.extractFilename
@@ -95,7 +94,7 @@ proc pack*(opts: Options, pkg: PackageRef): bool =
     removeDir(packDir)
     copyDirWithPermissions(cacheDir, packDir)
     const globOpts = {IgnoreCase, Hidden, Files}
-    for filter in pkg.getTarget(target).filters:
+    for filter in target.filters:
       for file in glob.walkGlob(filter, packDir, globOpts):
         info("Filtering", file)
         removeFile(packDir / file)

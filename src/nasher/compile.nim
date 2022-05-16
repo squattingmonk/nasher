@@ -1,6 +1,6 @@
 import os, tables, strtabs, strutils, pegs, sequtils
 
-import utils/[cli, compiler, options, shared]
+import utils/[compiler, shared]
 
 const
   helpCompile* = """
@@ -32,6 +32,9 @@ const
     --no-color         Disable color output (automatic if not a tty)
   """
 
+proc isSrcFile(target: Target, file: string): bool =
+  ## Returns whether `file` is a source file of `target`.
+  file.matchesAny(target.includes) and not file.matchesAny(target.excludes)
 
 proc executable(script: string): bool =
   ## Returns whether ``script`` contains a main() or StartingConditional()
@@ -114,23 +117,23 @@ proc getIncludesUpdated(file: string,
         updated[file] = true
         return true
 
-proc getUpdated(pkg: PackageRef, files: seq[string]): seq[string] =
+proc getUpdated(updatedNSS: var seq[string], files: seq[string]): seq[string] =
   let included = files.getIncludes
   var updated: Table[string, bool]
 
-  for file in pkg.updated:
+  for file in updatedNss:
     updated[file] = true
 
   for file in files:
     if file.getIncludesUpdated(included, updated):
       result.add(file)
 
-  pkg.updated = result
+  updatedNss = result
 
-proc compile*(opts: Options, pkg: PackageRef): bool =
+proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool =
   let
     cmd = opts["command"]
-    target = pkg.getTarget(opts["target"])
+    cacheDir = ".nasher" / "cache" / target.name
     abortOnCompileError =
       if opts.hasKey("abortOnCompileError"):
         if opts.get("abortOnCompileError", false): Answer.No
@@ -143,7 +146,7 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
   if opts.get("noCompile", false):
     return cmd != "compile"
 
-  withDir(opts["directory"]):
+  withDir(cacheDir):
     # If we are only compiling one file...
     var scripts: seq[string]
     if cmd == "compile" and opts.hasKey("files"):
@@ -171,16 +174,16 @@ proc compile*(opts: Options, pkg: PackageRef): bool =
         if file.executable:
           executables.add(file)
         
-          if file notin pkg.updated:
+          if file notin updatedNss:
             let compiled = file.changeFileExt("ncs")
             if not fileExists(compiled) or file.fileNewer(compiled):
               debug("Recompiling", "executable script " & file)
-              pkg.updated.add(file)
+              updatedNss.add(file)
 
-      scripts = pkg.getUpdated(files)
+      scripts = getUpdated(updatedNss, files)
 
     let
-      compiler = opts.get("nssCompiler")
+      compiler = opts.findBin("nssCompiler", "nwnsc", "script compiler")
       userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
 
     if scripts.len > 0:

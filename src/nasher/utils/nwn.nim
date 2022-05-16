@@ -7,8 +7,7 @@ export GffExtensions
 
 from nwnt import toNwnt, gffRootFromNwnt
 
-import cli, options
-from shared import getFileExt
+import shared
 
 const
   Options = {poUsePath, poStdErrToStdOut}
@@ -196,7 +195,7 @@ proc isValid(version: string): bool =
     except ValueError:
       return false
 
-proc updateIfo*(dir: string, opts: options.Options, target: options.Target) =
+proc updateIfo*(dir: string, opts: options.Options, target: Target) =
   ## Updates the areas listing in module.ifo, checks for matching .git files,
   ## and sets module name and min version, if specified
   let

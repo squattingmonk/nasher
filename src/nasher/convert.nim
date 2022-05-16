@@ -1,5 +1,5 @@
 import os, strtabs, strutils, strformat, tables
-import utils/[cli, manifest, nwn, options, shared]
+import utils/[manifest, nwn, shared]
 
 const
   helpConvert* = """
@@ -30,17 +30,12 @@ const
     --no-color     Disable color output (automatic if not a tty)
   """
 
-proc convert*(opts: Options, pkg: PackageRef): bool =
+proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool =
   setCurrentDir(getPackageRoot())
 
   let
     cmd = opts["command"]
-    target = pkg.getTarget(opts["target"])
     cacheDir = ".nasher" / "cache" / target.name
-
-  # Set these so they can be gotten easily by the pack and install commands
-  opts["file"] = target.file
-  opts["directory"] = cacheDir
 
   if opts.get("noConvert", false):
     return cmd != "convert"
@@ -52,11 +47,11 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
     fatal("--onMultipleSources must be one of [$#]" % join(multiSrcChoices, ", "))
 
   let
-    category = (if cmd == "compile": "compiling" else: cmd & "ing")
-    gffUtil = opts.get("gffUtil")
+    category = if cmd.endsWith('e'): cmd[0..^2] & "ing" else:  cmd & "ing"
+    gffUtil = opts.findBin("gffUtil", "nwn_gff", "gff utility")
     gffFlags = opts.get("gffFlags", "-p")
     gffFormat = opts.get("gffFormat", "json")
-    tlkUtil = opts.get("tlkUtil")
+    tlkUtil = opts.findBin("tlkUtil", "nwn_tlk", "tlk utility")
     tlkFlags = opts.get("tlkFlags")
     tlkFormat = opts.get("tlkFormat", "json")
     srcFiles = getSourceFiles(target.includes, target.excludes)
@@ -133,7 +128,7 @@ proc convert*(opts: Options, pkg: PackageRef): bool =
         # Let compile() know this is a new or updated script
         if cmd != "convert" and srcExt == "nss":
           removeFile(outfile.changeFileExt("ncs"))
-          pkg.updated.add(fileName)
+          updatedNss.add(fileName)
 
       manifest.add(srcFile, outFile)
 

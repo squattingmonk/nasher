@@ -1,6 +1,6 @@
 import os, osproc, strformat
 
-import utils/[cli, options, shared]
+import utils/shared
 
 const
   helpLaunch* = """
@@ -58,7 +58,7 @@ proc getServerBin: string =
   else:
     raise newException(ValueError, "Cannot find nwserver: unsupported OS")
 
-proc launch*(opts: Options) =
+proc launch*(opts: Options, target: Target) =
   let
     cmd = opts["command"]
 
@@ -83,7 +83,7 @@ proc launch*(opts: Options) =
   path = path.expandPath
 
   let
-    file = opts["file"]
+    file = target.file
     (_, name, ext) = file.splitFile
     (dir, bin) = path.splitPath
 
