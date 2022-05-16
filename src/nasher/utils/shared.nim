@@ -1,6 +1,6 @@
 import os, times, strtabs, tables, json
 from sequtils import mapIt, toSeq, deduplicate
-from strutils import unindent, strip
+from strutils import unindent, strip, `%`
 from unicode import toLower
 
 when defined(Windows):
@@ -196,13 +196,6 @@ template withEnv*(envs: openarray[(string, string)], body: untyped): untyped =
   for name in noValues:
     delEnv(name)
 
-
-
-proc findExe*(exe, baseDir: string): string =
-  ## As findExe, but uses baseDir as the current directory.
-  withDir(baseDir):
-    findExe(exe)
-
 proc getFileExt*(file: string): string =
   ## Returns the file extension without the leading "."
   file.splitFile.ext.strip(chars = {ExtSep})
@@ -219,12 +212,27 @@ proc expandPath*(path: string, keepUnknownKeys = false): string =
   let flags = {useEnvironment, if keepUnknownKeys: useKey else: useEmpty}
   result = `%`(path.expandTilde, newStringTable(modeCaseSensitive), flags)
 
+proc findBin*(opts: Options, flag, bin, desc: string): string =
+  ## Checks `opts` for the location of the binary `bin` stored at `opts[flag]`
+  ## and returns the absolute path with envvars resolved. `desc` is a
+  ## description of the binary for error messages.
+  result =
+    if flag in opts:
+      opts[flag].expandPath.absolutePath
+    else:
+      withDir getPackageRoot():
+        findExe(bin)
+  if result.len == 0:
+    fatal("Could not locate $1: is $2 installed?" % [desc, bin])
+  elif not fileExists(result):
+    fatal("Could not locate $1: $2 does not exist" % [desc, result])
+  info("Located", "$1 at $2" % [desc, result])
+
 proc outFile(srcFile: string): string =
   ## Returns the filename of the converted source file
   let (_, name, ext) = srcFile.splitFile
   if ext == ".json" or ext == ".nwnt": name
   else: name & ext
-
 
 type
   FileMap* = Table[string, seq[string]]
