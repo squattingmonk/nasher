@@ -1,6 +1,10 @@
 name: test
 
 on:
+  # Allow running manually
+  workflow_dispatch:
+
+  # Run automatically
   push:
     branches:
       - master
