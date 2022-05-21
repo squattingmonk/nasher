@@ -41,6 +41,12 @@ jobs:
     name: Nim ${{ matrix.nim }} (${{ matrix.os }})
     steps:
       - uses: actions/checkout@v2
+      - name: Cache choosenim
+        id: cache-choosenim
+        uses: actions/cache@v2
+        with:
+          path: ~/.choosenim
+          key: ${{ runner.os }}-choosenim-${{ matrix.nim }}
       - name: Cache nimble
         id: cache-nimble
         uses: actions/cache@v2
