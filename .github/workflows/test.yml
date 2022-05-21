@@ -12,6 +12,7 @@ on:
       - 'LICENSE'
       - '*.md'
       - '.github/**'
+      - '*.yml'
   pull_request:
     branches:
       - master
@@ -23,6 +24,7 @@ on:
       - '.github/**'
       - 'LICENSE'
       - '*.md'
+      - '*.yml'
 
 jobs:
   test:
