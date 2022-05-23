@@ -265,7 +265,7 @@ proc parseCommandLine*[T: string|seq[string]](opts: Options, params: T = command
         setForceAnswer(Yes)
       of "n", "no":
         setForceAnswer(No)
-      of "default":
+      of "d", "default":
         setForceAnswer(Default)
       of "color", "no-color", "nocolor":
         handleColorKey(key, val)
@@ -278,7 +278,7 @@ proc parseCommandLine*[T: string|seq[string]](opts: Options, params: T = command
           of "u", "unset": opts.putKeyOrHelp(["configOp"], "unset")
           of "l", "list": opts.putKeyOrHelp(["configOp"], "list")
           of "global", "local": opts.putKeyOrHelp(["configScope"], key)
-          of "d", "dir", "directory": opts.putKeyOrHelp(["directory"], val)
+          of "directory": opts.putKeyOrHelp(["directory"], val)
           else:
             opts.putKeyOrHelp(["configKey"], key)
             opts.putKeyOrHelp(["configValue"], val)

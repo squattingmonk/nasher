@@ -1,31 +1,17 @@
 import std/[os, strutils]
 import utils/[git, shared]
 
-const
-  helpInit* = """
-  Usage:
-    nasher init [options] [<dir> [<file>]]
+const helpInit* = """
+Usage:
+  nasher init [options] [<dir> [<file>]]
 
-  Description:
-    Initializes a directory as a nasher project. If supplied, <dir> will be
-    created if needed and set as the project root; otherwise, the current
-    directory will be the project root.
+Description:
+  Initializes a directory as a nasher project. If supplied, <dir> will be
+  created if needed and set as the project root; otherwise, the current
+  directory will be the project root.
 
-    If supplied, <file> will be unpacked into the project root's source tree.
-
-  Options:
-    --default      Automatically accept the default answers to prompts
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
+  If supplied, <file> will be unpacked into the project root's source tree.
+"""
 
 proc genPackageText(opts: Options): string
 

@@ -3,57 +3,44 @@ from glob import walkGlob
 
 import utils/[git, manifest, nwn, shared]
 
-const
-  helpUnpack* = """
-  Usage:
-    nasher unpack [options] [<target> [<file>]]
+const helpUnpack* = """
+Usage:
+  nasher unpack [options] [<target> [<file>]]
 
-  Description:
-    Unpacks a file into the project source tree for the given target.
+Description:
+  Unpacks a file into the project source tree for the given target.
 
-    If a target is not specified, the first target found in nasher.cfg is used. If
-    a file is not specified, will search for the target's file in the NWN install
-    directory.
+  If a target is not specified, the first target found in nasher.cfg is used. If
+  a file is not specified, will search for the target's file in the NWN install
+  directory.
 
-    Each extracted file is checked against the target's source tree (as defined in
-    the [Target] section of the package config). If the file only exists in one
-    location, it is copied there, overwriting the existing file. If the file
-    exists in multiple folders, you will be prompted to select where it should be
-    copied.
+  Each extracted file is checked against the target's source tree (as defined in
+  the [Target] section of the package config). If the file only exists in one
+  location, it is copied there, overwriting the existing file. If the file
+  exists in multiple folders, you will be prompted to select where it should be
+  copied.
 
-    If the extracted file does not exist in the source tree already, it is checked
-    against each pattern listed in the [Rules] section of the package config. If
-    a match is found, the file is copied to that location.
+  If the extracted file does not exist in the source tree already, it is checked
+  against each pattern listed in the [Rules] section of the package config. If
+  a match is found, the file is copied to that location.
 
-    If, after checking the source tree and rules, a suitable location has not been
-    found, the file is copied into a folder in the project root called "unknown"
-    so you can manually move it later.
+  If, after checking the source tree and rules, a suitable location has not been
+  found, the file is copied into a folder in the project root called "unknown"
+  so you can manually move it later.
 
-    If an unpacked source would overwrite an existing source, its sha1 checksum is
-    against that from the last pack/unpack operation. If the sum is different, the
-    file has changed. If the source file has not been updated since the last pack
-    or unpack, the source file will be overwritten by the unpacked file. Otherwise
-    you will be prompted to overwrite the source file. The default answer is to
-    keep the existing source file.
+  If an unpacked source would overwrite an existing source, its sha1 checksum is
+  against that from the last pack/unpack operation. If the sum is different, the
+  file has changed. If the source file has not been updated since the last pack
+  or unpack, the source file will be overwritten by the unpacked file. Otherwise
+  you will be prompted to overwrite the source file. The default answer is to
+  keep the existing source file.
 
-  Options:
-    --file:<file>  A file to unpack into the target's source tree. Only needed if
-                   not specifying the target and not using the default target's
-                   output file.
-    --yes, --no    Automatically answer yes/no to the overwrite prompt
-    --default      Automatically accept the default answer to the overwrite prompt
-    --branch       Place files into specified vcs branch
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
+Options:
+  --file:<file>  A file to unpack into the target's source tree. Only needed if
+                 not specifying the target and not using the default target's
+                 output file.
+  --branch       Place files into specified vcs branch
+"""
 
 proc genSrcMap(files: seq[string]): FileMap =
   ## Generates a table mapping unconverted source files to the proper directory.

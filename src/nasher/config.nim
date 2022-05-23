@@ -2,42 +2,31 @@ import os
 from strutils import escape
 import utils/[cli, options, shared]
 
-const
-  helpConfig* = """
-  Usage:
-    nasher config [options] <key> [<value>]
+const helpConfig* = """
+Usage:
+  nasher config [options] <key> [<value>]
 
-  Description:
-    Gets, sets, or unsets user-defined configuration options. These options can be
-    local (package-specific) or global (across all packages). Regardless, they
-    override default nasher settings.
+Description:
+  Gets, sets, or unsets user-defined configuration options. These options can be
+  local (package-specific) or global (across all packages). Regardless, they
+  override default nasher settings.
 
-    Global configuration is stored %APPDATA%\nasher\user.cfg on Windows or in
-    $XDG_CONFIG/nasher/user.cfg on Linux and Mac. These values apply to all
-    packages.
+  Global configuration is stored %APPDATA%\nasher\user.cfg on Windows or in
+  $XDG_CONFIG/nasher/user.cfg on Linux and Mac. These values apply to all
+  packages.
 
-    Local (package-level) configuration is stored in .nasher/user.cfg in the
-    package root directory. Any values defined here take precedence over those in
-    the global config file. This file will be ignored by git.
+  Local (package-level) configuration is stored in .nasher/user.cfg in the
+  package root directory. Any values defined here take precedence over those in
+  the global config file. This file will be ignored by git.
 
-  Options:
-    --global       Apply to all packages (default)
-    --local        Apply to the current package only
-    -g, --get      Get the value of <key> (default when <value> is not passed)
-    -s, --set      Set <key> to <value> (default when <value> is passed)
-    -u, --unset    Delete the key/value pair for <key>
-    -l, --list     Lists all key/value pairs in the config file
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
+Options:
+  --global       Apply to all packages (default)
+  --local        Apply to the current package only
+  -g, --get      Get the value of <key> (default when <value> is not passed)
+  -s, --set      Set <key> to <value> (default when <value> is passed)
+  -u, --unset    Delete the key/value pair for <key>
+  -l, --list     Lists all key/value pairs in the config file
+"""
 
 proc getConfigCmd(opts: Options): string =
   result = opts.get("configOp")

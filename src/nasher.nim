@@ -6,38 +6,28 @@ const
   NimblePkgVersion {.strdefine.} = "devel"
 
   helpAll = """
-  nasher: a build tool for Neverwinter Nights projects
+nasher: a build tool for Neverwinter Nights projects
 
-  Usage:
-    nasher init [options] [<dir> [<file>]]
-    nasher list [options]
-    nasher (convert|compile|pack|install|play|test|serve) [options] [<target>...]
-    nasher unpack [options] [<target> [<file>]]
-    nasher config [options] <key> [<value>]
+Usage:
+  nasher init [options] [<dir> [<file>]]
+  nasher list [options]
+  nasher (convert|compile|pack|install|play|test|serve) [options] [<target>...]
+  nasher unpack [options] [<target> [<file>]]
+  nasher config [options] <key> [<value>]
 
-  Commands:
-    init           Initializes a nasher repository
-    list           Lists the names and descriptions of all build targets
-    convert        Converts all json sources to their gff targets
-    compile        Compiles all nss sources for a build target
-    pack           Converts, compiles, and packs all sources for a build target
-    install        As pack, but installs the target file to the NWN install path
-    serve          As install, but starts the module with nwserver after installing
-    play           As install, but starts the module with nwmain after installing
-    test           As play, but automatically selects the first localvault PC
-    unpack         Unpacks a target's installed file into the source tree
-    config         Gets, sets, or unsets user-defined configuration options
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
+Commands:
+  init           Initializes a nasher repository
+  list           Lists the names and descriptions of all build targets
+  convert        Converts all json sources to their gff targets
+  compile        Compiles all nss sources for a build target
+  pack           Converts, compiles, and packs all sources for a build target
+  install        As pack, but installs the target file to the NWN install path
+  serve          As install, but starts the module with nwserver after installing
+  play           As install, but starts the module with nwmain after installing
+  test           As play, but automatically selects the first localvault PC
+  unpack         Unpacks a target's installed file into the source tree
+  config         Gets, sets, or unsets user-defined configuration options
+"""
 
 proc ctrlCQuit {.noconv.} =
   quit(QuitFailure)

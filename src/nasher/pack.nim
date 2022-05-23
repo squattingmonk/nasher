@@ -4,40 +4,26 @@ import glob
 
 import utils/[manifest, nwn, shared]
 
-const
-  helpPack* = """
-  Usage:
-    nasher pack [options] [<target>...]
+const helpPack* = """
+Usage:
+  nasher pack [options] [<target>...]
 
-  Description:
-    Converts, compiles, and packs all sources for <target>. If <target> is not
-    supplied, the first target supplied by the config files will be packed. The
-    assembled files are placed in $PKG_ROOT/.nasher/cache/<target>, but the packed
-    file is placed in $PKG_ROOT.
+Description:
+  Converts, compiles, and packs all sources for <target>. If <target> is not
+  supplied, the first target supplied by the config files will be packed. The
+  assembled files are placed in $PKG_ROOT/.nasher/cache/<target>, but the packed
+  file is placed in $PKG_ROOT.
 
-    If the packed file would overwrite an existing file, you will be prompted to
-    overwrite the file. The newly packaged file will have a modification time
-    equal to the modification time of the newest source file. If the packed file
-    is older than the existing file, the default is to keep the existing file.
+  If the packed file would overwrite an existing file, you will be prompted to
+  overwrite the file. The newly packaged file will have a modification time
+  equal to the modification time of the newest source file. If the packed file
+  is older than the existing file, the default is to keep the existing file.
 
-  Options:
-    --clean                Clears the cache directory before packing
-    --yes, --no            Automatically answer yes/no to prompts
-    --default              Automatically accept the default answer to prompts
-    --branch:<branch>      Selects git branch before operation
-    --abortOnCompileError  Automatically abort packing if compilation fails
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
-
+Options:
+  --clean                Clears the cache directory before packing
+  --branch:<branch>      Selects git branch before operation
+  --abortOnCompileError  Automatically abort packing if compilation fails
+"""
 
 proc getNewestFile(dir: string): string =
   for file in walkFiles(dir / "*"):

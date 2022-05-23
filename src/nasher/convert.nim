@@ -1,34 +1,23 @@
 import os, strtabs, strutils, strformat, tables
 import utils/[manifest, nwn, shared]
 
-const
-  helpConvert* = """
-  Usage:
-    nasher convert [options] [<target>...]
+const helpConvert* = """
+Usage:
+  nasher convert [options] [<target>...]
 
-  Description:
-    Converts all JSON sources for <target> into their GFF counterparts. If not
-    supplied, <target> will default to the first target found in the package file.
-    The input and output files are placed in .nasher/cache/<target>.
+Description:
+  Converts all JSON sources for <target> into their GFF counterparts. If not
+  supplied, <target> will default to the first target found in the package file.
+  The input and output files are placed in .nasher/cache/<target>.
 
-    This command is called automatically by 'nasher pack', so you only need to use
-    this if you want to convert the sources without compiling scripts and packing
-    the target file.
+  This command is called automatically by 'nasher pack', so you only need to use
+  this if you want to convert the sources without compiling scripts and packing
+  the target file.
 
-  Options:
-    --clean            Clears the cache directory before converting
-    --branch:<branch>  Selects git branch before operation.
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
+Options:
+  --clean            Clears the cache directory before converting
+  --branch:<branch>  Selects git branch before operation
+"""
 
 proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool =
   setCurrentDir(getPackageRoot())

@@ -2,35 +2,24 @@ import os, tables, strtabs, strutils, pegs, sequtils
 
 import utils/[compiler, shared]
 
-const
-  helpCompile* = """
-  Usage:
-    nasher compile [options] [<target>...]
+const helpCompile* = """
+Usage:
+  nasher compile [options] [<target>...]
 
-  Description:
-    Compiles all nss sources for <target>. If <target> is not supplied, the first
-    target supplied by the config files will be compiled. The input and output
-    files are placed in .nasher/cache/<target>.
+Description:
+  Compiles all nss sources for <target>. If <target> is not supplied, the first
+  target supplied by the config files will be compiled. The input and output
+  files are placed in .nasher/cache/<target>.
 
-    Compilation of scripts is handled automatically by 'nasher pack', so you only
-    need to use this if you want to compile the scripts without converting gff
-    sources and packing the target file.
+  Compilation of scripts is handled automatically by 'nasher pack', so you only
+  need to use this if you want to compile the scripts without converting gff
+  sources and packing the target file.
 
-  Options:
-    --clean            Clears the cache directory before compiling
-    -f, --file:<file>  Compiles <file> only. Can be repeated.
-    --branch:<branch>  Selects git branch before operation.
-
-  Global Options:
-    -h, --help         Display help for nasher or one of its commands
-    -v, --version      Display version information
-
-  Logging:
-    --debug            Enable debug logging
-    --verbose          Enable additional messages about normal operation
-    --quiet            Disable all logging except errors
-    --no-color         Disable color output (automatic if not a tty)
-  """
+Options:
+  --clean            Clears the cache directory before compiling
+  -f, --file:<file>  Compiles <file> only; repeatable
+  --branch:<branch>  Selects git branch before operation
+"""
 
 proc isSrcFile(target: Target, file: string): bool =
   ## Returns whether `file` is a source file of `target`.

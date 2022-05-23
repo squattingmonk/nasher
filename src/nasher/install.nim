@@ -2,39 +2,26 @@ import os, strformat
 
 import utils/[nwn, shared]
 
-const
-  helpInstall* = """
-  Usage:
-    nasher install [options] [<target>...]
+const helpInstall* = """
+Usage:
+  nasher install [options] [<target>...]
 
-  Description:
-    Converts, compiles, and packs all sources for <target>, then installs the
-    packed file into the NWN installation directory. If <target> is not supplied,
-    the first target found in the package will be packed and installed.
+Description:
+  Converts, compiles, and packs all sources for <target>, then installs the
+  packed file into the NWN installation directory. If <target> is not supplied,
+  the first target found in the package will be packed and installed.
 
-    If the file to be installed would overwrite an existing file, you will be
-    prompted to overwrite it. The default answer is to keep the newer file.
+  If the file to be installed would overwrite an existing file, you will be
+  prompted to overwrite it. The default answer is to keep the newer file.
 
-    The default install location is '~/Documents/Neverwinter Nights' for Windows
-    and Mac or `~/.local/share/Neverwinter Nights` on Linux.
+  The default install location is '~/Documents/Neverwinter Nights' for Windows
+  and Mac or `~/.local/share/Neverwinter Nights` on Linux.
 
-  Options:
-    --clean                Clears the cache directory before packing
-    --yes, --no            Automatically answer yes/no to prompts
-    --default              Automatically accept the default answer to prompts
-    --branch:<branch>      Selects git branch before operatio.
-    --abortOnCompileError  Automatically abort installation if compilation fails
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
+Options:
+  --clean                Clears the cache directory before packing
+  --branch:<branch>      Selects git branch before operation
+  --abortOnCompileError  Automatically abort installation if compilation fails
+"""
 
 proc install*(opts: Options, target: Target): bool =
   let

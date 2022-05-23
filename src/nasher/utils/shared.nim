@@ -1,6 +1,6 @@
 import os, times, strtabs, tables, json
 from sequtils import mapIt, toSeq, deduplicate
-from strutils import unindent, strip, `%`
+from strutils import strip, `%`
 from unicode import toLower
 from sugar import collect
 
@@ -11,6 +11,26 @@ from glob import walkGlob, defaultGlobOptions, GlobOption
 
 import cli, target, options
 export cli, target, options
+
+const GlobalOpts = """
+
+Global Options:
+  -h, --help     Display help for nasher or one of its commands
+  -v, --version  Display version information
+  -y, --yes      Automatically answer yes to all prompts
+  -n, --no       Automatically answer no to all prompts
+  -d, --default  Automatically accept the default answer to prompts
+
+Logging:
+  --quiet        Disable all logging except errors
+  --verbose      Enable additional messages about normal operation
+  --debug        Enable debug logging (implies --verbose)
+  --no-color     Disable color output (automatic if not a tty)
+"""
+
+proc help*(helpMessage: string, errorCode = QuitSuccess) =
+  ## Quits with a formatted help message, sending errorCode
+  quit(strip(helpMessage & GlobalOpts), errorCode)
 
 proc getPackageRoot*(baseDir = getCurrentDir()): string =
   ## Returns the first parent of baseDir that contains a nasher config
@@ -33,11 +53,6 @@ proc getPackageFile*(baseDir = getCurrentDir()): string =
 
 proc existsPackageFile*(dir = getCurrentDir()): bool =
   fileExists(getPackageFile(dir))
-
-
-proc help*(helpMessage: string, errorCode = QuitSuccess) =
-  ## Quits with a formatted help message, sending errorCode
-  quit(helpMessage.unindent(2), errorCode)
 
 proc matchesAny*(s: string, patterns: seq[string]): bool =
   ## Returns whether ``s`` matches any glob pattern in ``patterns``.

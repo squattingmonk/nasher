@@ -2,39 +2,26 @@ import os, osproc, strformat
 
 import utils/shared
 
-const
-  helpLaunch* = """
-  Usage:
-    nasher (serve|play|test) [options] [<target>...]
+const helpLaunch* = """
+Usage:
+  nasher (serve|play|test) [options] [<target>...]
 
-  Description:
-    Converts, compiles, and packs all sources for <target>, installs the packed
-    file into the NWN installation directory, then launches NWN and loads the
-    module. This command is only valid for module targets.
+Description:
+  Converts, compiles, and packs all sources for <target>, installs the packed
+  file into the NWN installation directory, then launches NWN and loads the
+  module. This command is only valid for module targets.
 
-    The exact behavior depends on the command. 'serve' launches with nwserver.
-    'play' launches with nwmain. 'test' launches with nwmain using the first
-    player character in the localvault.
+  The exact behavior depends on the command. 'serve' launches with nwserver.
+  'play' launches with nwmain. 'test' launches with nwmain using the first
+  player character in the localvault.
 
-  Options:
-    --gameBin              The path to the nwmain binary file
-    --serverBin            The path to the nwserver binary file
-    --clean                Clears the cache directory before packing
-    --yes, --no            Automatically answer yes/no to prompts
-    --default              Automatically accept the default answer to prompts
-    --branch:<branch>      Selects git branch before operation.
-    --abortOnCompileError  Automatically abort launching if compilation fails
-
-  Global Options:
-    -h, --help     Display help for nasher or one of its commands
-    -v, --version  Display version information
-
-  Logging:
-    --debug        Enable debug logging
-    --verbose      Enable additional messages about normal operation
-    --quiet        Disable all logging except errors
-    --no-color     Disable color output (automatic if not a tty)
-  """
+Options:
+  --gameBin              The path to the nwmain binary file
+  --serverBin            The path to the nwserver binary file
+  --clean                Clears the cache directory before packing
+  --branch:<branch>      Selects git branch before operation
+  --abortOnCompileError  Automatically abort launching if compilation fails
+"""
 
 proc getGameBin: string =
   let binDir = getEnv("NWN_ROOT") / "bin"
