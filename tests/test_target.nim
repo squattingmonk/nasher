@@ -621,7 +621,8 @@ suite "nasher.cfg backwards compatibility":
       "https://github.com/tinygiant98/darksun-sot",
       "https://github.com/tinygiant98/darksun-resources",
       "https://github.com/Kaikas/mintarn",
-      "https://github.com/b5635/the-frozen-north"]
+      "https://github.com/b5635/the-frozen-north",
+      "project-q"]
 
   # Since we know that cfg files parse correctly now, we only have to check
   # whether these files throw exceptions.
