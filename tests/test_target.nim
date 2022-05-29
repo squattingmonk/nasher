@@ -23,11 +23,15 @@ suite "Target type":
       Target() == Target()
       Target(name: "foo") == Target(name: "foo")
       Target(name: "foo", file: "bar") == Target(name: "foo", file: "bar")
+      Target(variables: newStringTable()) == Target(variables: newStringTable())
+      Target(variables: newStringTable({"foo": "bar"})) == Target(variables: newStringTable({"foo": "bar"}))
 
     check:
       Target(name: "foo") != Target()
       Target(name: "foo") != Target(name: "bar")
       Target(name: "foo", file: "bar") != Target(name: "foo", file: "baz")
+      Target(variables: newStringTable()) != Target()
+      Target(variables: newStringTable({"foo": "bar"})) != Target(variables: newStringTable({"foo": "baz"}))
 
   test "Get Target by index":
     let targets = {"foo": Target(name: "foo"), "bar": Target(name: "bar")}.newOrderedTable
@@ -82,16 +86,17 @@ suite "nasher.cfg parsing":
     """)
     check: targets.len == 1
 
-  test "[sources] and [rules] can be top-level sections":
+  test "[{sources,rules,variables}] can be top-level sections":
     check parsePackageString("""
     [sources]
     [rules]
+    [variables]
 
     [target]
     name = "foo"
     """).len == 1
 
-  test "[sources] and [rules] sections can belong to [package] or [target]":
+  test "[{sources,rules,variables}] sections can belong to [package] or [target]":
     let targets = parsePackageString("""
     [package]
 
@@ -99,6 +104,9 @@ suite "nasher.cfg parsing":
       include = "foo"
 
       [rules]
+      foo = "foo"
+
+      [variables]
       foo = "foo"
 
     [target]
@@ -110,6 +118,9 @@ suite "nasher.cfg parsing":
       [rules]
       bar = "bar"
 
+      [variables]
+      foo = "bar"
+
     [target]
     name = "foo"
     """)
@@ -118,23 +129,27 @@ suite "nasher.cfg parsing":
       targets.len == 2
       targets[0].includes == @["bar"]
       targets[0].rules == @[(pattern: "bar", dest: "bar")]
+      targets[0].variables["foo"] == "bar"
 
       targets[1].includes == @["foo"]
       targets[1].rules == @[(pattern: "foo", dest: "foo")]
+      targets[1].variables["foo"] == "foo"
 
-  test "[package.{sources,rules}] must be declared inside [package] or at top-level":
+  test "[package.{sources,rules,variables}] must be declared inside [package] or at top-level":
     check parsePackageString("""
     [package]
       [package.sources]
       [package.rules]
+      [package.variables]
     """).len == 0
 
     check parsePackageString("""
     [package.sources]
     [package.rules]
+    [package.variables]
     """).len == 0
 
-    for section in ["sources", "rules"]:
+    for section in ["sources", "rules", "variables"]:
       expect PackageError:
         checkErrorMsg "[package.$1] must be declared within [package]" % section:
           discard parsePackageString("""
@@ -143,15 +158,16 @@ suite "nasher.cfg parsing":
             [package.$1]
           """ % section)
 
-  test "[target.{sources,rules}] must be declared inside [target]":
+  test "[target.{sources,rules,variables}] must be declared inside [target]":
     check parsePackageString("""
     [target]
     name = "foo"
       [target.sources]
       [target.rules]
+      [target.variables]
     """).len == 1
 
-    for section in ["sources", "rules"]:
+    for section in ["sources", "rules", "variables"]:
       expect PackageError:
         checkErrorMsg "[target.$1] must be declared within [target]" % section:
           discard parsePackageString("""
@@ -409,6 +425,143 @@ suite "nasher.cfg parsing":
     """)[0]
     check:
       target.rules == @[(pattern: "foo", dest: "foo/"), (pattern: "bar", dest: "bar/")]
+  
+  test "Variables merged from [package]":
+    let targets = parsePackageString("""
+      [package.variables]
+      foo = "foo"
+      bar = "bar"
+
+      [target]
+      name = "foo"
+
+      [target]
+      name = "bar"
+        [target.variables]
+        bar = "foobar"
+        baz = "baz"
+      """)
+    check:
+      targets.len == 2
+      targets[0].variables["foo"] == "foo"
+      targets[0].variables["bar"] == "bar"
+      "baz" notin targets[0].variables
+
+      targets[1].variables["foo"] == "foo"
+      targets[1].variables["bar"] == "foobar"
+      targets[1].variables["baz"] == "baz"
+
+  test "Target name added to variables, overwriting if present":
+    let targets = parsePackageString("""
+      [target]
+      name = "foo"
+
+      [target]
+      name = "bar"
+
+        [target.variables]
+        target = "foo"
+      """)
+    check:
+      targets[0].variables["target"] == "foo"
+      targets[1].variables["target"] == "bar"
+
+  test "Error if trying to resolve unset variables":
+    let tests = @[
+      """
+      [target.sources]
+      include = "$bar"
+      """,
+      """
+      [target.sources]
+      exclude = "$bar"
+      """,
+      """
+      [target.sources]
+      filter = "$bar"
+      """,
+      """
+      [target.rules]
+      "$bar" = "foo"
+      """
+    ]
+    for test in tests:
+      expect PackageError:
+        checkErrorMsg "Unknown variable $bar in target foo":
+          discard parsePackageString("""
+            [target]
+            name = "foo"
+            """ & test)
+  test "Unset variables left in place in rule dest":
+    let target = parsePackageString("""
+      [target]
+      name = "foo"
+
+        [target.rules]
+        "*" = "src/$ext"
+      """)[0]
+
+    check target.rules == @[(pattern: "*", dest: "src/$ext")]
+
+  test "Variables in target fields resolved":
+    let parsed = parsePackageString("""
+      [target]
+      name = "foo"
+      description = "A $target that ${bar}es"
+      file = "${target}.mod"
+      branch = "$bar"
+      modName = "${target}-$ver"
+      modMinGameVersion = "$ver"
+      flags = "-i"
+      flags = "${bar}.nss"
+
+        [target.variables]
+        bar = "baz"
+        ver = "1.69"
+
+        [target.sources]
+        include = "src/$target/*.nss"
+        include = "$bar/src/*.nss"
+        exclude = "src/$target/$bar/*"
+        filter = "src/$target/${bar}_*.nss"
+
+        [target.rules]
+        "${bar}_*.nss" = "${bar}/src"
+        "*" = "src/${target}"
+      """)[0]
+    let
+      manual = Target(
+        name: "foo",
+        description: "A foo that bazes",
+        file: "foo.mod",
+        branch: "baz",
+        modName: "foo-1.69",
+        modMinGameVersion: "1.69",
+        flags: @["-i", "baz.nss"],
+        includes: @["src/foo/*.nss", "baz/src/*.nss"],
+        excludes: @["src/foo/baz/*"],
+        filters: @["src/foo/baz_*.nss"],
+        rules: @[(pattern: "baz_*.nss", dest: "baz/src"),
+                 (pattern: "*", dest: "src/foo")],
+        variables: newStringTable({"bar": "baz", "target": "foo", "ver": "1.69"}))
+
+    check manual == parsed
+
+  test "Variables resolved in inherited fields":
+    let targets = parsePackageString("""
+      [package]
+      file = "$target.hak"
+
+      [target]
+      name = "foo"
+
+      [target]
+      name = "bar"
+      """)
+
+    check:
+      targets[0].file == "foo.hak"
+      targets[1].file == "bar.hak"
 
   test "Parse package string":
     let pkg = """
@@ -443,14 +596,16 @@ suite "nasher.cfg parsing":
                        file: "core_framework.mod",
                        description: "A demo module",
                        includes: @["src/**/*.{nss,json}"],
-                       rules: @[(pattern: "*", dest: "src")])
+                       rules: @[(pattern: "*", dest: "src")],
+                       variables: newStringTable({"target": "module"}, modeStyleInsensitive))
       targetB = Target(name: "erf",
                        file: "core_framework.erf",
                        description: "An importable erf",
                        includes: @["src/**/*.{nss,json}"],
                        excludes: @["src/test_*.nss", "src/_*.nss"],
                        filters: @["*.ncs"],
-                       rules: @[(pattern: "*", dest: "src")])
+                       rules: @[(pattern: "*", dest: "src")],
+                       variables: newStringTable({"target": "erf"}, modeStyleInsensitive))
       manual = {"module": targetA, "erf": targetB}.newOrderedTable
       parsed = parsePackageString(pkg)
 
@@ -463,7 +618,7 @@ suite "nasher.cfg backwards compatibility":
       "https://github.com/squattingmonk/nasher", ## Example from readme
       "https://github.com/squattingmonk/sm-utils",
       "https://github.com/squattingmonk/nwn-core-framework",
-      "https://github.com/tinygiant/darksun-sot",
+      "https://github.com/tinygiant98/darksun-sot",
       "https://github.com/tinygiant98/darksun-resources",
       "https://github.com/Kaikas/mintarn",
       "https://github.com/b5635/the-frozen-north"]

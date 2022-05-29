@@ -1,6 +1,6 @@
-import os, parsecfg, streams, strutils, tables
+import macros, os, parsecfg, streams, strtabs, strutils, tables
 from sequtils import anyIt
-export tables
+export tables, strtabs
 
 type
   PackageError* = object of CatchableError
@@ -9,6 +9,7 @@ type
   Target* = ref object
     name*, description*, file*, branch*, modName*, modMinGameVersion*: string
     includes*, excludes*, filters*, flags*: seq[string]
+    variables*: StringTableRef
     rules*: seq[Rule]
 
   Rule* = tuple[pattern, dest: string]
@@ -18,8 +19,18 @@ const validTargetChars = {'\32'..'\64', '\91'..'\126'} - invalidFileNameChars
 proc `==`*(a, b: Target): bool =
   result = true
   for _, valA, valB in fieldPairs(a[], b[]):
-    if valA != valB:
-      return false
+    when valA is StringTableRef:
+      if valA.isNil != valB.isNil:
+        return false
+      if not valA.isNil:
+        if valA.len != valB.len:
+          return false
+        for key, val in valA.pairs:
+          if key notin valB or valB[key] != val:
+            return false
+    else:
+      if valA != valB:
+        return false
 
 proc `[]`*(t: OrderedTableRef[string, Target]; index: Natural): Target =
   ## Returns the `Target` at `index` in `t`. Raises an `IndexDefect` if there
@@ -61,21 +72,64 @@ proc raisePackageError(p: CfgParser, msg: string) =
   raise newException(PackageError, "Error parsing $1($2:$3): $4" %
     [p.getFilename, $p.getLine, $p.getColumn, msg])
 
-proc addTarget(targets: OrderedTableRef[string, Target], target, defaults: Target, filename = "") =
-  ## Adds `target` to `targets`. Missing fields other than `name` and
-  ## `description` are copied from `defaults`. A `PackageError` is raised if the
-  ## target does not have a name. `filename` is used for error messages.
+proc setDefaults(target, defaults: Target, idx: int, filename = "") =
+  ## Fills in missing fields other than `name` and `description` from `target`
+  ## using those in `defaults`. Missing key/value pairs in `target.variables`
+  ## are copied from `default.variables`. A `PackageError` is raised if the
+  ## target does not have a name. `idx` and `filename` are used for error
+  ## messages.
   for key, targetVal, defaultVal in fieldPairs(target[], defaults[]):
     if targetVal.len == 0:
       case key:
       of "name":
         raisePackageError("Error parsing $1: target $2 does not have a name" %
-          [filename, $(targets.len + 1)])
+          [filename, $idx])
       of "description":
         discard
       else:
-        targetVal = defaultVal
-  targets[target.name] = target
+        when targetVal is StringTableRef:
+          targetVal[] = defaultVal[]
+        else:
+          targetVal = defaultVal
+    else:
+      when targetVal is StringTableRef:
+        for name, val in defaultVal.pairs:
+          if name notin targetVal:
+            targetVal[name] = val
+
+  # This variable should remain constant
+  target.variables["target"] = target.name
+
+proc resolve(s: var string, variables: StringTableRef, flags = {useEnvironment}) =
+  s = `%`(s, variables, flags)
+
+proc resolve(paths: var seq[string], variables: StringTableRef) =
+  for path in paths.mitems:
+    path.resolve(variables)
+
+proc resolve(rules: var seq[Rule], variables: StringTableRef) =
+  for rule in rules.mitems:
+    rule.pattern.resolve(variables)
+    rule.dest.resolve(variables, {useEnvironment, useKey}) # Leave unknown keys to support $ext
+
+macro resolve(target: Target, field: string): untyped =
+  let field = ident($field)
+  quote do:
+    resolve(`target`.`field`, `target`.variables)
+
+proc resolve(target: Target) =
+  # Resolve variables (including env vars)
+  try:
+    for key, val in fieldPairs(target[]):
+      when key != "name" and val isnot StringTableRef:
+        target.resolve(key)
+  except ValueError as e:
+    e.msg.removePrefix("format string: key not found: ")
+    raisePackageError("Unknown variable $$$# in target $#" % [e.msg, target.name])
+
+proc newTarget(): Target =
+  result = new Target
+  result.variables = newStringTable(modeStyleInsensitive)
 
 proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string, Target] =
   ## Parses the content of `s` into a table of `Target`s where the key is the
@@ -86,8 +140,8 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
   var
     p: CfgParser
     context, section: string
-    defaults = new Target
-    target = new Target
+    defaults = newTarget()
+    target = newTarget()
 
   p.open(s, filename)
   while true:
@@ -95,7 +149,9 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
     case e.kind
     of cfgEof:
       if context == "target":
-        result.addTarget(target, defaults)
+        target.setDefaults(defaults, result.len + 1, filename)
+        target.resolve()
+        result[target.name] = target
       break
     of cfgSectionStart:
       # echo "Section: [$1]" % e.section
@@ -111,16 +167,18 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
         of "package", "":
           defaults = target
         of "target":
-          result.addTarget(target, defaults)
+          target.setDefaults(defaults, result.len + 1, filename)
+          target.resolve()
+          result[target.name] = target
         else: assert(false)
-        target = new Target
+        target = newTarget()
         context = "target"
-      of "sources", "rules":
+      of "sources", "rules", "variables":
         discard
-      of "package.sources", "package.rules":
+      of "package.sources", "package.rules", "package.variables":
         if context in ["target"]:
           p.raisePackageError("[$1] must be declared within [package]" % e.section)
-      of "target.sources", "target.rules":
+      of "target.sources", "target.rules", "target.variables":
         if context in ["package", ""]:
           p.raisePackageError("[$1] must be declared within [target]" % e.section)
       else:
@@ -173,6 +231,8 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
             [e.key.escape, if context.len > 0: context & "." else: "", section])
       of "rules":
         target.rules.add((e.key, e.value))
+      of "variables":
+        target.variables[e.key] = e.value
       else:
         discard
     of cfgError:

@@ -53,7 +53,7 @@ proc genSrcMap(files: seq[string]): FileMap =
     if result.hasKeyOrPut(fileName, @[dir]):
       result[fileName].add(dir)
 
-proc mapSrc(file, ext, target: string, srcMap: FileMap, rules: seq[Rule]): string =
+proc mapSrc(file: string, srcMap: FileMap, rules: seq[Rule]): string =
   ## Maps a file to the proper directory, first searching existing source files
   ## and then matching it to each pattern in rules. Returns the directory.
   var choices = srcMap.getOrDefault(file)
@@ -64,7 +64,7 @@ proc mapSrc(file, ext, target: string, srcMap: FileMap, rules: seq[Rule]): strin
     result = "unknown"
     for pattern, dir in rules.items:
       if glob.matches(file, pattern):
-        result = dir % ["ext", ext, "target", target]
+        result = dir % ["ext", file.getFileExt]
         debug("Matched", file & " to pattern " & pattern.escape)
         break
   else:
@@ -177,7 +177,7 @@ proc unpack*(opts: Options, target: Target) =
   for fileName in manifest.keys:
     let
       ext = fileName.getFileExt
-      dir = mapSrc(fileName, ext, target.name, srcMap, target.rules)
+      dir = mapSrc(fileName, srcMap, target.rules)
 
     var sourceName = dir / filename
     if ext in GffExtensions:
@@ -226,7 +226,7 @@ proc unpack*(opts: Options, target: Target) =
     let
       ext = file.fileName.getFileExt
       filePath = tmpDir / file.fileName
-      dir = mapSrc(file.fileName, ext, target.name, srcMap, target.rules)
+      dir = mapSrc(file.fileName, srcMap, target.rules)
 
     if dir == "unknown":
       warning("cannot decide where to extract " & file.fileName)
