@@ -1,6 +1,6 @@
-import macros, os, parsecfg, streams, strtabs, strutils, tables
+import os, parsecfg, streams, strtabs, strutils, tables
 from sequtils import anyIt
-export tables, strtabs
+export tables
 
 type
   PackageError* = object of CatchableError
@@ -9,8 +9,10 @@ type
   Target* = ref object
     name*, description*, file*, branch*, modName*, modMinGameVersion*: string
     includes*, excludes*, filters*, flags*: seq[string]
-    variables*: StringTableRef
+    variables*: seq[KeyValuePair]
     rules*: seq[Rule]
+
+  KeyValuePair* = tuple[key, value: string]
 
   Rule* = tuple[pattern, dest: string]
 
@@ -19,18 +21,8 @@ const validTargetChars = {'\32'..'\64', '\91'..'\126'} - invalidFileNameChars
 proc `==`*(a, b: Target): bool =
   result = true
   for _, valA, valB in fieldPairs(a[], b[]):
-    when valA is StringTableRef:
-      if valA.isNil != valB.isNil:
-        return false
-      if not valA.isNil:
-        if valA.len != valB.len:
-          return false
-        for key, val in valA.pairs:
-          if key notin valB or valB[key] != val:
-            return false
-    else:
-      if valA != valB:
-        return false
+    if valA != valB:
+      return false
 
 proc `[]`*(t: OrderedTableRef[string, Target]; index: Natural): Target =
   ## Returns the `Target` at `index` in `t`. Raises an `IndexDefect` if there
@@ -72,6 +64,11 @@ proc raisePackageError(p: CfgParser, msg: string) =
   raise newException(PackageError, "Error parsing $1($2:$3): $4" %
     [p.getFilename, $p.getLine, $p.getColumn, msg])
 
+proc contains(kv: seq[KeyValuePair], key: string): bool =
+  for k in kv:
+    if k.key == key:
+      return true
+
 proc setDefaults(target, defaults: Target, idx: int, filename = "") =
   ## Fills in missing fields other than `name` and `description` from `target`
   ## using those in `defaults`. Missing key/value pairs in `target.variables`
@@ -84,52 +81,53 @@ proc setDefaults(target, defaults: Target, idx: int, filename = "") =
       of "name":
         raisePackageError("Error parsing $1: target $2 does not have a name" %
           [filename, $idx])
-      of "description":
+      of "description", "variables":
         discard
       else:
-        when targetVal is StringTableRef:
-          targetVal[] = defaultVal[]
-        else:
-          targetVal = defaultVal
-    else:
-      when targetVal is StringTableRef:
-        for name, val in defaultVal.pairs:
-          if name notin targetVal:
-            targetVal[name] = val
+        targetVal = defaultVal
 
-  # This variable should remain constant
-  target.variables["target"] = target.name
+  for (key, value) in defaults.variables:
+    if key notin target.variables:
+      target.variables.add((key, value))
 
-proc resolve(s: var string, variables: StringTableRef, flags = {useEnvironment}) =
-  s = `%`(s, variables, flags)
+proc resolve(s: var string, variables: StringTableRef) =
+  s = `%`(s, variables, {useEnvironment})
 
-proc resolve(paths: var seq[string], variables: StringTableRef) =
-  for path in paths.mitems:
-    path.resolve(variables)
+proc resolve(items: var seq[string], variables: StringTableRef) =
+  for item in items.mitems:
+    resolve(item, variables)
 
 proc resolve(rules: var seq[Rule], variables: StringTableRef) =
   for rule in rules.mitems:
     rule.pattern.resolve(variables)
-    rule.dest.resolve(variables, {useEnvironment, useKey}) # Leave unknown keys to support $ext
-
-macro resolve(target: Target, field: string): untyped =
-  let field = ident($field)
-  quote do:
-    resolve(`target`.`field`, `target`.variables)
+    rule.dest.resolve(variables)
 
 proc resolve(target: Target) =
+  ## Resolves all variables in `target`'s fields using the values in
+  ## `target.variables`. Missing variables will be filled in by env vars if
+  ## available. Otherwise, throws an error.
+  let vars = newStringTable()
+
+  for (key, value) in target.variables:
+    vars[key] = value
+
+  # These variables should remain constant
+  vars["target"] = target.name
+  vars["ext"] = "$ext" # This supports $ext in unpack rule destinations
+
   # Resolve variables (including env vars)
   try:
     for key, val in fieldPairs(target[]):
-      when key != "name" and val isnot StringTableRef:
-        target.resolve(key)
+      when key != "name" and key != "variables":
+        resolve(val, vars)
   except ValueError as e:
     e.msg.removePrefix("format string: key not found: ")
     raisePackageError("Unknown variable $$$# in target $#" % [e.msg, target.name])
 
-proc newTarget(): Target =
-  result = new Target
-  result.variables = newStringTable(modeStyleInsensitive)
+proc addTarget(t: OrderedTableRef[string, Target], target, defaults: Target, filename: string) =
+  target.setDefaults(defaults, t.len + 1, filename)
+  target.resolve()
+  t[target.name] = target
 
 proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string, Target] =
   ## Parses the content of `s` into a table of `Target`s where the key is the
@@ -140,8 +138,8 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
   var
     p: CfgParser
     context, section: string
-    defaults = newTarget()
-    target = newTarget()
+    defaults = new Target
+    target = new Target
 
   p.open(s, filename)
   while true:
@@ -149,9 +147,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
     case e.kind
     of cfgEof:
       if context == "target":
-        target.setDefaults(defaults, result.len + 1, filename)
-        target.resolve()
-        result[target.name] = target
+        result.addTarget(target, defaults, filename)
       break
     of cfgSectionStart:
       # echo "Section: [$1]" % e.section
@@ -167,11 +163,9 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
         of "package", "":
           defaults = target
         of "target":
-          target.setDefaults(defaults, result.len + 1, filename)
-          target.resolve()
-          result[target.name] = target
+          result.addTarget(target, defaults, filename)
         else: assert(false)
-        target = newTarget()
+        target = new Target
         context = "target"
       of "sources", "rules", "variables":
         discard
@@ -232,7 +226,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
       of "rules":
         target.rules.add((e.key, e.value))
       of "variables":
-        target.variables[e.key] = e.value
+        target.variables.add((e.key, e.value))
       else:
         discard
     of cfgError:

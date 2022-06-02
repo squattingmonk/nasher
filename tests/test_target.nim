@@ -3,7 +3,7 @@ from strutils import contains, `%`
 
 import nasher/utils/target
 
-proc dumpTarget(target: Target) =
+proc dumpTarget(target: Target) {.used.} =
   ## Helps debug failing tests
   echo "Target: ", target.name
   for key, value in fieldPairs(target[]):
@@ -23,15 +23,11 @@ suite "Target type":
       Target() == Target()
       Target(name: "foo") == Target(name: "foo")
       Target(name: "foo", file: "bar") == Target(name: "foo", file: "bar")
-      Target(variables: newStringTable()) == Target(variables: newStringTable())
-      Target(variables: newStringTable({"foo": "bar"})) == Target(variables: newStringTable({"foo": "bar"}))
 
     check:
       Target(name: "foo") != Target()
       Target(name: "foo") != Target(name: "bar")
       Target(name: "foo", file: "bar") != Target(name: "foo", file: "baz")
-      Target(variables: newStringTable()) != Target()
-      Target(variables: newStringTable({"foo": "bar"})) != Target(variables: newStringTable({"foo": "baz"}))
 
   test "Get Target by index":
     let targets = {"foo": Target(name: "foo"), "bar": Target(name: "bar")}.newOrderedTable
@@ -129,11 +125,11 @@ suite "nasher.cfg parsing":
       targets.len == 2
       targets[0].includes == @["bar"]
       targets[0].rules == @[(pattern: "bar", dest: "bar")]
-      targets[0].variables["foo"] == "bar"
+      targets[0].variables == @[(key: "foo", value: "bar")]
 
       targets[1].includes == @["foo"]
       targets[1].rules == @[(pattern: "foo", dest: "foo")]
-      targets[1].variables["foo"] == "foo"
+      targets[1].variables == @[(key: "foo", value: "foo")]
 
   test "[package.{sources,rules,variables}] must be declared inside [package] or at top-level":
     check parsePackageString("""
@@ -443,28 +439,41 @@ suite "nasher.cfg parsing":
       """)
     check:
       targets.len == 2
-      targets[0].variables["foo"] == "foo"
-      targets[0].variables["bar"] == "bar"
-      "baz" notin targets[0].variables
+      targets[0].variables == @[("foo", "foo"), ("bar", "bar")]
+      targets[1].variables == @[("bar", "foobar"), ("baz", "baz"), ("foo", "foo")]
 
-      targets[1].variables["foo"] == "foo"
-      targets[1].variables["bar"] == "foobar"
-      targets[1].variables["baz"] == "baz"
-
-  test "Target name added to variables, overwriting if present":
+  test "$target variable resolved but not added to variables":
     let targets = parsePackageString("""
       [target]
       name = "foo"
+      file = "$target.hak"
 
       [target]
       name = "bar"
+      file = "$target.hak"
+      """)
+
+    check:
+      targets[0].file == "foo.hak"
+      targets[1].file == "bar.hak"
+
+  test "Target name overwrites target variable if present":
+    let targets = parsePackageString("""
+      [target]
+      name = "foo"
+      file = "$target.hak"
 
         [target.variables]
-        target = "foo"
+        target = "bar"
+
+      [target]
+      name = "bar"
+      file = "$target.hak"
       """)
+
     check:
-      targets[0].variables["target"] == "foo"
-      targets[1].variables["target"] == "bar"
+      targets[0].file == "foo.hak"
+      targets[1].file == "bar.hak"
 
   test "Error if trying to resolve unset variables":
     let tests = @[
@@ -492,7 +501,8 @@ suite "nasher.cfg parsing":
             [target]
             name = "foo"
             """ & test)
-  test "Unset variables left in place in rule dest":
+
+  test "$ext variable left in place in rule dest":
     let target = parsePackageString("""
       [target]
       name = "foo"
@@ -543,7 +553,7 @@ suite "nasher.cfg parsing":
         filters: @["src/foo/baz_*.nss"],
         rules: @[(pattern: "baz_*.nss", dest: "baz/src"),
                  (pattern: "*", dest: "src/foo")],
-        variables: newStringTable({"bar": "baz", "target": "foo", "ver": "1.69"}))
+        variables: @[("bar", "baz"), ("ver", "1.69")])
 
     check manual == parsed
 
@@ -596,16 +606,14 @@ suite "nasher.cfg parsing":
                        file: "core_framework.mod",
                        description: "A demo module",
                        includes: @["src/**/*.{nss,json}"],
-                       rules: @[(pattern: "*", dest: "src")],
-                       variables: newStringTable({"target": "module"}, modeStyleInsensitive))
+                       rules: @[(pattern: "*", dest: "src")])
       targetB = Target(name: "erf",
                        file: "core_framework.erf",
                        description: "An importable erf",
                        includes: @["src/**/*.{nss,json}"],
                        excludes: @["src/test_*.nss", "src/_*.nss"],
                        filters: @["*.ncs"],
-                       rules: @[(pattern: "*", dest: "src")],
-                       variables: newStringTable({"target": "erf"}, modeStyleInsensitive))
+                       rules: @[(pattern: "*", dest: "src")])
       manual = {"module": targetA, "erf": targetB}.newOrderedTable
       parsed = parsePackageString(pkg)
 
