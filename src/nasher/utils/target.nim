@@ -7,7 +7,7 @@ type
 
   Target* = ref object
     name*, description*, file*, branch*, modName*, modMinGameVersion*: string
-    includes*, excludes*, filters*, flags*: seq[string]
+    includes*, excludes*, filters*, flags*, groups*: seq[string]
     variables*: seq[KeyValuePair]
     rules*: seq[Rule]
 
@@ -30,7 +30,7 @@ proc filter*(targets: seq[Target], wanted: string): seq[Target] =
     elif find == "all":
       return targets
     else:
-      let found = targets.filterIt(find == it.name)
+      let found = targets.filterIt(find == it.name or find in it.groups)
       if found.len == 0:
         raise newException(KeyError, "Unknown target " & find)
       result.add(found)
@@ -181,6 +181,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
         of "branch": target.branch = e.value
         of "modName": target.modName = e.value
         of "modMinGameVersion": target.modMinGameVersion = e.value
+        of "group": target.groups.add(e.value)
         of "flags": target.flags.add(e.value)
         # Keep for backwards compatibility, but prefer [{package,target}.sources]
         of "source", "include": target.includes.add(e.value)

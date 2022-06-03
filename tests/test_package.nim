@@ -309,13 +309,14 @@ suite "nasher.cfg parsing":
       targets[1].modName == "foobar"
       targets[1].modMinGameVersion == "1.73"
 
-  test "target.{includes,excludes,filters,flags} inherit from [package]":
+  test "target.{includes,excludes,filters,flags,groups} inherit from [package]":
     let targets = parsePackageString("""
     [package]
     include = "foo/*"
     exclude = "bar/*"
     filter = "*.ncs"
     flags = "--foo"
+    group = "baz"
 
     [target]
     name = "bar"
@@ -323,6 +324,7 @@ suite "nasher.cfg parsing":
     exclude = "foo/*"
     filter = "*.ndb"
     flags = "--bar"
+    group = "qux"
 
     [target]
     name = "foo"
@@ -334,13 +336,15 @@ suite "nasher.cfg parsing":
       targets[0].excludes == @["foo/*"]
       targets[0].filters == @["*.ndb"]
       targets[0].flags == @["--bar"]
+      targets[0].groups == @["qux"]
       targets[1].name == "foo"
       targets[1].includes == @["foo/*"]
       targets[1].excludes == @["bar/*"]
       targets[1].filters == @["*.ncs"]
       targets[1].flags == @["--foo"]
+      targets[1].groups == @["baz"]
 
-  test "target.{includes,excludes,filters,flags} values added to seq when seen multiple times":
+  test "target.{includes,excludes,filters,flags,groups} values added to seq when seen multiple times":
     let target = parsePackageString("""
       [target]
       name = "foo"
@@ -352,12 +356,15 @@ suite "nasher.cfg parsing":
       filter = "*.bar"
       flags = "--foo"
       flags = "--bar"
+      group = "foo"
+      group = "bar"
       """)[0]
     check:
       target.includes == @["foo", "bar"]
       target.excludes == @["baz", "qux"]
       target.filters == @["*.foo", "*.bar"]
       target.flags == @["--foo", "--bar"]
+      target.groups == @["foo", "bar"]
 
   test "Unpack rules added to seq":
     let target = parsePackageString("""
@@ -493,6 +500,7 @@ suite "nasher.cfg parsing":
       [target]
       name = "foo"
       description = "A $target that ${bar}es"
+      group = "$ver"
       file = "${target}.mod"
       branch = "$bar"
       modName = "${target}-$ver"
@@ -522,6 +530,7 @@ suite "nasher.cfg parsing":
         branch: "baz",
         modName: "foo-1.69",
         modMinGameVersion: "1.69",
+        groups: @["1.69"],
         flags: @["-i", "baz.nss"],
         includes: @["src/foo/*.nss", "baz/src/*.nss"],
         excludes: @["src/foo/baz/*"],
@@ -611,4 +620,3 @@ suite "nasher.cfg backwards compatibility":
   for package in packages:
     test package:
       discard parsePackageFile(dir / package.lastPathPart.addFileExt("cfg"))
-

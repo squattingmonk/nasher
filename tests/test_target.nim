@@ -24,8 +24,8 @@ suite "Target type":
   
 suite "Target filtering":
   setup:
-    let targets = @[Target(name: "foo"),
-                    Target(name: "bar")]
+    let targets = @[Target(name: "foo", groups: @["baz"]),
+                    Target(name: "bar", groups: @["qux"])]
 
   test "Exception on unknown target":
     expect KeyError:
@@ -45,11 +45,15 @@ suite "Target filtering":
     check:
       targets.filter("all") == targets
 
+  test "Get target by group":
+    check:
+      targets.filter("baz") == @[targets[0]]
+      targets.filter("qux") == @[targets[1]]
+
   test "Get multiple targets with semicolon-delimited list":
     check:
-      targets.filter("bar;foo") == @[targets[1], targets[0]]
+      targets.filter("bar;baz") == @[targets[1], targets[0]]
 
   test "Each target returned only once":
     check:
       targets.filter("foo;foo") == @[targets[0]]
-
