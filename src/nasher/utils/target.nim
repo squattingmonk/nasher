@@ -1,6 +1,5 @@
-import os, parsecfg, streams, strtabs, strutils, tables
-from sequtils import anyIt
-export tables
+import os, parsecfg, streams, strtabs, strutils
+from sequtils import anyIt, filterIt, deduplicate
 
 type
   PackageError* = object of CatchableError
@@ -24,35 +23,18 @@ proc `==`*(a, b: Target): bool =
     if valA != valB:
       return false
 
-proc `[]`*(t: OrderedTableRef[string, Target]; index: Natural): Target =
-  ## Returns the `Target` at `index` in `t`. Raises an `IndexDefect` if there
-  ## are not `index + 1` items in `t`.
-  if t.len <= index:
-    raise newException(IndexDefect, "index $1 not in 0..$2" % [$index, $(t.len - 1)])
-  var idx: Natural
-  for value in t.values:
-    if idx == index:
-      return value
-    idx.inc
-
-iterator filter*(t: OrderedTableRef[string, Target], names = ""): Target =
-  ## Iterates over each target in `t` named in the semicolon-delimited list
-  ## `names`. If `names` is "", yields the first target in `t`. If any name in
-  ## `names` is "all", yields all targets in `t`. Raises a `KeyError` if any
-  ## target is not in `t`.
-  if names == "":
-    yield t[0]
-  else:
-    let wanted = names.split(';')
-    if wanted.anyIt(it == "all"):
-      for target in t.values:
-        yield target
+proc filter*(targets: seq[Target], wanted: string): seq[Target] =
+  for find in wanted.split(';'):
+    if find == "":
+      result.add(targets[0])
+    elif find == "all":
+      return targets
     else:
-      for name in wanted:
-        if name in t:
-          yield t[name]
-        else:
-          raise newException(KeyError, "Unknown target " & name)
+      let found = targets.filterIt(find == it.name)
+      if found.len == 0:
+        raise newException(KeyError, "Unknown target " & find)
+      result.add(found)
+  result.deduplicate
 
 proc raisePackageError(msg: string) =
   ## Raises a `PackageError` with the given message.
@@ -69,7 +51,7 @@ proc contains(kv: seq[KeyValuePair], key: string): bool =
     if k.key == key:
       return true
 
-proc setDefaults(target, defaults: Target, idx: int, filename = "") =
+proc setDefaults(target, defaults: Target, filename: string, idx: int) =
   ## Fills in missing fields other than `name` and `description` from `target`
   ## using those in `defaults`. Missing key/value pairs in `target.variables`
   ## are copied from `default.variables`. A `PackageError` is raised if the
@@ -107,7 +89,6 @@ proc resolve(target: Target) =
   ## `target.variables`. Missing variables will be filled in by env vars if
   ## available. Otherwise, throws an error.
   let vars = newStringTable()
-
   for (key, value) in target.variables:
     vars[key] = value
 
@@ -124,17 +105,15 @@ proc resolve(target: Target) =
     e.msg.removePrefix("format string: key not found: ")
     raisePackageError("Unknown variable $$$# in target $#" % [e.msg, target.name])
 
-proc addTarget(t: OrderedTableRef[string, Target], target, defaults: Target, filename: string) =
-  target.setDefaults(defaults, t.len + 1, filename)
+proc addTarget(targets: var seq[Target], target, defaults: Target, filename: string) =
+  target.setDefaults(defaults, filename, targets.len + 1)
   target.resolve()
-  t[target.name] = target
+  targets.add(target)
 
-proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string, Target] =
-  ## Parses the content of `s` into a table of `Target`s where the key is the
-  ## name of the target. The cfg package format is assumed. `filename` is used
-  ## for error messages only. Raises `PackageError` if an error is encountered
-  ## during parsing.
-  result = newOrderedTable[string, Target]()
+proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
+  ## Parses the content of `s` into a sequence of `Target`s. The cfg package
+  ## format is assumed. `filename` is used for error messages only. Raises
+  ## `PackageError` if an error is encountered during parsing.
   var
     p: CfgParser
     context, section: string
@@ -193,7 +172,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
               if c notin validTargetChars:
                 p.raisePackageError("invalid character $1 in target name $2" %
                                     [escape($c), e.value.escape])
-            if e.value in result:
+            if result.anyIt(it.name == e.value):
               p.raisePackageError("duplicate target name $1" % e.value.escape)
             else:
               target.name = e.value
@@ -233,7 +212,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): OrderedTableRef[string
       p.raisePackageError(e.msg)
   close(p)
 
-proc parsePackageString*(s: string, filename = "nasher.cfg"): OrderedTableRef[string, Target] =
+proc parsePackageString*(s: string, filename = "nasher.cfg"): seq[Target] =
   ## Parses `s` into a series of targets. The parser chosen is based on
   ## `filename`'s extension'.
   let stream = newStringStream(s)
@@ -243,7 +222,7 @@ proc parsePackageString*(s: string, filename = "nasher.cfg"): OrderedTableRef[st
   else:
     raisePackageError("Unable to determine package parser for $1" % filename)
 
-proc parsePackageFile*(filename: string): OrderedTableRef[string, Target] =
+proc parsePackageFile*(filename: string): seq[Target] =
   ## Parses the file `filename` into a sequence of targets. The parser chosen is
   ## based on the file's extension.
   let fileStream = newFileStream(filename)
