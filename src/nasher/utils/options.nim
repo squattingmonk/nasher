@@ -232,9 +232,7 @@ proc parseCommandLine*[T: string|seq[string]](opts: Options, params: T = command
         opts.putKeyOrHelp(["directory", "file"], key)
       of "config":
         opts.putKeyOrHelp(["configKey", "configValue"], key)
-      of "list":
-        opts.putKeyOrHelp(["target"], key)
-      of "compile", "convert", "pack", "install", "play", "test", "serve":
+      of "list", "compile", "convert", "pack", "install", "play", "test", "serve":
         if opts.hasKeyOrPut("targets", key):
           opts["targets"] = opts["targets"] & ";" & key
       of "unpack":

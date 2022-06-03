@@ -10,14 +10,14 @@ nasher: a build tool for Neverwinter Nights projects
 
 Usage:
   nasher init [options] [<dir> [<file>]]
-  nasher list [options]
+  nasher list [options] [<target>...]
   nasher (convert|compile|pack|install|play|test|serve) [options] [<target>...]
   nasher unpack [options] [<target> [<file>]]
   nasher config [options] <key> [<value>]
 
 Commands:
   init           Initializes a nasher repository
-  list           Lists the names and descriptions of all build targets
+  list           Lists the names, files, and descriptions of targets
   convert        Converts all json sources to their gff targets
   compile        Compiles all nss sources for a build target
   pack           Converts, compiles, and packs all sources for a build target
@@ -100,7 +100,14 @@ when isMainModule:
           withTargets(getPackageFile(dir), opts):
             unpack(opts, target)
       of "list":
-        list()
+        if not opts.hasKey("targets"):
+          opts["targets"] = "all"
+        var hasRun = false
+        withTargets(pkgFile, opts):
+          if hasRun:
+            stdout.write("\n")
+          list(target)
+          hasRun = true
       of "unpack", "convert", "compile", "pack", "install", "play", "test", "serve":
         withTargets(pkgFile, opts):
           if cmd == "unpack":
