@@ -28,10 +28,11 @@ This guide is current as of nasher release 0.17.x.
     * [Getting Help](#getting-help)
 * [Configuration](#configuration)
     * [nasher.cfg](#nashercfg)
-        * [Package](#package)
-        * [Sources](#sources)
-        * [Rules](#rules)
-        * [Target](#target)
+        * [`[package]`](#package)
+        * [`[target]`](#target)
+        * [`[*.sources]`](#sources)
+        * [`[*.rules]`](#rules)
+        * [`[*.variables]`](#variables)
         * [Source Trees](#source-trees)
         * [Tips](#tips)
 * [Commands](#commands)
@@ -122,7 +123,7 @@ $ nasher <command>
 $ docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
 ```
 
-You can also create an alias in your .bashrc and just use nasher <command>:
+You can also create an alias in your `.bashrc` and just use `nasher <command>`:
 ```console
 alias nasher='docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest '
 ```
@@ -139,20 +140,20 @@ nasher will detect nwnsc and the neverwinter.nim tools if they are in your
 `PATH`. You can also use nasher's `config` command to set the proper locations:
 ```console
 $ # Set the path to nwnsc
-$ nasher config --nssCompiler:"%USERPROFILE%/bin/nwnsc.exe"      # Windows
-$ nasher config --nssCompiler:"~/.local/bin/nwnsc"               # Posix
+$ nasher config nssCompiler "%USERPROFILE%/bin/nwnsc.exe"      # Windows
+$ nasher config nssCompiler "~/.local/bin/nwnsc"               # Posix
 
 $ # Set the path to nwn_erf
-$ nasher config --erfUtil:"%USERPROFILE%/bin/nwn_erf.exe"        # Windows
-$ nasher config --erfUtil:"~/.local/bin/nwn_erf"                 # Posix
+$ nasher config erfUtil "%USERPROFILE%/bin/nwn_erf.exe"        # Windows
+$ nasher config erfUtil "~/.local/bin/nwn_erf"                 # Posix
 
 $ # Set the path to nwn_gff
-$ nasher config --gffUtil:"%USERPROFILE%/bin/nwn_gff.exe"        # Windows
-$ nasher config --gffUtil:"~/.local/bin/nwn_gff"                 # Posix
+$ nasher config gffUtil "%USERPROFILE%/bin/nwn_gff.exe"        # Windows
+$ nasher config gffUtil "~/.local/bin/nwn_gff"                 # Posix
 
 $ # Set the path to nwn_tlk
-$ nasher config --tlkUtil:"%USERPROFILE%/bin/nwn_tlk.exe"        # Windows
-$ nasher config --tlkUtil:"~/.local/bin/nwn_tlk"                 # Posix
+$ nasher config tlkUtil "%USERPROFILE%/bin/nwn_tlk.exe"        # Windows
+$ nasher config tlkUtil "~/.local/bin/nwn_tlk"                 # Posix
 ```
 nasher will also detect NWN if it was installed by Steam, Beamdog, or GOG. If
 you are having issues getting nasher to recognize your NWN install, you can set
@@ -226,7 +227,23 @@ A nasher package must have a `nasher.cfg` file in the package root directory.
 This file contains package-specific settings that should be the same across all
 instances of the package. It does not vary for different users.
 
-Here is a sample `nasher.cfg` file:
+Here is a basic `nasher.cfg` that will serve for simple projects:
+
+```toml
+[package]
+  [package.sources]
+  include = "src/**/*.{nss,json}"
+
+  [package.rules]
+  "*" = "src"
+
+[target]
+name = "default"
+file = "demo.mod"
+description = ""
+```
+
+Here is a larger one showing more features that nasher supports:
 
 ```toml
 [package]
@@ -236,8 +253,17 @@ version = "0.1.0"
 author = "Squatting Monk <squattingmonk@gmail.com>"
 url = "https://github.com/squattingmonk/nwn-core-framework"
 
+# This key is inherited by targets that don't define it themselves. It uses a
+# variable to refer to the target's name, which is resolved for each target
+# (e.g., the target "scripts" will have the file "scripts.hak").
+file = "$target.hak"
+
+  # You can define your own variables to reference in other keys
+  [package.variables]
+  sm-utils = "../sm-utils/src"
+
   [package.sources]
-  include = "sm-utils/src/*.nss"
+  include = "${sm-utils}/*.nss" # This variable is expanded
   include = "src/**/*.{nss,json}"
   exclude = "**/test_*.nss"
 
@@ -266,16 +292,27 @@ file = "core_framework.erf"
   exclude = "src/demo/**"
   exclude = "**/test_*.nss"
 
-# Filtering optional files, such as .nss, .gic, and .ndb, can greatly reduce
-# packed file size
+# These targets are members of the "haks" group. You can build them all with one
+# command using "nasher pack haks". They all inherit the package-level "file"
+# key.
 [target]
 name = "scripts"
+group = "haks"
 description = "A hak file containing compiled scripts"
-file = "core_scripts.hak"
 
+  # Filtering optional files, such as .nss, .gic, and .ndb, can greatly reduce
+  # packed file size
   [target.sources]
   include = "src/**/*.nss"
   filter = "*.nss"
+
+[target]
+name = "blueprints"
+group = "haks"
+description = "A hak file containing blueprints"
+
+  [target.sources]
+  include = "src/blueprints/*.json"
 
 [target]
 name = "tlk"
@@ -283,7 +320,7 @@ description = "Custom talk file for PW"
 file = "myPWtlk.tlk"
 
   [target.sources]
-  include = "haks/tlk/**/*.json"
+  include = "src/tlk/*.json"
 ```
 
 While you can write your own package file, the [`init`](#init) command will
@@ -295,7 +332,7 @@ initialize the package, you can pass the `--default` flag when running `init`.
 
 This section provides a places to note the package's author, description, name,
 version, and url. This data is currently not used by any nasher commands, but
-that may change in the future.
+that may change in the future. You can skip it with the `--skipPkgInfo` flag.
 
 | Field         | Repeatable | Description                                                          |
 | ---           | ---        | ---                                                                  |
@@ -311,6 +348,7 @@ Some fields, while optional, are inherited from the package by
 | Field               | Repeatable | Description                                                               |
 | ---                 | ---        | ---                                                                       |
 | `file`              | no         | filename including extension be created; can optionally include path info |
+| `group`             | yes        | a group a target may belong to; used to build multiple targets at once    |
 | `flags`             | yes        | command line arguments to send to nwnsc at compile-time                   |
 | `branch`            | no         | the git branch to use for source files                                    |
 | `modName`           | no         | the name to give a module target file                                     |
@@ -327,6 +365,7 @@ the [`[package]`](#package) section if they are not set for this target.
 | `name`              | no         | no        | name of the target; must be unique among targets                          |
 | `description`       | no         | no        | an optional field that describes the target                               |
 | `file`              | no         | yes       | filename including extension be created; can optionally include path info |
+| `group`             | yes        | yes       | a group this target belongs to; used to build multiple targets at once    |
 | `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                   |
 | `branch`            | no         | yes       | the git branch to use for source files                                    |
 | `modName`           | no         | yes       | the name to give a module target file                                     |
@@ -369,6 +408,108 @@ project root for you to sort manually. To avoid this, use a catch-all rule
 
 [Targets](#target) can define their own `[target.rules]` section. If they don't
 they will inherit the `[package.rules]` section.
+
+#### `[*.variables]`
+
+You can define variables that can be referenced in any target field except for
+`name`. You can set variables in the `[package.variables]` section (to apply to
+all targets) or the `[target.variables]` section (to apply to a single target).
+The key is the variable name, while the value is what it should resolve to. The
+target variables table is merged with the package variables table to allow
+missing keys to be inherited.
+
+If a variable referenced is not found, nasher will also check the environment
+variables. If a variable is not found in the table or the environment, an error
+is thrown.
+
+Variables can be referenced using the syntax `$variable` or `${variable}`. The
+latter syntax allows variables to include non-alphanumeric characters or to be
+adjacent to alphanumeric characters that are not part of the variable name
+(e.g., `${foo}bar`).
+
+One variable is available by default: `$target` resolves to the name of the
+current target. This allows some neat things:
+
+```toml
+# This package has two targets, "foo" and "bar", that yield a file
+# named "foo.hak" and "bar.hak", respectively using the source files
+# in "src/foo" and "src/bar" respectively.
+[package]
+file = "$target.hak"
+
+  [package.sources]
+  include = "src/$target/*"
+
+[target]
+name = "foo"
+
+[target]
+name = "bar"
+```
+
+This feature can also be used to easily reference out-of-tree projects:
+
+```toml
+[package]
+
+  [package.variables]
+  sm-utils = "../sm-utils/src" # Can be used by any target or rule
+
+  [package.sources]
+  include = "${sm-utils}/*.{nss,json}" # include files in sm-utils
+  include = "src/**/*.{nss,json}"
+
+  [package.rules]
+  "util_*" = "${sm-utils}" # Unpack util files to sm-utils
+  "*" = "src/$target" # Unpack unknown file to target's source dir
+
+[target]
+name = "demo"
+file = "core_framework.mod"
+
+[target]
+name = "utils"
+file = "sm_utils.erf"
+
+  [target.sources]
+  include = "${sm-utils}/*.{nss,json}" # include only files in sm-utils
+```
+
+Since nasher checks environment variables, you can place user-specific
+information in an environment variable. For example, if you want to include a
+file in a target using an absolute path, you could place it directly in the
+`nasher.cfg`, but this would not be useful for other users of your project:
+
+```toml
+[target]
+name = "mymodule"
+file = "my_module.mod"
+
+  [target.sources]
+  include = "src/*.{nss,json}"
+  include = "/home/squattingmonk/.local/src/nwscript/utils/util_i_color.nss"
+```
+
+This makes collaboration difficult, since other users of this project would have
+to edit the `nasher.cfg` to change the location of the file to where it is on
+their system. Instead, you can use an environment variable:
+
+```toml
+[target]
+name = "mymodule"
+file = "my_module.mod"
+
+  [target.sources]
+  include = "src/*.{nss,json}"
+  include = "${SM_UTILS}/util_i_color.nss"
+```
+
+```bash
+export SM_UTILS=/home/squattingmonk/.local/src/nwscript/utils
+```
+
+Other users can then set the environment variable to the location of their
+choice without changing the `nasher.cfg`.
 
 #### Source Trees
 
@@ -417,14 +558,13 @@ follows:
   is rarely necessary to have much more than a single entry in the `[*.rules]`
   section (`"*" = "src"`). When a module is packed with nasher, the source
   location of each file is noted and unpacked back to that location, so a
-  detailed `[*.rules]` section is not necessary.
+  detailed `[*.rules]` section is usually not necessary.
 * Make the [`[package.sources]`](#sources) section as inclusive as possible and
   use the `[target.sources]` `exclude` field to narrow down the included files
   needed by the target.
-* If you use nasher to build your haks, consider having a separate repo or a
-  subfolder containing all of your hak file content as a separate nasher
-  package. This allows you to build more detailed hak-only targets and build all
-  of your haks at once with a `nasher install all` command.
+* Use target groups to build multiple targets at once. For example, make all of
+  your hak targets members of the `haks` group, then run `nasher pack haks` to
+  build only the hak files.
 
 ## Commands
 
@@ -586,16 +726,16 @@ $ nasher config --list --local  # local
 ```
 
 #### Tips
-* You can pass keys to the config functions using the `<key> <value>` syntax or
-  the `--key:value` syntax. The latter is required if the value contains a word
-  starting with a `-`, such as `--nssFlags:"-n /opt/nwn"`.
+* The `--` operator causes all following arguments to be treated as positional
+  arguments, even if they look like options. This is useful when setting config
+  keys to values starting with `-`: `nasher config -- nssFlags "-n /opt/nwn"`
 * Keys like `nssCompiler` and `installDir` work best as global options
 * Keys like `modName` or `useModuleFolder` work best as local options
 * `user.cfg` files are intentionally ignored by git. Do not include them in
   your commits, since other users may require different values than those that
   work on your machine
 * Some gotchas to watch out for when setting `--nssFlags`:
-    * Escape spaces in paths passed to `-n`.
+    * Quote paths with spaces when passing to `-n`.
     * Do not include other configurable nwnsc flags, such as `-b` and `-i`.
       Those flags can be passed to nwnsc per target through nasher.cfg.
     * It's better to use the `NWN_ROOT` environment variable with the default
@@ -634,18 +774,19 @@ $ nasher init foo --file:"~/Documents/Neverwinter Nights/modules/foobar.mod"
 
 ### list
 
-    nasher list [options]
+    nasher list [options] [<target>...]
 
-Lists all available targets defined the in [nasher.cfg](#nashercfg) along with
+Lists all named `<target>`s defined the in [nasher.cfg](#nashercfg) along with
 their descriptions, source file patterns, and the name of the file that will be
-generated. The first listed target is the default for other commands.
+generated. If a target is not passed, will list all targets. The first listed
+target is the default for other commands.
 
 #### Options
 
-| Flag      | Description            |
-| ---       | ---                    |
-| `--quiet` | list only target names |
-
+| Flag        | Description               |
+| ---         | ---                       |
+| `--quiet`   | list only target names    |
+| `--verbose` | list source files as well |
 
 ### unpack
 
@@ -919,15 +1060,15 @@ $ nasher test demo
 ## Errors
 
 * **`"No source files found for target"`** \
-  Caused by improper sourcing (`include = `) in either the `[Sources]` or
-  `[Target]` section in your [`nasher.cfg`](#nashercfg).
+  Caused by improper sourcing (`include = `) in either the `[*.sources]` or
+  `[target]` section in your [`nasher.cfg`](#nashercfg).
 
 * **`"This is not a nasher repository. Please run init"`** \
   Caused by running any nasher command except `nasher config --global` before
   running [`nasher init`](#init) in the project folder.
 
   Caused by incorrectly referencing the present working directory in the
-  `docker run` command. The reference can be CLI-specific. For example, Linux
+  `docker run` command. The reference can be CLI-specific. For example, Bash
   wants to see `$(pwd)` while PowerShell requires `${pwd}`. Look up the
   appropriate reference for your shell. `%cd%` only works for Windows
   `cmd.exe`.
@@ -958,13 +1099,7 @@ $ nasher test demo
 
 ## FAQs
 
-* **Can nasher `<anything you want here>`?** \
-  Probably.
-
 * **Can I use absolute or relative paths?** \
-  Yes.
-
-* **Does nasher strip the module ID?** \
   Yes.
 
 * **I really need nasher to do something it doesn't. Can you add this
