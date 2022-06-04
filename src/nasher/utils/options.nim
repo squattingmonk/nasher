@@ -220,7 +220,7 @@ proc parseCommandLine*[T: string|seq[string]](opts: Options, params: T = command
       longNoVal = @["help", "version", "color", "noColor", "no-color", "debug",
         "verbose", "quiet", "yes", "no", "default", "get", "set", "unset",
         "list", "global", "local", "clean", "noConvert", "noCompile", "noPack",
-        "removeDeleted", "removeUnusedAreas", "useModuleFolder",
+        "noInstall", "removeDeleted", "removeUnusedAreas", "useModuleFolder",
         "abortOnCompileError"],
       normalizeOption = normalize)
 
