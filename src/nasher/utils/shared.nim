@@ -1,6 +1,5 @@
-import os, times, strtabs, tables, json
+import os, times, strutils, strtabs, tables, json
 from sequtils import mapIt, toSeq, deduplicate
-from strutils import strip, `%`
 from unicode import toLower
 from sugar import collect
 
@@ -13,19 +12,67 @@ import cli, target, options
 export cli, target, options
 
 const GlobalOpts = """
-
 Global Options:
-  -h, --help     Display help for nasher or one of its commands
-  -v, --version  Display version information
-  -y, --yes      Automatically answer yes to all prompts
-  -n, --no       Automatically answer no to all prompts
-  -d, --default  Automatically accept the default answer to prompts
+  -h, --help             Display help for nasher or one of its commands
+  -v, --version          Display version information
+  -y, --yes              Automatically answer yes to all prompts
+  -n, --no               Automatically answer no to all prompts
+  -d, --default          Automatically accept the default answer to prompts
 
 Logging:
-  --quiet        Disable all logging except errors
-  --verbose      Enable additional messages about normal operation
-  --debug        Enable debug logging (implies --verbose)
-  --no-color     Disable color output (automatic if not a tty)
+  --quiet                Disable all logging except errors
+  --verbose              Enable additional messages about normal operation
+  --debug                Enable debug logging (implies --verbose)
+  --no-color             Disable color output (automatic if not a tty)
+"""
+
+const PackLoopOpts* = """
+  --noInstall            Do not re-install file before launching
+  --noPack               Do not re-pack file before installing
+  --noCompile            Do not re-compile scripts before packing
+  --noConvert            Do not re-convert gff files before compiling
+  --clean                Clear the cache directory before operation
+  --branch:<branch>      Select git branch <branch> before operation
+  --modName:<name>       Name for a module file
+  --modMinGameVersion:<ver>
+                         Minimum game version required to run a module
+  --onMultipleSources:<method>
+                         How to handle multiple sources for the same file
+                         [choices: choose (default), default (accept the first),
+                         error (fail)]
+  --removeUnusedAreas    Remove references to unused areas in module.ifo (note:
+                         disable if you have areas present only in a hak or
+                         override) [default: true]
+"""
+
+const UtilOpts* = """
+  --gffUtil:<bin>        Binary to convert GFF files[default: nwn_gff]
+  --gffFormat:<fmt>      GFF source file format [choices: json (default), nwnt]
+  --gffFlags:<flags>     Flags to pass to $gffUtil [default: -p]
+  --tlkUtil:<bin>        Binary to convert TLK files [default: nwn_tlk]
+  --tlkFormat:<fmt>      TLK source file format [choices: json (default), csv]
+  --tlkFlags:<flags>     Flags to pass to $tlkUtil [default: ""]
+  --erfUtil:<bin>        Binary for packing erf/hak/mod files [default: nwn_erf]
+  --erfFlags:<flags>     Flags to pass to $erfUtil [default: ""]
+"""
+
+const CompileOpts* = """
+  --abortOnCompileError  Quit if an error was encountered during compilation
+  --nssCompiler:<bin>    Binary for compiling nss scripts [default: nwnsc]
+  --nssFlags:<flags>     Flags to pass to the compiler [default: -lowqey]
+  --nssChunks:<n>        Max scripts to compile per compiler exec [default: 500]
+"""
+
+const InstallOpts* = """
+  --installDir:<dir>     Location for installed files (i.e., dir containing erf,
+                         hak, modules, and tlk dirs) [default: $NWN_HOME]
+  --useModuleFolder      Treat modules in $installDir/modules as folders instead
+                         of .mod files (note: EE only) [default: true]
+"""
+
+const LaunchOpts* = """
+  --gameBin              Path to the nwmain binary file
+  --serverBin            Path to the nwserver binary file
 """
 
 proc help*(helpMessage: string, errorCode = QuitSuccess) =

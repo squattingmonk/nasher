@@ -15,9 +15,12 @@ Description:
   the target file.
 
 Options:
-  --clean            Clears the cache directory before converting
-  --branch:<branch>  Selects git branch before operation
-"""
+$#
+Utility Options:
+$#
+
+""" % [PackLoopOpts.splitLines[4..^1].join("\n"),
+       UtilOpts.splitLines[0..^4].join("\n")]
 
 proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool =
   setCurrentDir(getPackageRoot())

@@ -16,17 +16,18 @@ Usage:
   nasher config [options] <key> [<value>]
 
 Commands:
-  init           Initializes a nasher repository
-  list           Lists the names, files, and descriptions of targets
-  convert        Converts all json sources to their gff targets
-  compile        Compiles all nss sources for a build target
-  pack           Converts, compiles, and packs all sources for a build target
-  install        As pack, but installs the target file to the NWN install path
-  serve          As install, but starts the module with nwserver after installing
-  play           As install, but starts the module with nwmain after installing
-  test           As play, but automatically selects the first localvault PC
-  unpack         Unpacks a target's installed file into the source tree
-  config         Gets, sets, or unsets user-defined configuration options
+  init                   Create a new nasher project
+  list                   List the names, files, and descriptions of targets
+  convert                Convert json sources to gff
+  compile                Convert gff, then compile nss scripts
+  pack                   Convert gff, compile scripts, then pack a target
+  install                As pack, but install the target file after packing
+  serve                  As install, but load the installed module with nwserver
+  play                   As install, but load the installed module with nwmain
+  test                   As play, but play as the first localvault PC
+  unpack                 Unpack an installed file into the source tree
+  config                 Get, set, or unset user-defined configuration options
+
 """
 
 proc ctrlCQuit {.noconv.} =

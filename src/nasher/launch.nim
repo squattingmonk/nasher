@@ -1,4 +1,4 @@
-import os, osproc, strformat
+import os, osproc, strformat, strutils
 
 import utils/shared
 
@@ -16,12 +16,16 @@ Description:
   player character in the localvault.
 
 Options:
-  --gameBin              The path to the nwmain binary file
-  --serverBin            The path to the nwserver binary file
-  --clean                Clears the cache directory before packing
-  --branch:<branch>      Selects git branch before operation
-  --abortOnCompileError  Automatically abort launching if compilation fails
-"""
+$#
+Utility Options:
+$#
+Compiler Options:
+$#
+Installation Options:
+$#
+Launch Options:
+$#
+""" % [PackLoopOpts, UtilOpts, CompileOpts, InstallOpts, LaunchOpts]
 
 proc getGameBin: string =
   let binDir = getEnv("NWN_ROOT") / "bin"

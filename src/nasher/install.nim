@@ -1,4 +1,4 @@
-import os, strformat
+import os, strformat, strutils
 
 import utils/[nwn, shared]
 
@@ -18,10 +18,14 @@ Description:
   and Mac or `~/.local/share/Neverwinter Nights` on Linux.
 
 Options:
-  --clean                Clears the cache directory before packing
-  --branch:<branch>      Selects git branch before operation
-  --abortOnCompileError  Automatically abort installation if compilation fails
-"""
+$#
+Utility Options:
+$#
+Compiler Options:
+$#
+Installation Options:
+$#
+""" % [PackLoopOpts.splitLines[1..^1].join("\n"), UtilOpts, CompileOpts, InstallOpts]
 
 proc install*(opts: Options, target: Target): bool =
   let

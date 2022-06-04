@@ -11,6 +11,14 @@ Description:
   directory will be the project root.
 
   If supplied, <file> will be unpacked into the project root's source tree.
+
+Options:
+  --vcs:<vcs>            The version control system to use for the project
+                         [choices: git (default), none]
+  --skipPkgInfo          Skip the optional [package] generation prompts
+  --url:<url>            The url for the project
+  --userName:<name>      The package author's name (default git user.name)
+  --userEmail:<email>    The package author's email (default git user.email)
 """
 
 proc genPackageText(opts: Options): string

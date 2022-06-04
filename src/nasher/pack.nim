@@ -1,4 +1,4 @@
-import os, strformat
+import os, strformat, strutils
 
 import glob
 
@@ -11,8 +11,8 @@ Usage:
 Description:
   Converts, compiles, and packs all sources for <target>. If <target> is not
   supplied, the first target supplied by the config files will be packed. The
-  assembled files are placed in $PKG_ROOT/.nasher/cache/<target>, but the packed
-  file is placed in $PKG_ROOT.
+  assembled files are placed in $$PKG_ROOT/.nasher/cache/<target>, but the packed
+  file is placed in $$PKG_ROOT.
 
   If the packed file would overwrite an existing file, you will be prompted to
   overwrite the file. The newly packaged file will have a modification time
@@ -20,10 +20,12 @@ Description:
   is older than the existing file, the default is to keep the existing file.
 
 Options:
-  --clean                Clears the cache directory before packing
-  --branch:<branch>      Selects git branch before operation
-  --abortOnCompileError  Automatically abort packing if compilation fails
-"""
+$#
+Utility Options:
+$#
+Compiler Options:
+$#
+""" % [PackLoopOpts.splitLines[2..^1].join("\n"), UtilOpts, CompileOpts]
 
 proc getNewestFile(dir: string): string =
   for file in walkFiles(dir / "*"):

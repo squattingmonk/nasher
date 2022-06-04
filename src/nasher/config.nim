@@ -20,12 +20,13 @@ Description:
   the global config file. This file will be ignored by git.
 
 Options:
-  --global       Apply to all packages (default)
-  --local        Apply to the current package only
-  -g, --get      Get the value of <key> (default when <value> is not passed)
-  -s, --set      Set <key> to <value> (default when <value> is passed)
-  -u, --unset    Delete the key/value pair for <key>
-  -l, --list     Lists all key/value pairs in the config file
+  --global               Apply to all packages (default)
+  --local                Apply to the current package only
+  -g, --get              Get the value of <key> (default if <value> not passed)
+  -s, --set              Set <key> to <value> (default if <value> is passed)
+  -u, --unset            Delete the key/value pair for <key>
+  -l, --list             Lists all key/value pairs in the config file
+
 """
 
 proc getConfigCmd(opts: Options): string =

@@ -16,10 +16,15 @@ Description:
   sources and packing the target file.
 
 Options:
-  --clean            Clears the cache directory before compiling
-  -f, --file:<file>  Compiles <file> only; repeatable
-  --branch:<branch>  Selects git branch before operation
-"""
+  -f, --file:<file>      Compiles <file> only; repeatable
+$#
+Utility Options:
+$#
+
+Compiler Options:
+$#
+""" % [PackLoopOpts.splitLines[3..^1].join("\n"),
+       UtilOpts.splitLines[0..^4].join("\n"), CompileOpts]
 
 proc isSrcFile(target: Target, file: string): bool =
   ## Returns whether `file` is a source file of `target`.
