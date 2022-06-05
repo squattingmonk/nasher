@@ -1,5 +1,18 @@
 # nasher changelog
 
+## 0.18.1: June 5, 2022
+
+### `unpack` now correctly acts on multiple targets
+
+Before 0.18.0, the usage was `nasher unpack [<target> [<file>]]`. With 0.18.0,
+the new usage was supposed to be `nasher unpack [<target>...]`, but a bug caused
+it to always use the default target.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.18.0...0.18.1
+
+
 ## 0.18.0: June 3, 2022
 
 ### Added subsections to `nasher.cfg`
@@ -158,11 +171,11 @@ demo`). The default behavior is to list all targets for backwards compatibility.
 To list only the first target, use `nasher list ""`. Also supports target
 groups.
 
-### Fixed relative paths not working in exclude directories
-([#90](https://github.com/squattingmonk/nasher/issues/90))
-
 ### Other
 
+- Fixed relative paths not working in exclude directories
+  ([#90](https://github.com/squattingmonk/nasher/issues/90))
+- Updated help text for all commands to show all available options
 - nasher commands now support the `--` operator, which causes all arguments that
   come after it to be treated as positional arguments even if they look like
   options. For example: `nasher config -- nssFlags "-n /opt/nwn"` prevents the
