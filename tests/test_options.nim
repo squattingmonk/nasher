@@ -292,37 +292,8 @@ suite "Command-line options parsing":
         opts["file"] == "bar"
         opts["help"] == "true"
 
-  test "Positional arguments for unpack":
-    withParams "unpack":
-      check:
-        opts["command"] == "unpack"
-        "directory" notin opts
-        "file" notin opts
-        "help" notin opts
-
-    withParams "unpack foo":
-      check:
-        opts["command"] == "unpack"
-        opts["target"] == "foo"
-        "file" notin opts
-        "help" notin opts
-
-    withParams "unpack foo bar":
-      check:
-        opts["command"] == "unpack"
-        opts["target"] == "foo"
-        opts["file"] == "bar"
-        "help" notin opts
-
-    withParams "unpack foo bar baz":
-      check:
-        opts["command"] == "unpack"
-        opts["target"] == "foo"
-        opts["file"] == "bar"
-        opts["help"] == "true"
-
-  test "Positional arguments for list and pack loop added to target list":
-    let commands = ["list", "convert", "compile", "pack", "install", "play", "test", "serve"]
+  test "Positional arguments for list, unpack, and pack loop added to target list":
+    let commands = ["list", "unpack", "convert", "compile", "pack", "install", "play", "test", "serve"]
     for command in commands:
       withParams command & " foo":
         check:

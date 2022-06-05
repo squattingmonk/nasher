@@ -5,13 +5,13 @@ import utils/[git, manifest, nwn, shared]
 
 const helpUnpack* = """
 Usage:
-  nasher unpack [options] [<target> [<file>]]
+  nasher unpack [options] [<target>...]
 
 Description:
   Unpacks a file into the project source tree for the given target.
 
   If a target is not specified, the first target found in nasher.cfg is used. If
-  a file is not specified, will search for the target's file in the NWN install
+  --file is not specified, will search for the target's file in the NWN install
   directory.
 
   Each extracted file is checked against the target's source tree (as defined in
@@ -21,7 +21,7 @@ Description:
   copied.
 
   If the extracted file does not exist in the source tree already, it is checked
-  against each pattern listed in the [Rules] section of the package config. If
+  against each pattern listed in the [*.rules] section of the package config. If
   a match is found, the file is copied to that location.
 
   If, after checking the source tree and rules, a suitable location has not been
@@ -37,8 +37,7 @@ Description:
 
 Options:
   --file:<file>          A file to unpack into the target's source tree. Only
-                         needed if not specifying the target and not using the
-                         default target's output file.
+                         needed if not using <target>'s default file.
   --truncateFloats:<n>   Max number of decimal places floats in GFF files may
                          have [range: 0-32, default: 4]
   --removeDeleted        Remove source files not present in the file being
