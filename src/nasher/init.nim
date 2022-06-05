@@ -19,6 +19,7 @@ Options:
   --url:<url>            The url for the project
   --userName:<name>      The package author's name (default git user.name)
   --userEmail:<email>    The package author's email (default git user.email)
+
 """
 
 proc genPackageText(opts: Options): string

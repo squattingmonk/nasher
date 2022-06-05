@@ -11,6 +11,7 @@ Description:
 
   If passed with --quiet, will only show target names. If passed with --verbose,
   will also show all files matching the source patterns.
+
 """
 
 proc displayField(field, val: string) =
