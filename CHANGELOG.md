@@ -1,5 +1,15 @@
 # nasher changelog
 
+## 0.18.2: June 22, 2022
+
+Fix: relative paths passed to `--nssCompiler` are now relative to the package
+directory rather than the target's cache directory.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.18.1...0.18.2
+
+
 ## 0.18.1: June 5, 2022
 
 ### `unpack` now correctly acts on multiple targets
@@ -165,7 +175,7 @@ file = "hak2.hak"
 ```
 
 ### `nasher list` can now list specific targets
-    
+
 `nasher list` can now limit its output to the named targets (e.g., `nasher list
 demo`). The default behavior is to list all targets for backwards compatibility.
 To list only the first target, use `nasher list ""`. Also supports target
@@ -259,7 +269,7 @@ remaining scripts from that chunk will not have been compiled and will show no
 errors to indicate why.
 
 ### `nasher list --verbose` now lists source files
-    
+
 This will make it easier to see which files will be included in a target without
 having to build and check the cache.
 
