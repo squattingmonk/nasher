@@ -140,6 +140,10 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
   if opts.get("noCompile", false):
     return cmd != "compile"
 
+  let
+    compiler = opts.findBin("nssCompiler", "nwnsc", "script compiler")
+    userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
+
   withDir(cacheDir):
     # If we are only compiling one file...
     var scripts: seq[string]
@@ -167,7 +171,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
         files.add(file)
         if file.executable:
           executables.add(file)
-        
+
           if file notin updatedNss:
             let compiled = file.changeFileExt("ncs")
             if not fileExists(compiled) or file.fileNewer(compiled):
@@ -175,10 +179,6 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
               updatedNss.add(file)
 
       scripts = getUpdated(updatedNss, files)
-
-    let
-      compiler = opts.findBin("nssCompiler", "nwnsc", "script compiler")
-      userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
 
     if scripts.len > 0:
       let
