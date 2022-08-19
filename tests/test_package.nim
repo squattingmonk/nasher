@@ -279,13 +279,14 @@ suite "nasher.cfg parsing":
     check:
       target.description == ""
 
-  test "target.{file,branch,modName,modMinGameVersion} inherit from [package]":
+  test "target.{file,branch,modName,modMinGameVersion,modDescription} inherit from [package]":
     let targets = parsePackageString("""
     [package]
     file = "foo.mod"
     branch = "master"
     modName = "foobar"
     modMinGameVersion = "1.73"
+    modDescription = "foo"
 
     [target]
     name = "no-inherit"
@@ -293,6 +294,7 @@ suite "nasher.cfg parsing":
     branch = "baz"
     modName = "qux"
     modMinGameVersion = "1.69"
+    modDescription = "bar"
 
     [target]
     name = "inherit"
@@ -303,11 +305,13 @@ suite "nasher.cfg parsing":
       targets[0].branch == "baz"
       targets[0].modName == "qux"
       targets[0].modMinGameVersion == "1.69"
+      targets[0].modDescription == "bar"
 
       targets[1].file == "foo.mod"
       targets[1].branch == "master"
       targets[1].modName == "foobar"
       targets[1].modMinGameVersion == "1.73"
+      targets[1].modDescription == "foo"
 
   test "target.{includes,excludes,filters,flags,groups} inherit from [package]":
     let targets = parsePackageString("""
@@ -404,7 +408,7 @@ suite "nasher.cfg parsing":
     """)[0]
     check:
       target.rules == @[(pattern: "foo", dest: "foo/"), (pattern: "bar", dest: "bar/")]
-  
+
   test "Variables merged from [package]":
     let targets = parsePackageString("""
       [package.variables]
@@ -505,6 +509,7 @@ suite "nasher.cfg parsing":
       branch = "$bar"
       modName = "${target}-$ver"
       modMinGameVersion = "$ver"
+      modDescription = "Module version ${ver}"
       flags = "-i"
       flags = "${bar}.nss"
 
@@ -530,6 +535,7 @@ suite "nasher.cfg parsing":
         branch: "baz",
         modName: "foo-1.69",
         modMinGameVersion: "1.69",
+        modDescription: "Module version 1.69",
         groups: @["1.69"],
         flags: @["-i", "baz.nss"],
         includes: @["src/foo/*.nss", "baz/src/*.nss"],
