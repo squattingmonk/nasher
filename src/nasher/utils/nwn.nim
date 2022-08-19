@@ -222,6 +222,7 @@ proc updateIfo*(dir: string, opts: options.Options, target: Target) =
     removeUnused = opts.get("removeUnusedAreas", true)
     moduleName = opts.get("modName", target.modName)
     moduleVersion = opts.get("modMinGameVersion", target.modMinGameVersion)
+    moduleDescription = opts.get("modDescription", target.modDescription)
 
   # Area List update
   if entryArea notin areas:
@@ -248,6 +249,10 @@ proc updateIfo*(dir: string, opts: options.Options, target: Target) =
   if moduleName.len > 0 and moduleName != ifoJson["Mod_Name"]["value"]["0"].getStr:
     ifoJson["Mod_Name"]["value"]["0"] = %moduleName
     success("module name set to " & moduleName)
+
+  if moduleDescription.len > 0 and moduleDescription != ifoJson["Mod_Description"]["value"]["0"].getStr:
+    ifoJson["Mod_Description"]["value"]["0"] = %moduleDescription
+    success("module description set to " & moduleDescription)
 
   # Module Min Game Version Update
   if moduleVersion.len > 0:
