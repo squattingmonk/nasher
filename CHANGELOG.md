@@ -1,5 +1,21 @@
 # nasher changelog
 
+## 0.19.0: Auguest 19, 2022
+
+### Added ability to set module description for module targets
+([#102](https://github.com/squattingmonk/nasher/pull/102))
+
+The `modDescription` field is available in the `[target]` section of
+`nasher.cfg` and can be overridden using the `--modDescription` command-line
+parameter.
+
+Thanks, @tinygiant98!
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.18.2...0.19.0
+
+
 ## 0.18.2: June 22, 2022
 
 Fix: relative paths passed to `--nssCompiler` are now relative to the package
