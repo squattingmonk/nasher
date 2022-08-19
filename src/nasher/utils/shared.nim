@@ -36,6 +36,9 @@ const PackLoopOpts* = """
   --modName:<name>       Name for a module file
   --modMinGameVersion:<ver>
                          Minimum game version required to run a module
+  --modDescription:<description>
+                         Sets the module's description, viewable in module
+                         properties
   --onMultipleSources:<method>
                          How to handle multiple sources for the same file
                          [choices: choose (default), default (accept the first),
