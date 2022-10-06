@@ -20,6 +20,7 @@ Description:
   is older than the existing file, the default is to keep the existing file.
 
 Options:
+  --packUnchanged        Pack a target even if the source files are unchanged
 $#
 Utility Options:
 $#

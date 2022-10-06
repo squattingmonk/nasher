@@ -18,6 +18,7 @@ Description:
   and Mac or `~/.local/share/Neverwinter Nights` on Linux.
 
 Options:
+  --packUnchanged        Pack a target even if the source files are unchanged
 $#
 Utility Options:
 $#

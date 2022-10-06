@@ -16,6 +16,7 @@ Description:
   player character in the localvault.
 
 Options:
+  --packUnchanged        Pack a target even if the source files are unchanged
 $#
 Utility Options:
 $#
@@ -86,7 +87,7 @@ proc launch*(opts: Options, target: Target) =
 
     if fpUserExec notin path.getFilePermissions:
       fatal(fmt"Cannot {cmd} {file}: {path} is not executable")
-    
+
     display("Executing", fmt"{bin} {args} {name}")
     var p = startProcess(path, dir, [args, name], options = options)
     discard p.waitForExit
