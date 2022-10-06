@@ -965,6 +965,7 @@ run it separately unless you want to pack files without installing.
 | `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
 | `--modDescription:<desc>`       | sets the `Mod_Description` value in `module.ifo` to `<desc>`       |
 | `--abortOnCompileError`         | abort packing if errors encountered during compilation             |
+| `--packUnchanged`               | continue packing a file if there are no changed fiels included     |
 
 #### Examples
 
@@ -1012,6 +1013,7 @@ the module (`.mod`) file.
 | `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
 | `--modDescription:<desc>`       | sets the `Mod_Description` value in `module.ifo` to `<desc>`       |
 | `--abortOnCompileError`         | abort installation if errors encountered during compilation        |
+| `--packUnchanged`               | continue packing a file if there are no changed fiels included     |
 
 #### Examples
 ```console
@@ -1051,6 +1053,7 @@ command is only valid for module targets.
 | `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
 | `--modDescription:<desc>`       | sets the `Mod_Description` value in `module.ifo` to `<desc>`       |
 | `--abortOnCompileError`         | abort launching if errors encountered during compilation           |
+| `--packUnchanged`               | continue packing a file if there are no changed fiels included     |
 | `--gameBin:<path>`              | path to the `nwmain` binary file                                   |
 | `--serverBin:<path>`            | path to the `nwserver` binary file                                 |
 

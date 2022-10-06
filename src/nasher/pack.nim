@@ -52,7 +52,17 @@ proc pack*(opts: Options, target: Target): bool =
 
   display("Packing", fmt"files for target {target.name} into {file}")
 
+  var
+    manifest = parseManifest(target.name)
+
   if fileExists(file):
+    if (manifest.getChangedFiles(cacheDir).len == 0):
+      if opts.get("packUnchanged", false):
+        display("Packing", "no changed files found")
+      else:
+        display("Skipping", "pack: no changed files found")
+        return cmd != "pack"
+
     let
       packTime = file.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, packTime)
@@ -67,9 +77,6 @@ proc pack*(opts: Options, target: Target): bool =
   let
     bin = opts.findBin("erfUtil", "nwn_erf", "erf utility")
     args = opts.get("erfFlags")
-
-  var
-    manifest = newManifest(target.name)
 
   if file.getFileExt == "tlk":
     let fileName = file.extractFilename
