@@ -62,7 +62,7 @@ proc setDefaults(target, defaults: Target, filename: string, idx: int) =
       case key:
       of "name":
         raisePackageError("Error parsing $1: target $2 does not have a name" %
-          [filename, $idx])
+          [filename, $(idx + 1)])
       of "description", "variables":
         discard
       else:
@@ -105,11 +105,6 @@ proc resolve(target: Target) =
     e.msg.removePrefix("format string: key not found: ")
     raisePackageError("Unknown variable $$$# in target $#" % [e.msg, target.name])
 
-proc addTarget(targets: var seq[Target], target, defaults: Target, filename: string) =
-  target.setDefaults(defaults, filename, targets.len + 1)
-  target.resolve()
-  targets.add(target)
-
 proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
   ## Parses the content of `s` into a sequence of `Target`s. The cfg package
   ## format is assumed. `filename` is used for error messages only. Raises
@@ -126,7 +121,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
     case e.kind
     of cfgEof:
       if context == "target":
-        result.addTarget(target, defaults, filename)
+        result.add(target)
       break
     of cfgSectionStart:
       # echo "Section: [$1]" % e.section
@@ -142,7 +137,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
         of "package", "":
           defaults = target
         of "target":
-          result.addTarget(target, defaults, filename)
+          result.add(target)
         else: assert(false)
         target = new Target
         context = "target"
@@ -213,6 +208,9 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
     of cfgError:
       p.raisePackageError(e.msg)
   close(p)
+  for idx, target in result:
+    target.setDefaults(defaults, filename, idx)
+    target.resolve
 
 proc parsePackageString*(s: string, filename = "nasher.cfg"): seq[Target] =
   ## Parses `s` into a series of targets. The parser chosen is based on
