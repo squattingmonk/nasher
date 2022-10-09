@@ -188,6 +188,38 @@ suite "nasher.cfg parsing":
       targets[0].name == "one"
       targets[1].name == "two"
 
+  test "Default target inserted at beginning":
+    let targets = parsePackageString("""
+    [package]
+    default = "two"
+    file = "bar.mod"
+
+    [target]
+    name = "one"
+
+    [target]
+    name = "two"
+    """)
+
+    check:
+      targets.len == 2
+      targets[0].name == "two"
+      targets[1].name == "one"
+
+    let perTarget = parsePackageString("""
+    [package]
+    file = "bar.mod"
+
+    [target]
+    name = "one"
+
+    [target]
+    default = true
+    name = "two"
+    """)
+
+    check(targets == perTarget)
+
   test "Error if target has no name":
     expect PackageError:
       checkErrorMsg "target 1 does not have a name":

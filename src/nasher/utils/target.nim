@@ -52,7 +52,7 @@ proc contains(kv: seq[KeyValuePair], key: string): bool =
     if k.key == key:
       return true
 
-proc setDefaults(target, defaults: Target, filename: string, idx: int) =
+proc setDefaults(target, defaults: Target, idx: int) =
   ## Fills in missing fields other than `name` and `description` from `target`
   ## using those in `defaults`. Missing key/value pairs in `target.variables`
   ## are copied from `default.variables`. A `PackageError` is raised if the
@@ -62,8 +62,7 @@ proc setDefaults(target, defaults: Target, filename: string, idx: int) =
     if targetVal.len == 0:
       case key:
       of "name":
-        raisePackageError("Error parsing $1: target $2 does not have a name" %
-          [filename, $(idx + 1)])
+        raisePackageError("Error: target $1 does not have a name" % $(idx + 1))
       of "description", "parent", "variables":
         discard
       else:
@@ -106,15 +105,31 @@ proc resolve(target: Target) =
     e.msg.removePrefix("format string: key not found: ")
     raisePackageError("Unknown variable $$$# in target $#" % [e.msg, target.name])
 
+proc add(targets: var seq[Target], target, package: Target, isDefault: bool) =
+  ## Resolves variables in `target` using the parent target from `targets` (if
+  ## given, `package` if not) to supply default values. Then inserts `target` at
+  ## the beginning or end of `targets` depending on `isDefault`.
+  let parent =
+    if target.parent.len > 0:
+      targets.filterIt(it.name == target.parent)[0]
+    else: package
+  target.setDefaults(parent, targets.len)
+  target.resolve
+  if isDefault:
+    targets.insert(target, 0)
+  else:
+    targets.add(target)
+
 proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
   ## Parses the content of `s` into a sequence of `Target`s. The cfg package
   ## format is assumed. `filename` is used for error messages only. Raises
   ## `PackageError` if an error is encountered during parsing.
   var
     p: CfgParser
-    context, section: string
+    context, section, defaultTarget: string
     defaults = new Target
     target = new Target
+    isDefault: bool
 
   p.open(s, filename)
   while true:
@@ -122,7 +137,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
     case e.kind
     of cfgEof:
       if context == "target":
-        result.add(target)
+          result.add(target, defaults, isDefault)
       break
     of cfgSectionStart:
       # echo "Section: [$1]" % e.section
@@ -138,10 +153,11 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
         of "package", "":
           defaults = target
         of "target":
-          result.add(target)
+          result.add(target, defaults, isDefault)
         else: assert(false)
         target = new Target
         context = "target"
+        isDefault = false
       of "sources", "rules", "variables":
         discard
       of "package.sources", "package.rules", "package.variables":
@@ -160,10 +176,16 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
       case section
       of "package", "target":
         case e.key
+        of "default":
+          case section
+          of "package":
+            defaultTarget = e.value
+          of "target":
+            isDefault = true
         of "name":
           if section == "target":
-            if e.value == "all":
-              p.raisePackageError("invalid target name \"all\"")
+            if e.value in ["", "all"]:
+              p.raisePackageError("invalid target name \"$1\"" % e.value)
             for c in e.value:
               if c notin validTargetChars:
                 p.raisePackageError("invalid character $1 in target name $2" %
@@ -172,6 +194,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
               p.raisePackageError("duplicate target name $1" % e.value.escape)
             else:
               target.name = e.value
+              isDefault = isDefault or target.name == defaultTarget
         of "description": target.description = e.value
         of "file": target.file = e.value
         of "branch": target.branch = e.value
@@ -213,13 +236,6 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
     of cfgError:
       p.raisePackageError(e.msg)
   close(p)
-  for idx, target in result:
-    let parent =
-      if target.parent.len > 0:
-        result.filterIt(it.name == target.parent)[0]
-      else: defaults
-    target.setDefaults(parent, filename, idx)
-    target.resolve
 
 proc parsePackageString*(s: string, filename = "nasher.cfg"): seq[Target] =
   ## Parses `s` into a series of targets. The parser chosen is based on
