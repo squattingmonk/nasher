@@ -6,7 +6,8 @@ type
     ## Raised when the package parser encounters an error
 
   Target* = ref object
-    name*, description*, file*, branch*, modName*, modMinGameVersion*, modDescription*: string
+    name*, description*, file*, branch*, parent*: string
+    modName*, modMinGameVersion*, modDescription*: string
     includes*, excludes*, filters*, flags*, groups*: seq[string]
     variables*: seq[KeyValuePair]
     rules*: seq[Rule]
@@ -63,7 +64,7 @@ proc setDefaults(target, defaults: Target, filename: string, idx: int) =
       of "name":
         raisePackageError("Error parsing $1: target $2 does not have a name" %
           [filename, $(idx + 1)])
-      of "description", "variables":
+      of "description", "parent", "variables":
         discard
       else:
         targetVal = defaultVal
@@ -174,6 +175,10 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
         of "description": target.description = e.value
         of "file": target.file = e.value
         of "branch": target.branch = e.value
+        of "parent":
+          if not result.anyIt(it.name == e.value):
+            p.raisePackageError("unknown parent target $1" % e.value.escape)
+          target.parent = e.value
         of "modName": target.modName = e.value
         of "modMinGameVersion": target.modMinGameVersion = e.value
         of "modDescription": target.modDescription = e.value
@@ -209,7 +214,11 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
       p.raisePackageError(e.msg)
   close(p)
   for idx, target in result:
-    target.setDefaults(defaults, filename, idx)
+    let parent =
+      if target.parent.len > 0:
+        result.filterIt(it.name == target.parent)[0]
+      else: defaults
+    target.setDefaults(parent, filename, idx)
     target.resolve
 
 proc parsePackageString*(s: string, filename = "nasher.cfg"): seq[Target] =

@@ -243,6 +243,15 @@ suite "nasher.cfg parsing":
           name = "foo"
           """)
 
+  test "Error on unkown parent target":
+    expect PackageError:
+      checkErrorMsg "unknown parent target \"bar\"":
+        discard parsePackageString("""
+        [target]
+        name = "foo"
+        parent = "bar"
+        """)
+
   test "{package,target}.{version,url,author} fields ignored":
     check:
       parsePackageString("""
@@ -347,6 +356,35 @@ suite "nasher.cfg parsing":
       targets[1].filters == @["*.ncs"]
       targets[1].flags == @["--foo"]
       targets[1].groups == @["baz"]
+
+  test "target.{includes,excludes,filters,flags,groups} inherit from parent":
+    let targets = parsePackageString("""
+    [target]
+    name = "bar"
+    include = "bar/*"
+    exclude = "foo/*"
+    filter = "*.ndb"
+    flags = "--bar"
+    group = "qux"
+
+    [target]
+    name = "foo"
+    parent = "bar"
+    """)
+    check:
+      targets.len == 2
+      targets[0].name == "bar"
+      targets[0].includes == @["bar/*"]
+      targets[0].excludes == @["foo/*"]
+      targets[0].filters == @["*.ndb"]
+      targets[0].flags == @["--bar"]
+      targets[0].groups == @["qux"]
+      targets[1].name == "foo"
+      targets[1].includes == targets[0].includes
+      targets[1].excludes == targets[0].excludes
+      targets[1].filters == targets[0].filters
+      targets[1].flags == targets[0].flags
+      targets[1].groups == targets[0].groups
 
   test "target.{includes,excludes,filters,flags,groups} values added to seq when seen multiple times":
     let target = parsePackageString("""
