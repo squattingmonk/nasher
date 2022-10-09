@@ -16,11 +16,7 @@ Description:
 
 Options:
 $#
-Utility Options:
-$#
-
-""" % [PackLoopOpts.splitLines[4..^1].join("\n"),
-       UtilOpts.splitLines[0..^4].join("\n")]
+""" % ConvertOpts
 
 proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool =
   setCurrentDir(getPackageRoot())

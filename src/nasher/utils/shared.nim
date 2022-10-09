@@ -26,11 +26,7 @@ Logging:
   --no-color             Disable color output (automatic if not a tty)
 """
 
-const PackLoopOpts* = """
-  --noInstall            Do not re-install file before launching
-  --noPack               Do not re-pack file before installing
-  --noCompile            Do not re-compile scripts before packing
-  --noConvert            Do not re-convert gff files before compiling
+const PackLoopOpts = """
   --clean                Clear the cache directory before operation
   --branch:<branch>      Select git branch <branch> before operation
   --modName:<name>       Name for a module file
@@ -48,7 +44,8 @@ const PackLoopOpts* = """
                          override) [default: true]
 """
 
-const UtilOpts* = """
+const UtilOpts = """
+Utility Options:
   --gffUtil:<bin>        Binary to convert GFF files[default: nwn_gff]
   --gffFormat:<fmt>      GFF source file format [choices: json (default), nwnt]
   --gffFlags:<flags>     Flags to pass to $gffUtil [default: -p]
@@ -59,24 +56,64 @@ const UtilOpts* = """
   --erfFlags:<flags>     Flags to pass to $erfUtil [default: ""]
 """
 
-const CompileOpts* = """
+const CompilerOpts = """
+Compiler Options:
   --abortOnCompileError  Quit if an error was encountered during compilation
   --nssCompiler:<bin>    Binary for compiling nss scripts [default: nwnsc]
   --nssFlags:<flags>     Flags to pass to the compiler [default: -lowqey]
   --nssChunks:<n>        Max scripts to compile per compiler exec [default: 500]
 """
 
+const ConvertOpts* = """
+$#
+$#""" % [PackLoopOpts, UtilOpts]
+
+const CompileOpts* = """
+  -f, --file:<file>      Compiles <file> only; repeatable
+  --noConvert            Do not re-convert gff files before compiling
+$#
+$#
+$#""" % [PackLoopOpts, UtilOpts, CompilerOpts]
+
+const PackOpts* = """
+  --noCompile            Do not re-compile scripts before packing
+  --noConvert            Do not re-convert gff files before compiling
+  --packUnchanged        Pack a target even if the source files are unchanged
+$#
+$#
+$#""" % [PackLoopOpts, UtilOpts, CompilerOpts]
+
 const InstallOpts* = """
+  --noPack               Do not re-pack file before installing
+$#
+Installation Options:
+  --installDir:<dir>     Location for installed files (i.e., dir containing erf,
+                         hak, modules, and tlk dirs) [default: $$NWN_HOME]
+  --useModuleFolder      Treat modules in $$installDir/modules as folders instead
+                         of .mod files (note: EE only) [default: true]
+""" % PackOpts
+
+const LaunchOpts* = """
+  --noInstall            Do not re-install file before launching
+$#
+Launch Options:
+  --gameBin              Path to the nwmain binary file
+  --serverBin            Path to the nwserver binary file
+""" % InstallOpts
+
+const UnpackOpts* = """
+  --file:<file>          A file to unpack into the target's source tree. Only
+                         needed if not using <target>'s default file.
+  --truncateFloats:<n>   Max number of decimal places floats in GFF files may
+                         have [range: 0-32, default: 4]
+  --removeDeleted        Remove source files not present in the file being
+                         unpacked [default: false]
+  --branch:<branch>      Select git branch <branch> before operation
   --installDir:<dir>     Location for installed files (i.e., dir containing erf,
                          hak, modules, and tlk dirs) [default: $NWN_HOME]
   --useModuleFolder      Treat modules in $installDir/modules as folders instead
                          of .mod files (note: EE only) [default: true]
-"""
-
-const LaunchOpts* = """
-  --gameBin              Path to the nwmain binary file
-  --serverBin            Path to the nwserver binary file
-"""
+""" & UtilOpts
 
 proc help*(helpMessage: string, errorCode = QuitSuccess) =
   ## Quits with a formatted help message, sending errorCode

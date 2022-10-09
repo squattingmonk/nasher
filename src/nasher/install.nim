@@ -18,15 +18,8 @@ Description:
   and Mac or `~/.local/share/Neverwinter Nights` on Linux.
 
 Options:
-  --packUnchanged        Pack a target even if the source files are unchanged
 $#
-Utility Options:
-$#
-Compiler Options:
-$#
-Installation Options:
-$#
-""" % [PackLoopOpts.splitLines[1..^1].join("\n"), UtilOpts, CompileOpts, InstallOpts]
+""" % InstallOpts
 
 proc install*(opts: Options, target: Target): bool =
   let

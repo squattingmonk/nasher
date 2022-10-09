@@ -36,17 +36,8 @@ Description:
   keep the existing source file.
 
 Options:
-  --file:<file>          A file to unpack into the target's source tree. Only
-                         needed if not using <target>'s default file.
-  --truncateFloats:<n>   Max number of decimal places floats in GFF files may
-                         have [range: 0-32, default: 4]
-  --removeDeleted        Remove source files not present in the file being
-                         unpacked [default: false]
 $#
-$#
-Utility Options:
-$#
-""" % [PackLoopOpts.splitLines[5], InstallOpts, UtilOpts]
+""" % UnpackOpts
 
 proc genSrcMap(files: seq[string]): FileMap =
   ## Generates a table mapping unconverted source files to the proper directory.

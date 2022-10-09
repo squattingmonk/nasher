@@ -20,13 +20,8 @@ Description:
   is older than the existing file, the default is to keep the existing file.
 
 Options:
-  --packUnchanged        Pack a target even if the source files are unchanged
 $#
-Utility Options:
-$#
-Compiler Options:
-$#
-""" % [PackLoopOpts.splitLines[2..^1].join("\n"), UtilOpts, CompileOpts]
+""" % PackOpts
 
 proc getNewestFile(dir: string): string =
   for file in walkFiles(dir / "*"):

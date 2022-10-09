@@ -16,17 +16,8 @@ Description:
   player character in the localvault.
 
 Options:
-  --packUnchanged        Pack a target even if the source files are unchanged
 $#
-Utility Options:
-$#
-Compiler Options:
-$#
-Installation Options:
-$#
-Launch Options:
-$#
-""" % [PackLoopOpts, UtilOpts, CompileOpts, InstallOpts, LaunchOpts]
+""" % LaunchOpts
 
 proc getGameBin: string =
   let binDir = getEnv("NWN_ROOT") / "bin"

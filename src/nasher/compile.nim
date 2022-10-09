@@ -16,15 +16,8 @@ Description:
   sources and packing the target file.
 
 Options:
-  -f, --file:<file>      Compiles <file> only; repeatable
 $#
-Utility Options:
-$#
-
-Compiler Options:
-$#
-""" % [PackLoopOpts.splitLines[3..^1].join("\n"),
-       UtilOpts.splitLines[0..^4].join("\n"), CompileOpts]
+""" % CompileOpts
 
 proc isSrcFile(target: Target, file: string): bool =
   ## Returns whether `file` is a source file of `target`.
