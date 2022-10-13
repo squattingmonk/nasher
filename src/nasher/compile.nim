@@ -172,6 +172,11 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
               updatedNss.add(file)
 
       scripts = getUpdated(updatedNss, files)
+      for script in scripts:
+        ## Ensure any updated scripts have their compiled version deleted so
+        ## they will be re-compiled if compilation fails for some reason.
+        removeFile(script.changeFileExt("ncs"))
+        removeFile(script.changeFileExt("ndb"))
 
     if scripts.len > 0:
       let
