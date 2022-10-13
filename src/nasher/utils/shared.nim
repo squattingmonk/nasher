@@ -334,6 +334,8 @@ proc findBin*(opts: Options, flag, bin, desc: string): string =
     fatal("Could not locate $1: is $2 installed?" % [desc, bin])
   elif not fileExists(result):
     fatal("Could not locate $1: $2 does not exist" % [desc, result])
+  elif fpUserExec notin getFilePermissions(result):
+    fatal("Cannot execute $1: check permissions for $2" % [desc, result])
   info("Located", "$1 at $2" % [desc, result])
 
 proc outFile(srcFile: string): string =
