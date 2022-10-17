@@ -352,6 +352,10 @@ proc outFiles*(srcFiles: seq[string]): FileMap =
   ## if there is more than one file in the target's source tree that can be used
   ## to generate the output file.
   for srcFile in srcFiles:
+    let fileName = srcFile.extractFilename
+    if glob.matches(fileName, "*[A-Z]*", ignoreCase = false):
+      warning("Uppercase characters found in filename $1 may cause 'file not found' prompt during unpack" % [fileName])
+
     let outFile = srcFile.outFile.normalizeFilename
     if result.hasKeyOrPut(outFile, @[srcFile]):
       result[outFile].add(srcFile)
