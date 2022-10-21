@@ -12,7 +12,7 @@ suite "Issues":
       # This nasher package is a library containing files
       let
         target = parsePackageFile(getPackageFile())[0]
-        actual = getSourceFiles(target.includes, target.excludes)
+        actual = target.getSourceFiles
         expected = collect:
           for file in walkFiles("src/*"):
             if file.splitFile.name[0] != '_':
@@ -24,7 +24,7 @@ suite "Issues":
       # This nasher package sources files from another directory
       let
         target = parsePackageFile(getPackageFile())[0]
-        actual = getSourceFiles(target.includes, target.excludes)
+        actual = target.getSourceFiles
         expected = collect:
           for file in walkFiles("../lib/src/*"):
             if file.splitFile.name[0] != '_':
