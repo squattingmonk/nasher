@@ -42,11 +42,22 @@ proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
     tlkUtil = opts.findBin("tlkUtil", "nwn_tlk", "tlk utility")
     tlkFlags = opts.get("tlkFlags")
     tlkFormat = opts.get("tlkFormat", "json")
-    srcFiles = getSourceFiles(target.includes, target.excludes)
-    outFiles = srcFiles.outFiles
 
   display(category.capitalizeAscii, "target " & target.name)
-  if srcFiles.len == 0:
+  var outFiles: Table[string, seq[string]]
+  for file in target.walkSourceFiles:
+    let
+      srcFile = file.normalizeFilename
+      outFile = srcFile.outFile
+
+    if file != srcFile:
+      info("Renaming", fmt"{file} to {srcFile}")
+      file.moveFile(srcFile)
+
+    if outFiles.hasKeyOrPut(outFile, @[srcFile]):
+      outFiles[outFile].add(srcFile)
+
+  if outFiles.len == 0:
     error("No source files found for target " & target.name)
     return false
 

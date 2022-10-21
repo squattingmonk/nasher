@@ -147,23 +147,23 @@ proc matchesAny*(s: string, patterns: seq[string]): bool =
     if glob.matches(s, pattern):
       return true
 
-iterator walkSourceFiles*(includes, excludes: seq[string]): string =
+iterator walkSourceFiles*(target: Target): string =
   ## Yields all files in the source tree matching include patterns while not
   ## matching exclude patterns.
   const globOpts = defaultGlobOptions - {GlobOption.DirLinks} + {GlobOption.Absolute}
   let excluded = collect:
-    for pattern in excludes:
+    for pattern in target.excludes:
       for file in walkGlob(pattern, options = globOpts):
         file
-  for pattern in includes:
+  for pattern in target.includes:
     for file in walkGlob(pattern, options = globOpts):
       if file notin excluded:
         yield file
 
-proc getSourceFiles*(includes, excludes: seq[string]): seq[string] =
+proc getSourceFiles*(target: Target): seq[string] =
   ## Returns all files in the source tree matching include patterns while not
   ## matching exclude patterns.
-  toSeq(walkSourceFiles(includes, excludes)).deduplicate
+  toSeq(target.walkSourceFiles).deduplicate
 
 proc getTimeDiff*(a, b: Time): int =
   ## Compares two times and returns the difference in seconds. If 0, the files
@@ -338,21 +338,8 @@ proc findBin*(opts: Options, flag, bin, desc: string): string =
     fatal("Cannot execute $1: check permissions for $2" % [desc, result])
   info("Located", "$1 at $2" % [desc, result])
 
-proc outFile(srcFile: string): string =
+proc outFile*(srcFile: string): string =
   ## Returns the filename of the converted source file
   let (_, name, ext) = srcFile.splitFile
   if ext == ".json" or ext == ".nwnt": name
   else: name & ext
-
-type
-  FileMap* = Table[string, seq[string]]
-
-proc outFiles*(srcFiles: seq[string]): FileMap =
-  ## Returns a table mapping an output file with source files. Used to determine
-  ## if there is more than one file in the target's source tree that can be used
-  ## to generate the output file.
-  for srcFile in srcFiles:
-    let outFile = srcFile.outFile.normalizeFilename
-    if result.hasKeyOrPut(outFile, @[srcFile]):
-      result[outFile].add(srcFile)
-

@@ -39,7 +39,7 @@ Options:
 $#
 """ % UnpackOpts
 
-proc genSrcMap(files: seq[string]): FileMap =
+proc genSrcMap(files: seq[string]): Table[string, seq[string]] =
   ## Generates a table mapping unconverted source files to the proper directory.
   ## Each file has a sequence of locations (in case it exists in more than one
   ## directory).
@@ -50,7 +50,7 @@ proc genSrcMap(files: seq[string]): FileMap =
     if result.hasKeyOrPut(fileName, @[dir]):
       result[fileName].add(dir)
 
-proc mapSrc(file: string, srcMap: FileMap, rules: seq[Rule]): string =
+proc mapSrc(file: string, srcMap: Table[string, seq[string]], rules: seq[Rule]): string =
   ## Maps a file to the proper directory, first searching existing source files
   ## and then matching it to each pattern in rules. Returns the directory.
   var choices = srcMap.getOrDefault(file)
@@ -155,7 +155,7 @@ proc unpack*(opts: Options, target: Target) =
     deleted: seq[string] = @[]
 
   let
-    sourceFiles = getSourceFiles(target.includes, target.excludes)
+    sourceFiles = target.getSourceFiles
     srcMap = genSrcMap(sourceFiles)
     packTime = file.getLastModificationTime
     removeDeleted = opts.get("removeDeleted", false)

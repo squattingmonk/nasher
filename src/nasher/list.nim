@@ -29,7 +29,7 @@ proc list*(target: Target) =
       discard
 
   if isLogging(LowPriority):
-    info("Source Files:", getSourceFiles(target.includes, target.excludes).join("\n"))
+    info("Source Files:", target.getSourceFiles.join("\n"))
 
   for pattern, dir in target.rules.items:
     display("Rule:", pattern & " -> " & dir)
