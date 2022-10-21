@@ -248,10 +248,10 @@ proc unpack*(opts: Options, target: Target) =
             continue
 
     if fileType == "tlk":
-      info("Converting", fmt"{filePath} -> outFile")
+      info("Converting", fmt"{filePath} -> {outFile}")
       convertFile(filePath, outFile, tlkUtil, tlkFlags)
     elif file.fileName.getFileExt in GffExtensions:
-      info("Converting", fmt"{filePath} -> outFile")
+      info("Converting", fmt"{filePath} -> {outFile}")
       case gffFormat
       of "json": gffToJson(filePath, outFile, gffUtil, gffFlags, precision)
       of "nwnt": gffToNwnt(filePath, outFile, precision)
