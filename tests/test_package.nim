@@ -284,6 +284,15 @@ suite "nasher.cfg parsing":
         parent = "bar"
         """)
 
+  test "Error if target.default is not bool":
+    expect PackageError:
+      checkErrorMsg "value of target.default must be a boolean":
+        discard parsePackageString("""
+        [target]
+        name = "foo"
+        default = "foo"
+        """)
+
   test "{package,target}.{version,url,author} fields ignored":
     check:
       parsePackageString("""

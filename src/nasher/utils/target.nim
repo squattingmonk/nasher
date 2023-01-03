@@ -137,7 +137,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
     case e.kind
     of cfgEof:
       if context == "target":
-          result.add(target, defaults, isDefault)
+        result.add(target, defaults, isDefault)
       break
     of cfgSectionStart:
       # echo "Section: [$1]" % e.section
@@ -181,7 +181,10 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
           of "package":
             defaultTarget = e.value
           of "target":
-            isDefault = true
+            try:
+              isDefault = e.value.parseBool
+            except ValueError:
+              p.raisePackageError("value of target.default must be a boolean")
         of "name":
           if section == "target":
             if e.value in ["", "all"]:
