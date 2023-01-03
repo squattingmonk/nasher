@@ -1,6 +1,145 @@
 # nasher changelog
 
-## 0.19.0: Auguest 19, 2022
+## 0.20.0: January 3, 2023
+
+### Targets can now inherit from other targets
+
+Previously, if a target in `nasher.cfg` did not have a value set, default values
+could be copied from the package level. This change adds the keyword `parent`,
+which can be added at the target level to allow a target to copy these values
+from another target instead; the value assigned to the keyword is the target to
+copy the values from. For example:
+
+```toml
+[target]
+name = "module"
+file = "my_mod.mod"
+
+  [target.sources]
+  include = "src/**/*.{nss,json}"
+
+[target]
+name = "module-slim"
+parent = "module"
+
+  [target.sources]
+  filter = "*.nss"
+```
+
+Inheritance works the same as with inheriting package-level keys: missing keys
+will be copied from the parent; existing keys will not.
+
+Some restrictions:
+1. The keyword can only be specified at the target level.
+2. The parent target must be declared before the child target.
+
+### Specify the default target in `nasher.cfg`
+
+Some nasher commands will operate on a default target if one is not specified.
+Previously, the default target was always the first specified in `nasher.cfg`.
+Now the default target can be set using the new `default` keyword, which can be
+specified at either the package or target level.
+
+At the package level, the value is a string matching the name of the target that
+should be the default target. When this target is found during parsing, it will
+be added to the beginning of the target list, making it the default target.
+
+At the target level, the value is a boolean. If it is `true`, the target will be
+added to the beginning of the target list. It is possible for multiple targets
+to specify this keyword; each will be added to the beginning of the list,
+shifting previous values downward.
+
+This keyword is useful because you can change the default target without having
+to move things around in the nasher.cfg. It also allows the default target to be
+a child of a non-default target, since parents must be declared before children.
+
+This example shows usage at the package level. The target `demo` inherits the
+properties of `demo-nwnx`, excluding those source files that are not desired.
+Because it is marked as `default`, it will be the one acted on by commands such
+as `nasher pack` if no target is specified.
+
+```toml
+[package]
+default = "demo"
+
+[target]
+name = "demo-nwnx"
+description = "A demo module using nwnx"
+file = "demo.mod"
+
+  [target.variables]
+  nwnx = "lib/nwnxee"
+
+  [target.sources]
+  include = "src/**/*.{nss,json}"
+  include = "${nwnx}/Core/NWScript/nwnx.nss"
+  include = "${nwnx}/Plugins/Events/NWScript/nwnx_events.nss"
+
+[target]
+name = "demo"
+parent = "demo-nwnx"
+description = "A demo module without nwnx"
+
+  [target.sources]
+  exclude = "${nwnx}/**"
+```
+
+It is also possible to use the keyword at the target level, but this is
+discouraged in all but the simplest cases since it is less obvious:
+
+```toml
+[target]
+name = "demo-nwnx"
+description = "A demo module using nwnx"
+file = "demo.mod"
+
+  [target.variables]
+  nwnx = "lib/nwnxee"
+
+  [target.sources]
+  include = "src/**/*.{nss,json}"
+  include = "${nwnx}/Core/NWScript/nwnx.nss"
+  include = "${nwnx}/Plugins/Events/NWScript/nwnx_events.nss"
+
+[target]
+name = "demo"
+parent = "demo-nwnx"
+default = true
+description = "A demo module without nwnx"
+
+  [target.sources]
+  exclude = "${nwnx}/**"
+```
+
+### Skip packing if source files are unchanged
+([#103](https://github.com/squattingmonk/nasher/pull/103))
+
+By default, the `pack`, `install`, `serve`, `play`, and `test` commnads will now
+skip packing a file if the source files have not changed since the file was last
+packed. You can override this with the new flag `--packUnchanged`. If you want
+the old behavior to be the default, you can add it as a config setting: `nasher
+config packUnchanged true`.
+
+### Other
+
+- Help messages now include all available options to improve feature discovery.
+- The `convert` command now renames source files to lower case, like the
+  `unpack` command does with output files. This prevents clashes between files
+  based on case. ([#105](https://github.com/squattingmonk/nasher/pull/105))
+- Filenames are shown properly when unpacking
+  ([#106](https://github.com/squattingmonk/nasher/issues/106))
+- Fixed an issue that prevented recompilation of scripts which previously failed
+  to compile. ([#104](https://github.com/squattingmonk/nasher/issues/104))
+- nasher now checks if binaries can be executed before attempting to call them.
+  Should prevent permission errors like that mentioned in
+  [#104](https://github.com/squattingmonk/nasher/issues/104).
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.19.0...0.20.0
+
+
+## 0.19.0: August 19, 2022
 
 ### Added ability to set module description for module targets
 ([#102](https://github.com/squattingmonk/nasher/pull/102))
