@@ -355,30 +355,43 @@ Some fields, while optional, are inherited from the package by
 | `modMinGameVersion` | no         | the minimum game version to run a module target file                      |
 | `modDescription`    | no         | the description for a module target file                                  |
 
+Normally, the first target specified in `nasher.cfg` will be the default.
+However, you can manually specify the target to use as the default in the
+`[package]` section:
+
+| Field     | Repeatable | Description                    |
+| ---       | ---        | ---                            |
+| `default` | no         | the name of the default target |
+
 #### `[target]`
 
 At least one target must be specified. This section provides a target name,
-description, and output filename. Many of these fields will be inherited from
-the [`[package]`](#package) section if they are not set for this target.
+description, and output filename. Many of these fields will be inherited if they
+are not set for this target. Normally, missing values are inherited from the
+`[package]` section. However, you can instead inherit from another target using
+the `parent` key. Its value is the name of another target. The parent target
+must be specified before the child target.
 
-| Field               | Repeatable | Inherited | Description                                                               |
-| ---                 | ---        | ---       | ---                                                                       |
-| `name`              | no         | no        | name of the target; must be unique among targets                          |
-| `description`       | no         | no        | an optional field that describes the target                               |
-| `file`              | no         | yes       | filename including extension be created; can optionally include path info |
-| `group`             | yes        | yes       | a group this target belongs to; used to build multiple targets at once    |
-| `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                   |
-| `branch`            | no         | yes       | the git branch to use for source files                                    |
-| `modName`           | no         | yes       | the name to give a module target file                                     |
-| `modMinGameVersion` | no         | yes       | the minimum game version to run a module target file                      |
-| `modDescription`    | no         | yes       | the description for a module target file                                  |
+| Field               | Repeatable | Inherited | Description                                                                         |
+| ---                 | ---        | ---       | ---                                                                                 |
+| `name`              | no         | no        | name of the target; must be unique among targets                                    |
+| `default`           | no         | no        | whether the target should be the default (true/false)                               |
+| `description`       | no         | no        | an optional field that describes the target                                         |
+| `parent`            | no         | no        | a target to inherit missing values from (if missing, will inherit from `[package]`) |
+| `file`              | no         | yes       | filename including extension be created; can optionally include path info           |
+| `group`             | yes        | yes       | a group this target belongs to; used to build multiple targets at once              |
+| `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                             |
+| `branch`            | no         | yes       | the git branch to use for source files                                              |
+| `modName`           | no         | yes       | the name to give a module target file                                               |
+| `modMinGameVersion` | no         | yes       | the minimum game version to run a module target file                                |
+| `modDescription`    | no         | yes       | the description for a module target file                                            |
 
 #### `[*.sources]`
 
 The sources subsection tells nasher the locations of the source files needed for
 a target. It can be set at the package level (i.e., `[package.rules]`) or at the
 target level (i.e., `[target.rules]`). If a target is missing one of these
-fields, it will be inherited from the package.
+fields, it will be inherited from the package or parent.
 
 All of these fields are repeatable.
 
@@ -409,16 +422,18 @@ project root for you to sort manually. To avoid this, use a catch-all rule
 (`"*" = "path"`) at the end to match any files that did not match other rules.
 
 [Targets](#target) can define their own `[target.rules]` section. If they don't
-they will inherit the `[package.rules]` section.
+they will inherit from their parent target (if set) or the `[package.rules]`
+section.
 
 #### `[*.variables]`
 
 You can define variables that can be referenced in any target field except for
 `name`. You can set variables in the `[package.variables]` section (to apply to
 all targets) or the `[target.variables]` section (to apply to a single target).
-The key is the variable name, while the value is what it should resolve to. The
-target variables table is merged with the package variables table to allow
-missing keys to be inherited.
+Child targets may also inherit variables from parent targets. The key is the
+variable name, while the value is what it should resolve to. The target
+variables table is merged with the inherited variables table to allow missing
+keys to be inherited.
 
 If a variable referenced is not found, nasher will also check the environment
 variables. If a variable is not found in the table or the environment, an error
@@ -710,8 +725,12 @@ by passing the key/value pair as an option to the command.
     are found.
 - `abortOnCompileError`: whether to automatically abort packing, installing, or
    testing a target if `nwnsc` encounters errors.
-   default: `false`
-   supported: `true`, `false`
+   - default: `false`
+   - supported: `true`, `false`
+- `packUnchanged`: whether to force packing a file if the source files have not
+  changed since the last pack.
+  - default: `false`
+  - supported:  `true`, `false`
 
 #### Examples
 
