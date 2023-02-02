@@ -1,5 +1,4 @@
-import os, parsecfg, streams, strtabs, strutils
-from sequtils import anyIt, filterIt, deduplicate
+import std/[os, parsecfg, sequtils, streams, strtabs, strutils]
 
 type
   PackageError* = object of CatchableError
@@ -114,7 +113,6 @@ proc add(targets: var seq[Target], target, package: Target, isDefault: bool) =
       targets.filterIt(it.name == target.parent)[0]
     else: package
   target.setDefaults(parent, targets.len)
-  target.resolve
   if isDefault:
     targets.insert(target, 0)
   else:
@@ -239,6 +237,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
     of cfgError:
       p.raisePackageError(e.msg)
   close(p)
+  result.apply(resolve)
 
 proc parsePackageString*(s: string, filename = "nasher.cfg"): seq[Target] =
   ## Parses `s` into a series of targets. The parser chosen is based on

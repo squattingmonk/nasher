@@ -642,6 +642,32 @@ suite "nasher.cfg parsing":
       targets[0].file == "foo.hak"
       targets[1].file == "bar.hak"
 
+  test "Variables resolved after inheritance":
+    let targets = parsePackageString("""
+      [target]
+      name = "foo"
+      file = "$myVar.hak"
+
+        [target.variables]
+        myVar = "foo"
+
+      [target]
+      name = "bar"
+      parent = "foo"
+
+      [target]
+      name = "baz"
+      parent = "foo"
+
+        [target.variables]
+        myVar = "baz"
+      """)
+
+    check:
+      targets[0].file == "foo.hak"
+      targets[1].file == "foo.hak"
+      targets[2].file == "baz.hak"
+
   test "Parse package string":
     let pkg = """
       [package]
