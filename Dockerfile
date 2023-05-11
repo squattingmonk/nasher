@@ -11,6 +11,7 @@ FROM nwneetools/nwnsc:latest as nwnsc
 FROM nimlang/nim:latest as nasher
 COPY --from=nwnsc usr/local/bin/nwnsc usr/local/bin/nwnsc
 COPY --from=nwserver $NWDATA_PATH /nwn
+ENV NWN_ROOT=/nwn/nwn/data
 RUN dpkg --add-architecture i386 \
     && apt update \
     && apt upgrade -y \
