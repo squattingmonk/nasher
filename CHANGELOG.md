@@ -1,5 +1,19 @@
 # nasher changelog
 
+## 0.20.1: July 8, 2023
+
+### Variables are now resolved after inheritance
+
+Previously, fields inherited from other targets would have their variables
+resolved before inheritance, preventing the child target from supplying their
+own values for the variable. This update causes all targets to have the
+variables resolved after `nasher.cfg `is fully parsed.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.20.0...0.20.1
+
+
 ## 0.20.0: January 3, 2023
 
 ### Targets can now inherit from other targets
