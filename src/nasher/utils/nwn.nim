@@ -19,7 +19,7 @@ proc truncateFloats(j: var JsonNode, precision: range[1..32] = 4, bearing: bool 
   case j.kind
   of JObject:
     for k, v in j.mpairs:
-      if(k == "Bearing"):
+      if(k in @["Bearing", "Orientation"]):
         v.truncateFloats(precision, true)
       else:
         v.truncateFloats(precision, bearing)
