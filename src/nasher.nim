@@ -115,11 +115,13 @@ when isMainModule:
             unpack(opts, target)
           else:
             var updatedNss: seq[string]
+            var exitCode = QuitSuccess
             if convert(opts, target, updatedNss) and
-               compile(opts, target, updatedNss) and
+               compile(opts, target, updatedNss, exitCode) and
                pack(opts, target) and
                install(opts, target):
                  launch(opts, target)
+            quit(exitCode)
       else:
         help(helpAll, QuitFailure)
   except SyntaxError, PackageError:
