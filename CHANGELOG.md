@@ -1,5 +1,16 @@
 # nasher changelog
 
+## 0.20.2: August 2, 2023
+
+- The `Orientation` field in gff files no longer flaps sign (0/-0).
+- nasher now requires neverwinter.nim 1.6.3.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.20.1...0.20.2
+
+
+
 ## 0.20.1: July 8, 2023
 
 ### Variables are now resolved after inheritance
