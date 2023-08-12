@@ -121,7 +121,8 @@ when isMainModule:
                pack(opts, target) and
                install(opts, target):
                  launch(opts, target)
-            quit(exitCode)
+            if exitCode != QuitSuccess:
+              quit(exitCode)
       else:
         help(helpAll, QuitFailure)
   except SyntaxError, PackageError:
