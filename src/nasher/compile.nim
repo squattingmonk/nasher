@@ -117,7 +117,7 @@ proc getUpdated(updatedNSS: var seq[string], files: seq[string]): seq[string] =
 
   updatedNss = result
 
-proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool =
+proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCode: var int): bool =
   let
     cmd = opts["command"]
     cacheDir = ".nasher" / "cache" / target.name
@@ -196,6 +196,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
             hint("This was chunk $1 out of $2" % [$(chunk + 1), $chunks])
             if not askIf("Do you want to continue compiling?"):
               setForceAnswer(forced)
+              exitCode = QuitFailure
               return false
     else:
       display("Skipping", "compilation: nothing to compile")
@@ -212,7 +213,10 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
           setForceAnswer(abortOnCompileError)
         if not askIf("Do you want to continue to $#?" % [cmd]):
           setForceAnswer(forced)
+          exitCode = QuitFailure
           return false
+      else:
+        exitCode = QuitFailure
     else:
       success("All executable scripts have a matching compiled (.ncs) script", LowPriority);
       if scripts.len > 0:
