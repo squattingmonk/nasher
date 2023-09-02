@@ -1,5 +1,17 @@
 # nasher changelog
 
+## 0.21.0: September 2, 2023
+
+- The `compile` command now returns a non-zero exit code on failure. When
+  multiple targets are being compiled, failure to build one target will abort
+  operations on any remaining targets. Thanks to Ardesco for PR
+  [#111](https://github.com/squattingmonk/nasher/pull/111).
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.20.2...0.21.0
+
+
 ## 0.20.2: August 2, 2023
 
 - The `Orientation` field in gff files no longer flaps sign (0/-0).
@@ -8,7 +20,6 @@
 ---
 
 Details: https://github.com/squattingmonk/nasher/compare/0.20.1...0.20.2
-
 
 
 ## 0.20.1: July 8, 2023
