@@ -37,6 +37,7 @@ jobs:
           - macOS-latest
         nim:
           - 1.6.14
+          - stable
     name: Nim ${{ matrix.nim }} (${{ matrix.os }})
     steps:
       - uses: actions/checkout@v2
