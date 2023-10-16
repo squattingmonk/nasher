@@ -62,11 +62,28 @@ proc pack*(opts: Options, target: Target): bool =
     let
       packTime = file.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, packTime)
+      currentAnswer = getForceAnswer()
       defaultAnswer = if timeDiff >= 0: Yes else: No
+
+    # Here we temporarily override the user's forced answer. We do this so if
+    # the user passed both --yes / --no and --overwritePackedFile=ask, we can
+    # ask the user for input. After we ask, we set the forced answer back so any
+    # other prompts will be answered as the user intended.
+    case opts.get("overwritePackedFile", "")
+    of "ask": setForceAnswer(None)
+    of "default": setForceAnswer(Default)
+    of "always": setForceAnswer(Yes)
+    of "never": setForceAnswer(No)
+    of "": discard
+    else:
+      fatal("--overwritePackedFile must be one of [ask, default, always, never]")
 
     hint(getTimeDiffHint("The file to be packed", timeDiff))
     if not askIf(fmt"{file} already exists. Overwrite?", defaultAnswer):
+      setForceAnswer(currentAnswer)
       return cmd != "pack" and askIf(fmt"Continue installing {file}?")
+    setForceAnswer(currentAnswer)
+
   else:
     file.parentDir.createDir
 

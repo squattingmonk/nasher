@@ -57,12 +57,28 @@ proc install*(opts: Options, target: Target): bool =
     let
       installedTime = installed.getLastModificationTime
       timeDiff = getTimeDiff(fileTime, installedTime)
+      currentAnswer = getForceAnswer()
       defaultAnswer = if timeDiff >= 0: Yes else: No
+
+    # Here we temporarily override the user's forced answer. We do this so if
+    # the user passed both --yes / --no and --overwriteInstalledFile=ask, we can
+    # ask the user for input. After we ask, we set the forced answer back so any
+    # other prompts will be answered as the user intended.
+    case opts.get("overwriteInstalledFile", "")
+    of "ask": setForceAnswer(None)
+    of "default": setForceAnswer(Default)
+    of "always": setForceAnswer(Yes)
+    of "never": setForceAnswer(No)
+    of "": discard
+    else:
+      fatal("--overwriteInstalledFile must be one of [ask, default, always, never]")
 
     hint(getTimeDiffHint("The file to be installed", timeDiff))
     if not askIf(fmt"{installed} already exists. Overwrite?", defaultAnswer):
+      setForceAnswer(currentAnswer)
       return ext == ".mod" and cmd != "install" and
              askIf(fmt"Do you still wish to {cmd} {filename}?")
+    setForceAnswer(currentAnswer)
 
   copyFile(file, installed)
   setLastModificationTime(installed, fileTime)

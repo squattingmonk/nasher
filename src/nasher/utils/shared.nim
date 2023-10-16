@@ -79,6 +79,11 @@ const PackOpts* = """
   --noCompile            Do not re-compile scripts before packing
   --noConvert            Do not re-convert gff files before compiling
   --packUnchanged        Pack a target even if the source files are unchanged
+  --overwritePackedFile:<method>
+                         Whether to overwrite existing packed files of the same
+                         name in the output directory [choices: ask (default),
+                         default (overwrite if existing file is older, skip if
+                         newer), never, always]
 $#
 $#
 $#""" % [PackLoopOpts, UtilOpts, CompilerOpts]
@@ -89,6 +94,11 @@ $#
 Installation Options:
   --installDir:<dir>     Location for installed files (i.e., dir containing erf,
                          hak, modules, and tlk dirs) [default: $$NWN_HOME]
+  --overwriteInstalledFile:<method>
+                         Whether to overwrite existing files of the same name in
+                         the install directory [choices: ask (default), default
+                         (overwrite if existing file is older, skip if newer),
+                         never, always (will lose any changes from the toolset)]
   --useModuleFolder      Treat modules in $$installDir/modules as folders instead
                          of .mod files (note: EE only) [default: true]
 """ % PackOpts
