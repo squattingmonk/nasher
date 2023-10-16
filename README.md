@@ -16,7 +16,7 @@ version control and team collaboration.
 * nasher uses json or [NWNT](https://github.com/WilliamDraco/NWNT) for its text
   file format.
 
-This guide is current as of nasher release 0.20.x.
+This guide is current as of nasher release 0.21.x.
 
 * [Installation Options](#installation-options)
     * [Binary Releases](#binary-releases)
@@ -64,7 +64,8 @@ of nasher for your OS and place a pointer to the location of the executable
 file in your [`PATH` environment variable](https://superuser.com/a/284351).
 
 In addition, you will need the following tools:
-* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.5.5
+* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.6.4
+* [nwnt](https://github.com/WilliamDraco/NWNT) >= 1.3.3
 * [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.3
 * [git](https://git-scm.com/downloads)
 
