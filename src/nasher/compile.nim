@@ -215,6 +215,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
           setForceAnswer(forced)
           exitCode = QuitFailure
           return false
+        setForceAnswer(forced)
       else:
         exitCode = QuitFailure
     else:
