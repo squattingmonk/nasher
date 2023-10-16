@@ -1,4 +1,6 @@
-import json, os, times, std/sha1
+import std/[json, os, times]
+
+import checksums/sha1
 
 import cli
 
