@@ -221,7 +221,7 @@ proc parseCommandLine*[T: string|seq[string]](opts: Options, params: T = command
         "verbose", "quiet", "yes", "no", "default", "get", "set", "unset",
         "list", "global", "local", "clean", "noConvert", "noCompile", "noPack",
         "noInstall", "removeDeleted", "removeUnusedAreas", "useModuleFolder",
-        "abortOnCompileError"],
+        "abortOnCompileError", "packUnchanged"],
       normalizeOption = normalize)
 
   for kind, key, val in p.getopt():
