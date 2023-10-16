@@ -153,7 +153,7 @@ proc prompt(msg: string): string =
     result = stdin.readLine
     if not stdin.isatty:
       echo result
-  except:
+  except CatchableError:
     stdout.write("\n")
     result = ""
 

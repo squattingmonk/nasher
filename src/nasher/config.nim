@@ -53,7 +53,7 @@ proc writeConfigFile(opts: Options, file: string) =
   try:
     createDir(file.splitFile.dir)
     opts.writeFile(file)
-  except:
+  except CatchableError:
     fatal(getCurrentExceptionMsg())
 
 proc config*(opts: Options) =

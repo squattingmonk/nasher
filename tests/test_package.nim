@@ -12,7 +12,7 @@ template checkErrorMsg(msg: string, body: untyped) =
   ## Runs `body` and checks that any raised exception message contains `msg`.
   try:
     body
-  except:
+  except CatchableError:
     check msg in getCurrentExceptionMsg()
     raise
 

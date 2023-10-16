@@ -28,7 +28,7 @@ proc write*(manifest: Manifest) =
   try:
     createDir(getCurrentDir() / ".nasher")
     path.writeFile(manifest.data.pretty)
-  except:
+  except CatchableError:
     fatal("Could not write to manifest file " & path)
 
 proc parseManifest*(file: string): Manifest =
@@ -41,7 +41,7 @@ proc parseTime(time: string): Time =
   else:
     try:
       time.parseTime("yyyy-MM-dd\'T\'HH:mm:sszzz", now().timezone)
-    except:
+    except CatchableError:
       error("Could not parse timestamp " & time)
       fromUnix(0)
 

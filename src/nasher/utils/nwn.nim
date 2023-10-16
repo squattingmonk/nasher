@@ -53,7 +53,7 @@ proc createOutDir(file: string) =
   except OSError:
     let msg = osErrorMsg(osLastError())
     fatal(fmt"Could not create {dir}: {msg}")
-  except:
+  except CatchableError:
     fatal(getCurrentExceptionMsg())
 
 proc convertFile*(inFile, outFile, bin, args: string) =
@@ -104,7 +104,7 @@ proc gffToJson*(inFile, outFile, bin, args: string, precision: range[1..32] = 4)
   try:
     createOutDir(outFile)
     writeFile(outFile, j.pretty() & "\n")
-  except:
+  except CatchableError:
     let msg = getCurrentExceptionMsg()
     fatal(fmt"Could not convert {inFile} to {outFile}: {msg}")
 
@@ -153,7 +153,7 @@ proc gffToNwnt*(inFile, outFile: string, precision: range[1..32] = 4) =
     output.toNwnt(state, precision) # does writeFile in-proc
     input.close()
     output.close()
-  except:
+  except CatchableError:
     let msg = getCurrentExceptionMsg()
     fatal(fmt"Could not convert {inFile} to {outFile}: {msg}")
 
@@ -177,7 +177,7 @@ proc nwntToGff*(inFile, outFile: string) =
     output.write(input.gffRootFromNwnt())
     input.close()
     output.close()
-  except:
+  except CatchableError:
     let msg = getCurrentExceptionMsg()
     fatal(fmt"Could not convert {inFile} to {outFile.extractFilename}: {msg}")
 

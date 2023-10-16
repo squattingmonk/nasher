@@ -127,7 +127,7 @@ when isMainModule:
         help(helpAll, QuitFailure)
   except SyntaxError, PackageError:
     fatal(getCurrentExceptionMsg())
-  except:
+  except CatchableError:
     error("An unknown error occurred. Please file a bug report at " &
           "https://github.com/squattingmonk/nasher/issues using the " &
           "stack trace info below:")

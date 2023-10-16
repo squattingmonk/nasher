@@ -61,7 +61,7 @@ proc init*(opts: Options): bool =
       if gitInit(dir):
         gitIgnore(dir)
       success("initialized git repository")
-    except:
+    except CatchableError:
       error("Could not initialize git repository: " & getCurrentExceptionMsg())
 
   success("project initialized")
