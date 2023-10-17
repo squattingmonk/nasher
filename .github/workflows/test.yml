@@ -1,22 +1,6 @@
 name: Tests
 
-on:
-  # Allow running manually
-  workflow_dispatch:
-
-  # Run automatically
-  push:
-    paths-ignore:
-      - '.github/**'
-      - 'LICENSE'
-      - '*.md'
-      - '*.yml'
-  pull_request:
-    paths-ignore:
-      - '.github/**'
-      - 'LICENSE'
-      - '*.md'
-      - '*.yml'
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   test:
