@@ -47,6 +47,8 @@ jobs:
         with:
           path: ~/.nimble
           key: ${{ runner.os }}-nimble-${{ matrix.nim-version }}-${{ hashFiles('nasher.nimble') }}
+          restore-keys: |
+            ${{ runner.os }}-nimble-${{ matrix.nim-version }}
 
       - name: Set up Nim
         uses: jiro4989/setup-nim-action@v1
