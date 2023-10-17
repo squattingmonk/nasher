@@ -1,4 +1,4 @@
-name: release
+name: Release
 
 on:
   push:
@@ -21,11 +21,33 @@ jobs:
           - windows-latest
           - macOS-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: jiro4989/setup-nim-action@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache choosenim
+        id: cache-choosenim
+        uses: actions/cache@v3
+        with:
+          path: ~/.choosenim
+          key: ${{ runner.os }}-choosenim-${{ env.NIM_VERSION }}
+
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v3
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ env.NIM_VERSION }}-${{ hashFiles('nasher.nimble') }}
+          restore-keys: |
+            ${{ runner.os }}-nimble-${{ env.NIM_VERSION }}
+
+      - name: Set up nim
+        uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: ${{ env.NIM_VERSION }}
-      - run: nimble build -Y -d:release
+
+      - name: Build release binary
+        run: nimble build -Y -d:release
+
       - name: Create artifact
         run: |
           assets="${{ env.APP_NAME }}_$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')"
@@ -42,7 +64,9 @@ jobs:
             ls -lah *.*
           )
         shell: bash
-      - uses: actions/upload-artifact@v2
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
         with:
           name: artifact-${{ matrix.os }}
           path: |
@@ -70,7 +94,8 @@ jobs:
       - name: Write upload_url to file
         run: echo '${{ steps.create-release.outputs.upload_url }}' > upload_url.txt
 
-      - uses: actions/upload-artifact@v2
+      - name: Upload articact
+        uses: actions/upload-artifact@v2
         with:
           name: create-release
           path: upload_url.txt
