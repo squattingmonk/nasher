@@ -29,12 +29,6 @@ proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
     return cmd != "convert"
 
   let
-    multiSrcChoices = ["choose", "default", "error"]
-    multiSrcAction = opts.get("onMultipleSources", multiSrcChoices[0])
-  if multiSrcAction notin multiSrcChoices:
-    fatal("--onMultipleSources must be one of [$#]" % join(multiSrcChoices, ", "))
-
-  let
     category = if cmd.endsWith('e'): cmd[0..^2] & "ing" else:  cmd & "ing"
     gffUtil = opts.findBin("gffUtil", "nwn_gff", "gff utility")
     gffFlags = opts.get("gffFlags", "-p")
@@ -42,6 +36,7 @@ proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
     tlkUtil = opts.findBin("tlkUtil", "nwn_tlk", "tlk utility")
     tlkFlags = opts.get("tlkFlags")
     tlkFormat = opts.get("tlkFormat", "json")
+    multiSrcAction = opts.get("onMultipleSources", MultiSrcAction.None)
 
   display(category.capitalizeAscii, "target " & target.name)
   var outFiles: Table[string, seq[string]]
@@ -92,18 +87,14 @@ proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
   for cacheFile, inFiles in outFiles.pairs:
     assert inFiles.len > 0
 
-    var srcFile = inFiles[0]
-    if inFiles.len > 1:
-      case multiSrcAction
-      of "error":
-        fatal("Multiple sources found for $1:\n$2" % [cacheFile, join(inFiles, "\n")])
-      of "choose":
-        srcFile = choose(fmt"Multiple sources found for {cacheFile}. " &
-                    "Which one do you wish to use?", inFiles)
-      of "default": discard
-      else: assert false
+    let
+      outFile = cacheDir / cacheFile
+      srcFile =
+        if inFiles.len > 1:
+          chooseFile(cacheFile, inFiles, multiSrcAction)
+        else:
+          inFiles[0]
 
-    let outFile = cacheDir / cacheFile
     if manifest.getFilesChanged(srcFile, outFile):
       let
         srcExt = srcFile.getFileExt
