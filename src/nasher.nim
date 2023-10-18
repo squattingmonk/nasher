@@ -12,7 +12,7 @@ Usage:
   nasher init [options] [<dir> [<file>]]
   nasher list [options] [<target>...]
   nasher (convert|compile|pack|install|play|test|serve) [options] [<target>...]
-  nasher unpack [options] [<target> [<file>]]
+  nasher unpack [options] [<target>...]
   nasher config [options] <key> [<value>]
 
 Commands:

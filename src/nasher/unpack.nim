@@ -29,11 +29,11 @@ Description:
   so you can manually move it later.
 
   If an unpacked source would overwrite an existing source, its sha1 checksum is
-  against that from the last pack/unpack operation. If the sum is different, the
-  file has changed. If the source file has not been updated since the last pack
-  or unpack, the source file will be overwritten by the unpacked file. Otherwise
-  you will be prompted to overwrite the source file. The default answer is to
-  keep the existing source file.
+  checked against that from the last pack/unpack operation. If the sum is
+  different, the file has changed. If the source file has not been updated since
+  the last pack or unpack, the source file will be overwritten by the unpacked
+  file. Otherwise you will be prompted to overwrite the source file. The default
+  answer is to keep the existing source file.
 
 Options:
 $#
