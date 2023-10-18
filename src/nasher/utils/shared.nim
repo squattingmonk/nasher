@@ -122,6 +122,10 @@ const UnpackOpts* = """
                          have [range: 0-32, default: 4]
   --removeDeleted        Remove source files not present in the file being
                          unpacked [default: false]
+  --onMultipleSources:<method>
+                         How to handle multiple sources for the same file
+                         [choices: choose (default), default (accept the first),
+                         error (fail)]. Overrides --yes/--no if explicitly set.
   --branch:<branch>      Select git branch <branch> before operation
   --installDir:<dir>     Location for installed files (i.e., dir containing erf,
                          hak, modules, and tlk dirs) [default: $NWN_HOME]
