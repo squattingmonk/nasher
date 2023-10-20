@@ -367,13 +367,13 @@ proc chooseFile*(file: string, choices: seq[string], action: MultiSrcAction): st
   ## allowing them to choose a location based on `action`. Returns the chosen
   ## location.
   case action
-  of Error:
+  of MultiSrcAction.Error:
     fatal("Multiple locations for $1:\n$2" % [file, choices.join("\n")])
   else:
     let current = getForceAnswer()
     case action
-    of Choose: setForceAnswer(None)
-    of Default: setForceAnswer(Default)
+    of MultiSrcAction.Choose: setForceAnswer(None)
+    of MultiSrcAction.Default: setForceAnswer(Default)
     else: discard
     result = choose(fmt"Multiple locations available for {file}. Please choose:", choices)
     setForceAnswer(current)
