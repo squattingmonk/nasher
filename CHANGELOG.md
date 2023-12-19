@@ -1,5 +1,11 @@
 # nasher changelog
 
+## 0.22.0: <data>
+
+- neverwinter.nim's `nwn_script_comp` is now the default script compiler. 
+  Users who want to continue using nwnsc must set the `nssCompiler` and 
+  `nssFlags` configuration values as noted in the [readme](readme.md).
+
 ## 0.21.0: September 2, 2023
 
 - The `compile` command now returns a non-zero exit code on failure. When

@@ -59,8 +59,8 @@ Utility Options:
 const CompilerOpts = """
 Compiler Options:
   --abortOnCompileError  Quit if an error was encountered during compilation
-  --nssCompiler:<bin>    Binary for compiling nss scripts [default: nwnsc]
-  --nssFlags:<flags>     Flags to pass to the compiler [default: -lowqey]
+  --nssCompiler:<bin>    Binary for compiling nss scripts [default: nwn_script_comp]
+  --nssFlags:<flags>     Flags to pass to the compiler [default: <none>]
   --nssChunks:<n>        Max scripts to compile per compiler exec [default: 500]
 """
 

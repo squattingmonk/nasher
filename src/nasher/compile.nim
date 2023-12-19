@@ -8,8 +8,10 @@ Usage:
 
 Description:
   Compiles all nss sources for <target>. If <target> is not supplied, the first
-  target supplied by the config files will be compiled. The input and output
-  files are placed in .nasher/cache/<target>.
+  target supplied by the config files will be compiled. The input files are
+  placed in .nasher/cache/<target>.  The output files are placed in the same
+  folder unless the compiler flags `-b` (for nwnsc`) or `-o`/`-d` (for
+  nwn_script_comp) are specified.
 
   Compilation of scripts is handled automatically by 'nasher pack', so you only
   need to use this if you want to compile the scripts without converting gff
@@ -117,10 +119,27 @@ proc getUpdated(updatedNSS: var seq[string], files: seq[string]): seq[string] =
 
   updatedNss = result
 
+proc getFlags(compiler: Compiler, opts: Options, target: Target): seq[string] =
+  let nssFlags = opts.get("nssFlags", compilerFlags[compiler.ord]).parseCmdLine
+  var flags = nssFlags & target.flags
+
+  case compiler:
+    of Organic:
+      let
+        installDir = opts.get("installDir", getEnv("NWN_HOME")).expandPath
+        rootDir = getNwnRootDir().expandPath
+
+      if installDir.len > 0: flags = flags & "--userdirectory" & installDir
+      if rootDir.len > 0: flags = flags & "--root" & rootDir
+
+      result = flags & "-c"
+    of Legacy:
+      result = flags
+
 proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCode: var int): bool =
   let
     cmd = opts["command"]
-    cacheDir = ".nasher" / "cache" / target.name
+    cacheDir = (".nasher" / "cache" / target.name)
     abortOnCompileError =
       if opts.hasKey("abortOnCompileError"):
         if opts.get("abortOnCompileError", false): Answer.No
@@ -134,8 +153,8 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
     return cmd != "compile"
 
   let
-    compiler = opts.findBin("nssCompiler", "nwnsc", "script compiler")
-    userFlags = opts.get("nssFlags", "-lowqey").parseCmdLine
+    bin = opts.findBin("nssCompiler", $Compiler.low, "script compiler")
+    compiler = parseEnum[Compiler](bin.splitPath.tail.splitFile.name, Compiler.low)
 
   withDir(cacheDir):
     # If we are only compiling one file...
@@ -186,8 +205,9 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
       for chunk, scripts in distribute(scripts, chunks):
         if chunks > 1:
           info("Compiling", "$1 scripts (chunk $2/$3)" % [$scripts.len, $(chunk + 1), $chunks])
-        let args = userFlags & target.flags & scripts
-        if runCompiler(compiler, args) != 0:
+
+        let args = compiler.getFlags(opts, target) & scripts
+        if runCompiler(bin, args) != 0:
           warning("Errors encountered during compilation (see above)")
           if chunk + 1 < chunks:
             let forced = getForceAnswer()
@@ -204,8 +224,8 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
     let unmatchedNcs = executables.filterIt(not fileExists(it.changeFileExt("ncs")))
     if unmatchedNcs.len > 0:
       warning("""
-        Compiled only $1 of $2 scripts. The following executable scripts do not
-        have matching .ncs files due to an nwnsc error: $3""".dedent %
+        Compiled $1 of $2 scripts. The following executable scripts do not
+        have a matching compiled (.ncs) script file: $3""".dedent %
         [$(scripts.len - unmatchedNcs.len), $scripts.len, unmatchedNcs.join(", ")])
       if cmd in ["pack", "install", "serve", "test", "play"]:
         let forced = getForceAnswer()
@@ -219,7 +239,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
       else:
         exitCode = QuitFailure
     else:
-      success("All executable scripts have a matching compiled (.ncs) script", LowPriority);
+      success("All executable scripts have a matching compiled (.ncs) script file", LowPriority);
       if scripts.len > 0:
         success("Compiled $1 scripts" % $scripts.len)
 
