@@ -66,13 +66,17 @@ file in your [`PATH` environment variable](https://superuser.com/a/284351).
 In addition, you will need the following tools:
 * [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.7.3
 * [nwnt](https://github.com/WilliamDraco/NWNT) >= 1.3.3
-* [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.3
 * [git](https://git-scm.com/downloads)
+
+Starting with 1.0.0, nasher's default script compiler is neverwinter.nim's 
+`nwn_script_comp`.  If you'd like to use the legacy script compiler nwnsc, 
+you'll need:
+* [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.3
 
 #### Tips
 * Keep the binaries for nasher, neverwinter.nim, and nwnsc in the same
   location.
-* Do not keep binaries in your nasher project folder
+* Do not keep binaries in your nasher project folder.
 * Do not publish binaries with your source control repository. If you are
   collaborating, each team member should download and install the binaries
   individually.
@@ -84,8 +88,10 @@ In addition, you will need the following tools:
 First, install the following:
 * [nim](https://nim-lang.org) and it package manager `nimble`. The easy way to
   install is to use [choosenim](https://github.com/dom96/choosenim).
-* [nwnsc](https://github.com/nwneetools/nwnsc) >= 1.1.3
 * [git](https://git-scm.com/downloads)
+
+Optionally, install nwnsc if you'd like to use the legacy script compiler:
+* [nwnsc](https://github.com/nwneetools/nwnsc) >= 1.1.3
 
 *Note: when building nasher, nimble will download and install neverwinter.nim
 automatically. You do not need to install it yourself.*
@@ -130,31 +136,37 @@ alias nasher='docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest '
 ```
 
 #### Tips
-Create batch/script files to run your most common nasher commands since the
+* Create batch/script files to run your most common nasher commands since the
 docker commands can be rather verbose. An excellent example of this is in [The
 Frozen North](https://github.com/b5635/the-frozen-north) GitHub repository.
 
 ## Getting Started
 
 ### First-Time Setup
-nasher will detect nwnsc and the neverwinter.nim tools if they are in your
-`PATH`. You can also use nasher's `config` command to set the proper locations:
+nasher will detect neverwinter.nim tools and your chosen script compiler if 
+they are in your `PATH` enviromental variable. You can also use nasher's 
+`config` command to set the proper locations if the tools are not on your
+`PATH` variable:
 ```console
-$ # Set the path to nwnsc
-$ nasher config nssCompiler "%USERPROFILE%/bin/nwnsc.exe"      # Windows
-$ nasher config nssCompiler "~/.local/bin/nwnsc"               # Posix
+$ # Set the path to the script compiler
+$ # neverwinter.nim script compiler
+$ nasher config nssCompiler "%USERPROFILE%/bin/nwn_script_comp.exe"      # Windows
+$ nasher config nssCompiler "~/.local/bin/nwn_script_comp"               # Posix
+$ # or nwnsc (this must be set if you want to use nwnsc with nasher >=0.22.0)
+$ nasher config nssCompiler "%USERPROFILE%/bin/nwnsc.exe"                # Windows
+$ nasher config nssCompiler "~/.local/bin/nwnsc"                         # Posix
 
 $ # Set the path to nwn_erf
-$ nasher config erfUtil "%USERPROFILE%/bin/nwn_erf.exe"        # Windows
-$ nasher config erfUtil "~/.local/bin/nwn_erf"                 # Posix
+$ nasher config erfUtil "%USERPROFILE%/bin/nwn_erf.exe"                  # Windows
+$ nasher config erfUtil "~/.local/bin/nwn_erf"                           # Posix
 
 $ # Set the path to nwn_gff
-$ nasher config gffUtil "%USERPROFILE%/bin/nwn_gff.exe"        # Windows
-$ nasher config gffUtil "~/.local/bin/nwn_gff"                 # Posix
+$ nasher config gffUtil "%USERPROFILE%/bin/nwn_gff.exe"                  # Windows
+$ nasher config gffUtil "~/.local/bin/nwn_gff"                           # Posix
 
 $ # Set the path to nwn_tlk
-$ nasher config tlkUtil "%USERPROFILE%/bin/nwn_tlk.exe"        # Windows
-$ nasher config tlkUtil "~/.local/bin/nwn_tlk"                 # Posix
+$ nasher config tlkUtil "%USERPROFILE%/bin/nwn_tlk.exe"                  # Windows
+$ nasher config tlkUtil "~/.local/bin/nwn_tlk"                           # Posix
 ```
 nasher will also detect NWN if it was installed by Steam, Beamdog, or GOG. If
 you are having issues getting nasher to recognize your NWN install, you can set
@@ -205,7 +217,7 @@ $ nasher install
 You can get help for nasher or one of its commands using the `--help` flag:
 ```console
 $ nasher --help       # General help
-$ nasher init --help  # Command-specific help
+$ nasher <command> --help  # Command-specific help
 ```
 
 If you're still stuck, you can get assistance in several locations:
@@ -324,7 +336,7 @@ file = "myPWtlk.tlk"
   include = "src/tlk/*.json"
 ```
 
-While you can write your own package file, the [`init`](#init) command will
+While you can write your own configuration file, the [`init`](#init) command will
 create one for you. It will show prompts for each section and provide useful
 defaults. If you don't want to answer the prompts and just want to quickly
 initialize the package, you can pass the `--default` flag when running `init`.
@@ -350,7 +362,7 @@ Some fields, while optional, are inherited from the package by
 | ---                 | ---        | ---                                                                       |
 | `file`              | no         | filename including extension be created; can optionally include path info |
 | `group`             | yes        | a group a target may belong to; used to build multiple targets at once    |
-| `flags`             | yes        | command line arguments to send to nwnsc at compile-time                   |
+| `flags`             | yes        | command line arguments to send to the script compiler at compile-time     |
 | `branch`            | no         | the git branch to use for source files                                    |
 | `modName`           | no         | the name to give a module target file                                     |
 | `modMinGameVersion` | no         | the minimum game version to run a module target file                      |
@@ -381,7 +393,7 @@ must be specified before the child target.
 | `parent`            | no         | no        | a target to inherit missing values from (if missing, will inherit from `[package]`) |
 | `file`              | no         | yes       | filename including extension be created; can optionally include path info           |
 | `group`             | yes        | yes       | a group this target belongs to; used to build multiple targets at once              |
-| `flags`             | yes        | yes       | command line arguments to send to nwnsc at compile-time                             |
+| `flags`             | yes        | yes       | command line arguments to send to the script compiler at compile-time               |
 | `branch`            | no         | yes       | the git branch to use for source files                                              |
 | `modName`           | no         | yes       | the name to give a module target file                                               |
 | `modMinGameVersion` | no         | yes       | the minimum game version to run a module target file                                |
@@ -642,8 +654,8 @@ by passing the key/value pair as an option to the command.
     - default (Posix): `nwnsc`
     - default (Windows): `nwnsc.exe`
 - `nssFlags`: the default flags to use on packages
-    - default: `-lowqey`
-    - note: since nwnsc can read the `NWN_ROOT` environment variable to find
+    - default: `` for `nwn_script_comp``, `-lowqey` for `nwnsc`
+    - note: since compilers can read the `NWN_ROOT` environment variable to find
       your NWN install, it is preferable to use that rather than passing the
       location through `nssFlags`. If `NWN_ROOT` is set (or if nasher can find
       your NWN install without it), nwnsc should work fine using the default
@@ -704,17 +716,6 @@ by passing the key/value pair as an option to the command.
   float value changes.
   - default: `4`
   - supported: `1` - `32`
-- `modName`: the name for any module file to be generated by the target. This
-  is independent of the filename. Only relevant when `convert` will be called.
-  - default: ""
-- `modMinGameVersion`: the minimum game version that can run any module file
-  generated by the target. Only relevant when `convert` will be called.
-  - default: ""
-  - note: if blank, the version in the `module.ifo` file will be unchanged.
-- `modDescription`: the description for a module file generated by a target.
-  Only relevant when `convert` will be called.
-  - default: ""
-  - note: If blank, the description in the `module.ifo` file will be unchanged.
 - `onMultipleSources`: an action to perform when multiple source files of the
   same name are found for a target.
   - default: `choose`

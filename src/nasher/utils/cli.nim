@@ -20,7 +20,7 @@ type
     None, No, Yes, Default
 
 const
-  colWidth = len("Initializing")
+  colWidth = len("Compile Error:")
   foregrounds: array[Error .. Prompt, ForegroundColor] =
     [fgRed, fgYellow, fgCyan, fgGreen, fgYellow]
   styles: array[DebugPriority .. HighPriority, set[Style]] =

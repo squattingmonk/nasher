@@ -1,5 +1,17 @@
 # nasher changelog
 
+## 1.0.0: <date>
+
+### BREAKING CHANGE: use `nwn_script_comp` as the default script compiler
+neverwinter.nim's `nwn_script_comp` is now the default script compiler. Users
+who want to continue using nwnsc must set the `nssCompiler` and `nssFlags`
+configuration values as noted in the [readme](README.md).
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.22.0...1.0.0
+
+
 ## 0.22.0: March 3, 2024
 
 ### Allow automatically overwriting files
