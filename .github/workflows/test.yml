@@ -13,7 +13,6 @@ jobs:
           # - macOS-latest
         nim-version:
           - stable
-          - 1.6.14
     steps:
       - name: Checkout
         uses: actions/checkout@v3
