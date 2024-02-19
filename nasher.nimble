@@ -10,8 +10,8 @@ bin           = @["nasher"]
 
 # Dependencies
 
-requires "nim >= 2.0.0"
-requires "neverwinter 1.7.1"
+requires "nim >= 1.6.4"
+requires "neverwinter >= 1.7.3"
 requires "nwnt >= 1.3.3"
 requires "blarg >= 0.1.0"
 
