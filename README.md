@@ -16,7 +16,7 @@ version control and team collaboration.
 * nasher uses json or [NWNT](https://github.com/WilliamDraco/NWNT) for its text
   file format.
 
-This guide is current as of nasher release 0.21.x.
+This guide is current as of nasher release 0.22.x.
 
 * [Installation Options](#installation-options)
     * [Binary Releases](#binary-releases)
@@ -64,7 +64,7 @@ of nasher for your OS and place a pointer to the location of the executable
 file in your [`PATH` environment variable](https://superuser.com/a/284351).
 
 In addition, you will need the following tools:
-* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.6.4
+* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.7.3
 * [nwnt](https://github.com/WilliamDraco/NWNT) >= 1.3.3
 * [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.3
 * [git](https://git-scm.com/downloads)
@@ -720,10 +720,6 @@ by passing the key/value pair as an option to the command.
   - default: `choose`
   - supported: `choose` (choose manually), `default` (accept the first choice),
     `error` (abort with an error message)
-  - note: this option currently only applies for the `convert`, `compile`,
-    `pack`, `install`, `play`, `test`, and `serve` commands. The `unpack`
-    command still makes you choose where to unpack a file if multiple options
-    are found.
 - `abortOnCompileError`: whether to automatically abort packing, installing, or
    testing a target if `nwnsc` encounters errors.
    - default: `false`
@@ -732,6 +728,20 @@ by passing the key/value pair as an option to the command.
   changed since the last pack.
   - default: `false`
   - supported:  `true`, `false`
+- `overwritePackedFile`: automatically answer the "Are you sure you wish to
+  overwrite?" prompt when an existing file of the same name is found within
+  the project dir (`pack` command only):
+  - default: `ask`
+  - supported: `ask` (always ask), `default` (overwrite only if the existing
+    file is older than the newest source file), `always` (always overwrite),
+    `never` (never overwrite)
+- `overwriteInstalledFile`: automatically answer the "Are you sure you wish to
+  overwrite?" prompt when an existing file of the same name is found within
+  `installDir` (`install` command only):
+  - default: `ask`
+  - supported: `ask` (always ask), `default` (overwrite only if the existing
+    file is older than the newest source file), `always` (always overwrite),
+    `never` (never overwrite)
 
 #### Examples
 
@@ -963,7 +973,7 @@ $ nasher compile demo --file:myfile.nss
 If not supplied, `<target>` will default to the first target defined in the
 package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
 on all defined targets in a loop. You can also specify multiple targets by
-separatng them with spaces.
+separating them with spaces.
 
 If the packed file would overwrite an existing file, you will be prompted to
 overwrite the file. The newly packaged file will have a modification time equal
@@ -986,6 +996,7 @@ run it separately unless you want to pack files without installing.
 | `--modDescription:<desc>`       | sets the `Mod_Description` value in `module.ifo` to `<desc>`       |
 | `--abortOnCompileError`         | abort packing if errors encountered during compilation             |
 | `--packUnchanged`               | continue packing a file if there are no changed files included     |
+| `--overwritePackedFile`         | how to handle an existing packed file in the project dir           |
 
 #### Examples
 
@@ -1011,7 +1022,7 @@ $ nasher pack module --file:"modules/mymodule.mod" --modName:"My Module" --modMi
 If not supplied, `<target>` will default to the first target defined in the
 package's [`nasher.cfg`](#nashercfg). The dummy target `all` runs the command
 on all defined targets in a loop. You can also specify multiple targets by
-separatng them with spaces.
+separating them with spaces.
 
 If the file to be installed would overwrite an existing file, you will be
 prompted to overwrite it. The default answer is to keep the newer file. If the
@@ -1034,6 +1045,8 @@ the module (`.mod`) file.
 | `--modDescription:<desc>`       | sets the `Mod_Description` value in `module.ifo` to `<desc>`       |
 | `--abortOnCompileError`         | abort installation if errors encountered during compilation        |
 | `--packUnchanged`               | continue packing a file if there are no changed files included     |
+| `--overwritePackedFile`         | how to handle an existing packed file in the project dir           |
+| `--overwriteInstalledFile`      | how to handle an existing installed file in `installDir`           |
 
 #### Examples
 ```console
