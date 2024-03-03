@@ -1,4 +1,4 @@
-import os, times, strutils, strtabs, tables, json
+import std/[os, times, strformat, strutils, strtabs, tables, json]
 from sequtils import mapIt, toSeq, deduplicate
 from unicode import toLower
 from sugar import collect
@@ -10,6 +10,10 @@ from glob import walkGlob, defaultGlobOptions, GlobOption
 
 import cli, target, options
 export cli, target, options
+
+type
+  MultiSrcAction* {.pure.} = enum
+    None = "", Choose = "choose", Default = "default", Error = "error"
 
 const GlobalOpts = """
 Global Options:
@@ -38,7 +42,7 @@ const PackLoopOpts = """
   --onMultipleSources:<method>
                          How to handle multiple sources for the same file
                          [choices: choose (default), default (accept the first),
-                         error (fail)]
+                         error (fail)]. Overrides --yes/--no if explicitly set.
   --removeUnusedAreas    Remove references to unused areas in module.ifo (note:
                          disable if you have areas present only in a hak or
                          override) [default: true]
@@ -118,6 +122,10 @@ const UnpackOpts* = """
                          have [range: 0-32, default: 4]
   --removeDeleted        Remove source files not present in the file being
                          unpacked [default: false]
+  --onMultipleSources:<method>
+                         How to handle multiple sources for the same file
+                         [choices: choose (default), default (accept the first),
+                         error (fail)]. Overrides --yes/--no if explicitly set.
   --branch:<branch>      Select git branch <branch> before operation
   --installDir:<dir>     Location for installed files (i.e., dir containing erf,
                          hak, modules, and tlk dirs) [default: $NWN_HOME]
@@ -353,3 +361,19 @@ proc outFile*(srcFile: string): string =
   let (_, name, ext) = srcFile.splitFile
   if ext == ".json" or ext == ".nwnt": name
   else: name & ext
+
+proc chooseFile*(file: string, choices: seq[string], action: MultiSrcAction): string =
+  ## Presents the user with a list of possible locations for `file`, possibly
+  ## allowing them to choose a location based on `action`. Returns the chosen
+  ## location.
+  case action
+  of MultiSrcAction.Error:
+    fatal("Multiple locations for $1:\n$2" % [file, choices.join("\n")])
+  else:
+    let current = getForceAnswer()
+    case action
+    of MultiSrcAction.Choose: setForceAnswer(None)
+    of MultiSrcAction.Default: setForceAnswer(Default)
+    else: discard
+    result = choose(fmt"Multiple locations available for {file}. Please choose:", choices)
+    setForceAnswer(current)

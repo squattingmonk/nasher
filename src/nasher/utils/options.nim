@@ -45,7 +45,7 @@ proc newOptions*(): Options =
   ## Returns a new options table.
   newStringTable(modeStyleInsensitive)
 
-proc `[]=`*[T: bool|int](opts: Options, key: string, value: T) =
+proc `[]=`*[T: not string](opts: Options, key: string, value: T) =
   ## Overloaded `[]=` operator that converts `value` to a string before setting
   ## `opts[key]`.
   opts[key] = $value
@@ -61,7 +61,7 @@ converter toInt(s: string): int =
   ## converted to `int`.
   s.parseInt
 
-proc get*[T: bool|int|string](opts: Options, keys: openarray[string], default: T = ""): T =
+proc get*[T](opts: Options, keys: openarray[string], default: T = ""): T =
   ## Checks `opts` for each key in `keys` and returns the value of the first one
   ## of type `T`. If none of the keys are set or none of the keys can be
   ## converted to `T`, returns `default`. 
@@ -75,15 +75,19 @@ proc get*[T: bool|int|string](opts: Options, keys: openarray[string], default: T
           result = opts[key].toBool
         elif T is int:
           result = opts[key].toInt
+        elif T is enum:
+          result = parseEnum[T](opts[key])
+        else:
+          raise newException(Defect, "get() is not implemented for type " & $(type(T)) )
       except ValueError:
         discard
 
-proc get*[T: bool|int|string](opts: Options, key: string, default: T = ""): T =
+proc get*[T](opts: Options, key: string, default: T = ""): T =
   ## Returns value of type `T` stored at `key` in `opts`. If `key` is not
   ## present in `opts` or cannot be converted to `T`, returns `default` instead.
   opts.get([key], default)
 
-proc hasKeyOrPut*[T: bool|int|string](opts: Options, keys: openarray[string], value: T): bool =
+proc hasKeyOrPut*[T](opts: Options, keys: openarray[string], value: T): bool =
   ## Returns true if each key in `keys` is in `opts`. Otherwise, sets the first
   ## key that is not present to `value` and returns false.
   result = true
@@ -92,13 +96,13 @@ proc hasKeyOrPut*[T: bool|int|string](opts: Options, keys: openarray[string], va
       opts[key] = value
       return false
 
-proc hasKeyOrPut*[T: bool|int|string](opts: Options, key: string, value: T): bool =
+proc hasKeyOrPut*[T](opts: Options, key: string, value: T): bool =
   ## Returns true if `key` is in `opts`. Otherwise, sets `opts[key]` to
   ## `value` and returns false. If `value` is not a string, it will be
   ## converted to one.
   opts.hasKeyOrPut([key], value)
 
-proc getOrPut*[T: bool|int|string](opts: Options, key: string, value: T): T =
+proc getOrPut*[T](opts: Options, key: string, value: T): T =
   ## Returns the value of type `T` located at `opts[key]`. If the key does not
   ## exist or cannot be converted to `T`, it is set to `value`, which is
   ## returned.
@@ -106,12 +110,16 @@ proc getOrPut*[T: bool|int|string](opts: Options, key: string, value: T): T =
   if opts.hasKeyOrPut([key], value):
     let tmpValue = opts[key]
     try:
-      when T is bool:
+      when T is string:
+        result = tmpValue
+      elif T is bool:
         result = tmpValue.toBool
       elif T is int:
         result = tmpValue.toInt
+      elif T is enum:
+        result = parseEnum[T](tmpValue)
       else:
-        result = tmpValue
+        raise newException(Defect, "getOrPut() is not implemented for type " & $(type(T)) )
     except ValueError:
       opts[key] = value
 
@@ -202,7 +210,7 @@ proc writeFile*(opts: Options, file: string) =
 
 # --- Command-line parsing
 
-proc putKeyOrHelp*[T: bool|int|string](opts: Options, keys: openarray[string], value: T) =
+proc putKeyOrHelp*[T](opts: Options, keys: openarray[string], value: T) =
   ## Checks `opts` for each key in `keys`, setting the first missing key to
   ## `value`. If all `keys` are set, sets the `help` key to `true`.
   for key in keys:

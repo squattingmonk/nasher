@@ -50,7 +50,7 @@ proc genSrcMap(files: seq[string]): Table[string, seq[string]] =
     if result.hasKeyOrPut(fileName, @[dir]):
       result[fileName].add(dir)
 
-proc mapSrc(file: string, srcMap: Table[string, seq[string]], rules: seq[Rule]): string =
+proc mapSrc(file: string, srcMap: Table[string, seq[string]], rules: seq[Rule], action: MultiSrcAction): string =
   ## Maps a file to the proper directory, first searching existing source files
   ## and then matching it to each pattern in rules. Returns the directory.
   var choices = srcMap.getOrDefault(file)
@@ -65,15 +65,13 @@ proc mapSrc(file: string, srcMap: Table[string, seq[string]], rules: seq[Rule]):
         debug("Matched", file & " to pattern " & pattern.escape)
         break
   else:
-    choices.add("unknown")
-    result =
-      choose(fmt"Cannot decide where to extract {file}. Please choose:",
-             choices)
+    result = chooseFile(file, choices, action)
 
 proc unpack*(opts: Options, target: Target) =
   let
     dir = opts.get("directory", getPackageRoot())
     precision = opts.get("truncateFloats", 4)
+    multiSrcAction = opts.get("onMultipleSources", MultiSrcAction.None)
 
   if precision notin 1..32:
     fatal("Invalid value: --truncateFloats must be between 1 and 32")
@@ -174,7 +172,7 @@ proc unpack*(opts: Options, target: Target) =
   for fileName in manifest.keys:
     let
       ext = fileName.getFileExt
-      dir = mapSrc(fileName, srcMap, target.rules)
+      dir = mapSrc(fileName, srcMap, target.rules, multiSrcAction)
 
     var sourceName = dir / filename
     if ext in GffExtensions:
@@ -223,7 +221,7 @@ proc unpack*(opts: Options, target: Target) =
     let
       ext = file.fileName.getFileExt
       filePath = tmpDir / file.fileName
-      dir = mapSrc(file.fileName, srcMap, target.rules)
+      dir = mapSrc(file.fileName, srcMap, target.rules, multiSrcAction)
 
     if dir == "unknown":
       warning("cannot decide where to extract " & file.fileName)

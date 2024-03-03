@@ -1,10 +1,46 @@
 # nasher changelog
 
-## 0.22.0: <data>
+## 1.0.0: <date>
 
-- neverwinter.nim's `nwn_script_comp` is now the default script compiler. 
-  Users who want to continue using nwnsc must set the `nssCompiler` and 
-  `nssFlags` configuration values as noted in the [readme](readme.md).
+### BREAKING CHANGE: use `nwn_script_comp` as the default script compiler
+neverwinter.nim's `nwn_script_comp` is now the default script compiler. Users
+who want to continue using nwnsc must set the `nssCompiler` and `nssFlags`
+configuration values as noted in the [readme](README.md).
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.22.0...1.0.0
+
+
+## 0.22.0: March 3, 2024
+
+### Allow automatically overwriting files
+
+Added two new flags, `--overwritePackedFile` and `--overwriteInstalledFile`,
+which can be used to automatically answer the "Are you sure you wish to
+overwrite?" prompt when an existing packed or installed file of the same name is
+found. Valid values include "ask", "default", "always", and "never". Like other
+nasher flags, these can be set with `nasher config` so you don't have to pass
+them every time.
+
+### Automatically handle multiple source files during unpack
+
+The unpack operation now supports the `--onMultipleSources` flag just like the
+pack operation. The options are:
+  - `choose`: manually choose the file to update (this is the default)
+  - `default`: automatically accept the first file found
+  - `error`: fail if multiple source files are found
+
+### Bug fixes
+
+- `--abortOnCompileError` no longer answers other prompts
+- `--packUnchanged` no longer consumes other args.
+- `--{yes,no,default}` no longer override `--onMultipleSources`.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/0.21.0...0.22.0
+
 
 ## 0.21.0: September 2, 2023
 
