@@ -1,4 +1,4 @@
-ARG NWSERVER_IMAGE=beamdog/nwserver:latest
+ARG NWSERVER_IMAGE=urothis/nwserver:stable
 ARG NWDATA_PATH=/nwn
 
 # nw data source
