@@ -178,10 +178,19 @@ iterator walkSourceFiles*(target: Target): string =
       if file notin excluded:
         yield file
 
+iterator walkSkippedFiles*(target: Target): string =
+  const globOpts = defaultGlobOptions - {GlobOption.DirLinks} + {GlobOption.Absolute}
+  for pattern in target.skips:
+      for file in walkGlob(pattern, options = globOpts):
+        yield file
+
 proc getSourceFiles*(target: Target): seq[string] =
   ## Returns all files in the source tree matching include patterns while not
   ## matching exclude patterns.
   toSeq(target.walkSourceFiles).deduplicate
+
+proc getSkippedFiles*(target: Target): seq[string] =
+  toSeq(target.walkSkippedFiles).deduplicate
 
 proc getTimeDiff*(a, b: Time): int =
   ## Compares two times and returns the difference in seconds. If 0, the files
