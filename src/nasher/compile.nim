@@ -171,12 +171,15 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
               debug("Recompiling", "executable script " & file)
               updatedNss.add(file)
 
-      scripts = getUpdated(updatedNss, files, target.skips)
+      scripts = getUpdated(updatedNss, files, target.skips.mapIt(it.extractFilename))
       for script in scripts:
         ## Ensure any updated scripts have their compiled version deleted so
         ## they will be re-compiled if compilation fails for some reason.
         removeFile(script.changeFileExt("ncs"))
         removeFile(script.changeFileExt("ndb"))
+
+      for skip in target.skips.mapIt(it.extractFilename):
+        debug("skipCompile", skip);
 
     if scripts.len > 0:
       let
