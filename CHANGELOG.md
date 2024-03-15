@@ -1,6 +1,6 @@
 # nasher changelog
 
-## 1.0.0: <date>
+## 1.0.0: Marcg 15, 2024
 
 ### BREAKING CHANGE: use `nwn_script_comp` as the default script compiler
 neverwinter.nim's `nwn_script_comp` is now the default script compiler. Users

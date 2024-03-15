@@ -16,7 +16,7 @@ version control and team collaboration.
 * nasher uses json or [NWNT](https://github.com/WilliamDraco/NWNT) for its text
   file format.
 
-This guide is current as of nasher release 0.22.x.
+This guide is current as of nasher release 1.0.x.
 
 * [Installation Options](#installation-options)
     * [Binary Releases](#binary-releases)
