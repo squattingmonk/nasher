@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '*.*.*'
+  workflow_dispatch:
 
 env:
   APP_NAME: 'nasher'
@@ -13,73 +14,80 @@ env:
 
 jobs:
   build-artifact:
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macOS-latest
+        include:
+          - target: linux
+            builder: ubuntu-latest
+          - target: macos
+            builder: macOS-latest
+          - target: windows
+            builder: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    name: '${{ matrix.target}}'
+    runs-on: '${{ matrix.builder }}'
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache choosenim
         id: cache-choosenim
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.choosenim
-          key: ${{ runner.os }}-choosenim-${{ env.NIM_VERSION }}
+          key: ${{ matrix.target }}-choosenim-${{ env.NIM_VERSION }}
 
       - name: Cache nimble
         id: cache-nimble
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.nimble
-          key: ${{ runner.os }}-nimble-${{ env.NIM_VERSION }}-${{ hashFiles('nasher.nimble') }}
+          key: ${{ matrix.target }}-nimble-${{ env.NIM_VERSION }}-${{ hashFiles('nasher.nimble') }}
           restore-keys: |
-            ${{ runner.os }}-nimble-${{ env.NIM_VERSION }}
+            ${{ matrix.target }}-nimble-${{ env.NIM_VERSION }}
+      
+      - name: Install mingw
+        if: matrix.target == 'windows'
+        run: sudo apt-get install -y --no-install-recommends mingw-w64
 
       - name: Set up nim
         uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: ${{ env.NIM_VERSION }}
 
-      - name: Build release binary
-        run: nimble build -Y -d:release
+      - name: Create release binary
+        run: |
+          if [[ "${{ matrix.target }}" == windows ]]; then
+            nimble build -Y -d:release -d:mingw --cpu:amd64
+          else
+            nimble build -Y -d:release
+          fi
 
       - name: Create artifact
         run: |
-          assets="${{ env.APP_NAME }}_$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')"
-          echo "$assets"
-          mkdir -p "dist/$assets"
-          cp -r ${{ env.RELEASE_FILES }} "dist/$assets/"
-          (
-            cd dist
-            if [[ "${{ runner.os }}" == Windows ]]; then
-              7z a "$assets.zip" "$assets"
-            else
-              tar czf "$assets.tar.gz" "$assets"
-            fi
-            ls -lah *.*
-          )
-        shell: bash
+          if [[ "${{ matrix.target }}" == windows ]]; then
+            zip "${{ env.APP_NAME }}_${{ matrix.target }}.zip" nasher.exe CHANGELOG.md README.md LICENSE
+          else
+            chmod +x nasher
+            tar -czvf "${{ env.APP_NAME }}_${{ matrix.target }}.tar.gz" nasher CHANGELOG.md README.md LICENSE
+          fi
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: artifact-${{ matrix.os }}
+          name: artifact-${{ matrix.target }}
           path: |
-            dist/*.tar.gz
-            dist/*.zip
+            *.zip
+            *.tar.gz
 
   create-release:
+    needs: [ build-artifact ]
     runs-on: ubuntu-latest
-    needs:
-      - build-artifact
     steps:
-      - uses: actions/checkout@v1
-      - name: Create Release
+      - name: Create release
         id: create-release
         uses: actions/create-release@v1
         env:
@@ -87,44 +95,46 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
-          body: Release
           draft: false
           prerelease: false
 
       - name: Write upload_url to file
         run: echo '${{ steps.create-release.outputs.upload_url }}' > upload_url.txt
 
-      - name: Upload articact
-        uses: actions/upload-artifact@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: create-release
           path: upload_url.txt
 
   upload-release:
+    needs: [ create-release ]
     runs-on: ubuntu-latest
-    needs: create-release
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          - target: linux
             asset_name_suffix: linux.tar.gz
             asset_content_type: application/gzip
-          - os: windows-latest
+          - target: windows
             asset_name_suffix: windows.zip
             asset_content_type: application/zip
-          - os: macOS-latest
+          - target: macos
             asset_name_suffix: macos.tar.gz
             asset_content_type: application/gzip
     steps:
-      - uses: actions/download-artifact@v2
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: artifact-${{ matrix.os }}
+          name: artifact-${{ matrix.target }}
 
-      - uses: actions/download-artifact@v2
+      - name: Download upload_url
+        uses: actions/download-artifact@v4
         with:
           name: create-release
 
-      - id: vars
+      - name: Create vars
+        id: vars
         run: |
           echo "::set-output name=upload_url::$(cat upload_url.txt)"
 
@@ -138,4 +148,3 @@ jobs:
           asset_path: ${{ env.APP_NAME }}_${{ matrix.asset_name_suffix }}
           asset_name: ${{ env.APP_NAME }}_${{ matrix.asset_name_suffix }}
           asset_content_type: ${{ matrix.asset_content_type }}
-
