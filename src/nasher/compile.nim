@@ -106,7 +106,7 @@ proc getIncludesUpdated(file: string,
         updated[file] = true
         return true
 
-proc getUpdated(updatedNSS: var seq[string], files: seq[string]): seq[string] =
+proc getUpdated(updatedNSS: var seq[string], files, skips: seq[string]): seq[string] =
   let included = files.getIncludes
   var updated: Table[string, bool]
 
@@ -114,7 +114,7 @@ proc getUpdated(updatedNSS: var seq[string], files: seq[string]): seq[string] =
     updated[file] = true
 
   for file in files:
-    if file.getIncludesUpdated(included, updated):
+    if file.getIncludesUpdated(included, updated) and file notin skips:
       result.add(file)
 
   updatedNss = result
@@ -190,12 +190,15 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
               debug("Recompiling", "executable script " & file)
               updatedNss.add(file)
 
-      scripts = getUpdated(updatedNss, files)
+      scripts = getUpdated(updatedNss, files, target.skips.mapIt(it.extractFilename))
       for script in scripts:
         ## Ensure any updated scripts have their compiled version deleted so
         ## they will be re-compiled if compilation fails for some reason.
         removeFile(script.changeFileExt("ncs"))
         removeFile(script.changeFileExt("ndb"))
+
+      for skip in target.skips.mapIt(it.extractFilename):
+        debug("skipCompile", skip);
 
     if scripts.len > 0:
       let
