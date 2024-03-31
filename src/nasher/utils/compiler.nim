@@ -10,7 +10,7 @@ const compilerFlags* =
   # Default compiler flags; ordered referenced to `Compiler` enum above
   ["-y", "-lowqey"]
 
-proc parseCompilerOutput(line: var string, compiler: Compiler): bool =
+proc parseCompilerOutput(line: var string, compiler: Compiler): int =
   ## Intercepts the compiler's output and converts it into nasher's cli format.
   case compiler:
     of Organic:
@@ -30,10 +30,12 @@ proc parseCompilerOutput(line: var string, compiler: Compiler): bool =
             display("Results:", matches[1])
           of "E":
             error("Compile Error:", "$1 :: $2" % [matches[1], matches[2].strip])
-            result = true
+            result = 1
           else:
             #Catchall to find other errors I didn't expect
             display("Unknown Compiler Output", line)
+      elif line.startsWith "Usage":
+        result = 2
     of Legacy:
       var
         token: string
@@ -51,7 +53,7 @@ proc parseCompilerOutput(line: var string, compiler: Compiler): bool =
           var lines = line.split(':').mapIt(it.strip)
           if lines.contains("Error"):
             error(lines.filterIt(it != "Error").join("\n"))
-            result = true
+            result = 1
           elif lines.contains("Warning"):
             warning(lines.filterIt(it != "Warning").join("\n"))
           else:
@@ -72,7 +74,9 @@ proc runCompiler*(cmd: string, args: openArray[string] = []): int =
 
   while p.running:
     if s.readLine(line):
-      if line.parseCompilerOutput(compiler):
-        result = 1
+      result = line.parseCompilerOutput(compiler)
+      if result == 2:
+        error("Error:", "Incorrect args provided to compiler: " & params.join(" "))
+        break
 
   p.close

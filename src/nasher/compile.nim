@@ -225,9 +225,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
 
     executables.keepItIf(not fileExists(it.changeFileExt("ncs")) and it notin skips)
     if executables.len > 0:
-      warning("""
-        Compiled only $1 of $2 scripts. The following executable scripts do not
-        have matching .ncs: $3""".dedent %
+      warning("Compiled only $1 of $2 scripts. The following executable scripts do not have matching .ncs:\n$3" %
         [$(scripts.len - executables.len), $scripts.len, executables.join(", ")])
       if cmd in ["pack", "install", "serve", "test", "play"]:
         let forced = getForceAnswer()
