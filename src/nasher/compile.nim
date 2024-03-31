@@ -198,7 +198,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
         removeFile(script.changeFileExt("ncs"))
         removeFile(script.changeFileExt("ndb"))
       
-    scripts.keepItIf(it notin skips)
+    scripts.keepItIf(not it.matchesAny(skips))
     if scripts.len > 0:
       let
         chunkSize = opts.get("nssChunks", 500)
@@ -223,7 +223,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
     else:
       display("Skipping", "compilation: nothing to compile")
 
-    executables.keepItIf(not fileExists(it.changeFileExt("ncs")) and it notin skips)
+    executables.keepItIf(not fileExists(it.changeFileExt("ncs")) and not it.matchesAny(skips))
     if executables.len > 0:
       warning("Compiled only $1 of $2 scripts. The following executable scripts do not have matching .ncs:\n$3" %
         [$(scripts.len - executables.len), $scripts.len, executables.join(", ")])
