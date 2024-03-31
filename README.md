@@ -408,11 +408,12 @@ fields, it will be inherited from the package or parent.
 
 All of these fields are repeatable.
 
-| Field     | Description                                                         |
-| ---       | ---                                                                 |
-| `include` | glob pattern matching files to include                              |
-| `exclude` | glob pattern matching files to exclude                              |
-| `filter`  | glob pattern matching cached files to be excluded after compilation |
+| Field         | Description                                                         |
+| ---           | ---                                                                 |
+| `include`     | glob pattern matching files to include                              |
+| `exclude`     | glob pattern matching files to exclude                              |
+| `filter`      | glob pattern matching cached files to be excluded after compilation |
+| `skipCompile` | glob pattern matching files to exclude from compilation             |
 
 Refer to the [source trees](#source-trees) section to understand how these
 fields are used by targets.
@@ -543,9 +544,9 @@ choice without changing the `nasher.cfg`.
 
 #### Source Trees
 
-A target's source tree is built from the `include`, `exclude`, and `filter`
-fields. Remember, each of these are inherited from the `[package.sources]`
-section if not specified in the `[target.sources]` section.
+A target's source tree is built from the `include`, `exclude`,`filter` and
+`skipCompile` fields. Remember, each of these are inherited from the
+`[package.sources]` section if not specified in the `[target.sources]` section.
 
 nasher uses [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming))
 matching to identify desired files (e.g., `src/**/*.{nss,json}` matches all
@@ -556,12 +557,14 @@ matching to identify desired files (e.g., `src/**/*.{nss,json}` matches all
    removed from the list.
 
 Pack operations ([`convert`](#convert), [`compile`](#compile), [`pack`](#pack),
-[`install`](#install), and [launch](#launch)) commands use the source tree as
+[`install`](#install), and [`launch`](#launch)) commands use the source tree as
 follows:
 
 1. The `convert` and `compile` commands process the source files and output to a
    cache directory.
-2. Before the `pack` command is run, each cached file is checked against each
+2. The `compile` command will prevent compilation of any files identified by
+   `skipCompile` in nasher.cfg; skipped files may still be used as includes.
+3. Before the `pack` command is run, each cached file is checked against each
    `filter` pattern; matches are excluded from the final packaged file. Note
    that filters should not have any path information since they are compared to
    files in the cache, not the source tree.
@@ -765,7 +768,7 @@ $ nasher config --list --local  # local
 #### Tips
 * The `--` operator causes all following arguments to be treated as positional
   arguments, even if they look like options. This is useful when setting config
-  keys to values starting with `-`: `nasher config -- nssFlags "-n /opt/nwn"`
+  keys to values starting with `-`: `nasher config --nssFlags "-n /opt/nwn"`
 * Keys like `nssCompiler` and `installDir` work best as global options
 * Keys like `modName` or `useModuleFolder` work best as local options
 * `user.cfg` files are intentionally ignored by git. Do not include them in

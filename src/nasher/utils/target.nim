@@ -7,7 +7,7 @@ type
   Target* = ref object
     name*, description*, file*, branch*, parent*: string
     modName*, modMinGameVersion*, modDescription*: string
-    includes*, excludes*, filters*, flags*, groups*: seq[string]
+    includes*, excludes*, filters*, flags*, groups*, skips*: seq[string]
     variables*: seq[KeyValuePair]
     rules*: seq[Rule]
 
@@ -212,6 +212,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
         of "source", "include": target.includes.add(e.value)
         of "exclude": target.excludes.add(e.value)
         of "filter": target.filters.add(e.value)
+        of "skipCompile": target.skips.add(e.value)
         # Unused, but kept for backwards compatibility
         of "version", "url", "author": discard
         else:
@@ -225,6 +226,7 @@ proc parseCfgPackage(s: Stream, filename = "nasher.cfg"): seq[Target] =
         of "include": target.includes.add(e.value)
         of "exclude": target.excludes.add(e.value)
         of "filter": target.filters.add(e.value)
+        of "skipCompile": target.skips.add(e.value)
         else:
           p.raisePackageError("invalid key $1 for section [$2$3]" %
             [e.key.escape, if context.len > 0: context & "." else: "", section])

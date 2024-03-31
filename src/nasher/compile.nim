@@ -159,6 +159,8 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
   withDir(cacheDir):
     # If we are only compiling one file...
     var scripts: seq[string]
+    let skips = target.skips.mapIt(it.extractFilename)
+
     if cmd == "compile" and opts.hasKey("files"):
       for file in opts["files"].split(';'):
         let
@@ -178,7 +180,6 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
     else:
       # Only compile scripts that have not been compiled since update
       var files: seq[string]
-
       for file in walkFiles("*.nss"):
         files.add(file)
         if file.executable:
@@ -196,7 +197,8 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
         ## they will be re-compiled if compilation fails for some reason.
         removeFile(script.changeFileExt("ncs"))
         removeFile(script.changeFileExt("ndb"))
-
+      
+    scripts.keepItIf(it notin skips)
     if scripts.len > 0:
       let
         chunkSize = opts.get("nssChunks", 500)
@@ -221,12 +223,12 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
     else:
       display("Skipping", "compilation: nothing to compile")
 
-    let unmatchedNcs = executables.filterIt(not fileExists(it.changeFileExt("ncs")))
-    if unmatchedNcs.len > 0:
+    executables.keepItIf(not fileExists(it.changeFileExt("ncs")) and it notin skips)
+    if executables.len > 0:
       warning("""
-        Compiled $1 of $2 scripts. The following executable scripts do not
-        have a matching compiled (.ncs) script file: $3""".dedent %
-        [$(scripts.len - unmatchedNcs.len), $scripts.len, unmatchedNcs.join(", ")])
+        Compiled only $1 of $2 scripts. The following executable scripts do not
+        have matching .ncs: $3""".dedent %
+        [$(scripts.len - executables.len), $scripts.len, executables.join(", ")])
       if cmd in ["pack", "install", "serve", "test", "play"]:
         let forced = getForceAnswer()
         if abortOnCompileError != Answer.None:
