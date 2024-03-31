@@ -66,6 +66,9 @@ Compiler Options:
   --nssCompiler:<bin>    Binary for compiling nss scripts [default: nwn_script_comp]
   --nssFlags:<flags>     Flags to pass to the compiler [default: <none>]
   --nssChunks:<n>        Max scripts to compile per compiler exec [default: 500]
+  --skipCompile:<glob>   Glob pattern matching script(s) to skip when compiling.
+                         Can specify multiple patterns with semicolon-delimited
+                         list or by calling multiple times [default: ""]
 """
 
 const ConvertOpts* = """

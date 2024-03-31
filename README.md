@@ -279,6 +279,7 @@ file = "$target.hak"
   include = "${sm-utils}/*.nss" # This variable is expanded
   include = "src/**/*.{nss,json}"
   exclude = "**/test_*.nss"
+  skipCompile = "util_i_library.nss"
 
   [package.rules]
   "hook_*.nss" = "src/Hooks"
@@ -746,6 +747,9 @@ by passing the key/value pair as an option to the command.
   - supported: `ask` (always ask), `default` (overwrite only if the existing
     file is older than the newest source file), `always` (always overwrite),
     `never` (never overwrite)
+- `skipCompile`: semicolon-delimited list of glob patterns matching files to
+  skip during compilation. Used to avoid errors when broken scripts are present.
+  - default: ""
 
 #### Examples
 
@@ -945,10 +949,11 @@ separately unless you want to compile scripts files without packing.
 
 #### Options
 
-| Argument       | Description                             |
-| ---            | ---                                     |
-| `--clean`      | clears the cache before packing         |
-| `-f`, `--file` | compiles specific file; can be repeated |
+| Argument       | Description                                   |
+| ---            | ---                                           |
+| `--clean`      | clears the cache before packing               |
+| `-f`, `--file` | compiles specific file; can be repeated       |
+| `--skipCompile` | don't compile specific file; can be repeated |
 
 #### Examples
 
@@ -995,6 +1000,7 @@ run it separately unless you want to pack files without installing.
 | `--file:<file>`                 | specify the location for the output file                           |
 | `--noConvert`                   | do not convert updated json files                                  |
 | `--noCompile`                   | do not recompile updated scripts                                   |
+| `--skipCompile:<file>`          | don't compile specific file; can be repeated                       |
 | `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
 | `--modMinGameVersion:<version>` | sets the `Mod_MinGameVersion` value in `module.ifo` to `<version>` |
 | `--modDescription:<desc>`       | sets the `Mod_Description` value in `module.ifo` to `<desc>`       |
@@ -1042,6 +1048,7 @@ the module (`.mod`) file.
 | `--noConvert`                   | do not convert updated json files                                  |
 | `--noCompile`                   | do not recompile updated scripts                                   |
 | `--noPack`                      | do not re-pack the file (implies `--noConvert` and `--noCompile`)  |
+| `--skipCompile:<file>`          | don't compile specific file; can be repeated                       |
 | `--file:<file>`                 | specify the file to install                                        |
 | `--installDir:<dir>`            | the location of the NWN user directory                             |
 | `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |
@@ -1084,6 +1091,7 @@ command is only valid for module targets.
 | `--noConvert`                   | do not convert updated json files                                  |
 | `--noCompile`                   | do not recompile updated scripts                                   |
 | `--noPack`                      | do not re-pack the file (implies `--noConvert` and `--noCompile`)  |
+| `--skipCompile:<file>`          | don't compile specific file; can be repeated                       |
 | `--file:<file>`                 | specify the file to install                                        |
 | `--installDir:<dir>`            | the location of the NWN user directory                             |
 | `--modName:<name>`              | sets the `Mod_Name` value in `module.ifo` to `<name>`              |

@@ -159,7 +159,7 @@ proc compile*(opts: Options, target: Target, updatedNss: var seq[string], exitCo
   withDir(cacheDir):
     # If we are only compiling one file...
     var scripts: seq[string]
-    let skips = target.skips.mapIt(it.extractFilename)
+    let skips = mapIt(opts.get("skipCompile").split(';') & target.skips, it.extractFilename)
 
     if cmd == "compile" and opts.hasKey("files"):
       for file in opts["files"].split(';'):

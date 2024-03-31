@@ -273,6 +273,9 @@ proc parseCommandLine*[T: string|seq[string]](opts: Options, params: T = command
         setForceAnswer(Default)
       of "color", "no-color", "nocolor":
         handleColorKey(key, val)
+      of "skipcompile":
+        if opts.hasKeyOrPut("skipCompile", val):
+          opts["skipCompile"] = opts["skipCompile"] & ";" & val
       else:
         case opts.get("command")
         of "config":
