@@ -1,6 +1,38 @@
 # nasher changelog
 
-## 1.0.0: Marcg 15, 2024
+## 1.1.0: March 30, 2024
+
+### Skip compilation of broken files [#118](https://github.com/squattingmonk/nasher/pull/118)
+
+Added the new directive `skipCompile` to `[package.sources]` and
+`[target.sources]` sections. This directive can be specified multiple times like
+`filter`. The value should be a glob pattern matching script(s) that should not
+be compiled by nasher. Like `filter`, the pattern should match the script name
+*only* (i.e., no path information should be included). If a target does not
+have its own `skipCompile` values, they will be inherited from the parent or
+package.
+
+The `--skipCompile` option has also been added to allow skipping a broken file
+from the command-line rather than editing the nasher.cfg. This option takes a
+semicolon-delimited list of globs matching the scripts to skip. This option can
+be specified multiple times and can be set with `nasher config`.
+
+This feature is useful for skipping compilation of broken scripts while still
+keeping them in the sources.
+
+### Fixes
+
+- nasher now gives a helpful error message when an incorrect flag is passed to
+`nwn_script_comp` through `--nssFlags`. Previously, compilation would fail
+silently.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/1.0.0...1.1.0
+
+
+
+## 1.0.0: March 15, 2024
 
 ### BREAKING CHANGE: use `nwn_script_comp` as the default script compiler
 neverwinter.nim's `nwn_script_comp` is now the default script compiler. Users
