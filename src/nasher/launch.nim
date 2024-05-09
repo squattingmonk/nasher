@@ -47,7 +47,7 @@ proc launch*(opts: Options, target: Target) =
 
   var
     path, args: string
-    options = {poStdErrToStdOut}
+    options = {poStdErrToStdOut, poParentStreams}
 
   case cmd
   of "play":
@@ -59,7 +59,6 @@ proc launch*(opts: Options, target: Target) =
   of "serve":
     path = opts.get("serverBin", getServerBin())
     args = "-module"
-    options.incl(poParentStreams)
   else:
     assert false
 
