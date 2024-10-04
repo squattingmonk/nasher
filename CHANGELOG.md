@@ -1,5 +1,19 @@
 # nasher changelog
 
+## 1.1.1: October 4, 2024
+
+### Fix freezing when running launch commands with 1.88 preview
+
+The 1.88 preview added lots of useful log messages. However, these were filling
+the output buffer when running `nasher test` or `nasher play`, causing the game
+to freeze. These commands now display these messages, just as when running
+`nasher serve`.
+
+---
+
+Details: https://github.com/squattingmonk/nasher/compare/1.1.0...1.1.1
+
+
 ## 1.1.0: March 30, 2024
 
 ### Skip compilation of broken files [#118](https://github.com/squattingmonk/nasher/pull/118)
