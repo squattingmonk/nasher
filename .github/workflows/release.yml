@@ -15,7 +15,7 @@ jobs:
   build-artifact:
     strategy:
       matrix:
-        nim-version: stable
+        nim-version: '2.0.x'
         include:
           - target: linux
             builder: ubuntu-latest
