@@ -8,6 +8,7 @@ on:
 
 env:
   APP_NAME: 'nasher'
+  NIM_VERSION: '2.0.8'
   MAINTAINER: 'Michael A. Sinclair <squattingmonk@gmail.com>'
   RELEASE_FILES: nasher LICENSE README.md CHANGELOG.md
 
@@ -15,8 +16,6 @@ jobs:
   build-artifact:
     strategy:
       matrix:
-        nim-version: 
-          - '2.0.8'
         include:
           - target: linux
             builder: ubuntu-latest
@@ -50,7 +49,7 @@ jobs:
       - name: Set up nim
         uses: jiro4989/setup-nim-action@v2
         with:
-          nim-version: ${{ matrix.nim-version }}
+          nim-version: ${{ env.NIM_VERSION }}
           repo-token: $ {{ secrets.GITHUB_TOKEN }}
 
       - name: Create release binary
