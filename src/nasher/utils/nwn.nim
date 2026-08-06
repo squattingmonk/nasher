@@ -61,7 +61,7 @@ proc convertFile*(inFile, outFile, bin, args: string) =
   let
     inFileName = inFile.extractFilename
     outFileName = outFile.extractFilename
-    cmd = join([bin, args, "-i", inFile.escape, "-o", outFile.escape], " ")
+    cmd = join([bin, args, "-i", inFile.quoteShell, "-o", outFile.quoteShell], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
@@ -81,7 +81,7 @@ proc gffToJson*(inFile, outFile, bin, args: string, precision: range[1..32] = 4)
   # instead of manipulating the GFF file directly because otherwise we can't
   # handle alternate encodings or other gffFlags.
   let
-    cmd = join([bin, args, "-i", inFile.escape, "-k json"], " ")
+    cmd = join([bin, args, "-i", inFile.quoteShell, "-k json"], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
@@ -280,7 +280,7 @@ proc updateIfo*(dir: string, opts: options.Options, target: Target) =
 proc extractErf*(file, bin, args: string) =
   ## Extracts the erf ``file`` into the current directory.
   let
-    cmd = join([bin, args, "-x -f", file.escape], " ")
+    cmd = join([bin, args, "-x -f", file.quoteShell], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
@@ -290,7 +290,7 @@ proc createErf*(dir, outFile, bin, args: string) =
   ## Creates an erf file at ``outFile`` from all files in ``dir``, passing
   ## ``args`` to the ``nwn_erf`` utiltity.
   let
-    cmd = join([bin, args, "-c -f", outFile.escape, dir], " ")
+    cmd = join([bin, args, "-c -f", outFile.quoteShell, dir], " ")
     (output, errCode) = execCmdEx(cmd, Options)
 
   if errCode != 0:
