@@ -1,5 +1,15 @@
 # nasher changelog
 
+## 1.1.3: August 6, 2026
+
+Fixes improper escaping of file names during conversion. This prevented
+conversion of GFF files with `'` in the filename, such as found in the OC
+Chapter 3 module.
+
+---
+
+Details: <https://github.com/squattingmonk/nasher/compare/1.1.3...newtag>
+
 ## 1.1.2: September 18, 2025
 
 Fixed compilation issues due to mis-matched dependencies
