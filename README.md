@@ -19,32 +19,32 @@ version control and team collaboration.
 This guide is current as of nasher release 1.0.x.
 
 * [Installation Options](#installation-options)
-    * [Binary Releases](#binary-releases)
-    * [Nimble](#nimble)
-    * [Docker](#docker)
+  * [Binary Releases](#binary-releases)
+  * [Nimble](#nimble)
+  * [Docker](#docker)
 * [Getting Started](#getting-started)
-    * [First-Time Setup](#first-time-setup)
-    * [Basic Workflow](#basic-workflow)
-    * [Getting Help](#getting-help)
+  * [First-Time Setup](#first-time-setup)
+  * [Basic Workflow](#basic-workflow)
+  * [Getting Help](#getting-help)
 * [Configuration](#configuration)
-    * [nasher.cfg](#nashercfg)
-        * [`[package]`](#package)
-        * [`[target]`](#target)
-        * [`[*.sources]`](#sources)
-        * [`[*.rules]`](#rules)
-        * [`[*.variables]`](#variables)
-        * [Source Trees](#source-trees)
-        * [Tips](#tips)
+  * [nasher.cfg](#nashercfg)
+    * [`[package]`](#package)
+    * [`[target]`](#target)
+    * [`[*.sources]`](#sources)
+    * [`[*.rules]`](#rules)
+    * [`[*.variables]`](#variables)
+    * [Source Trees](#source-trees)
+    * [Tips](#tips)
 * [Commands](#commands)
-    * [config](#config)
-    * [init](#init)
-    * [list](#list)
-    * [unpack](#unpack)
-    * [convert](#convert)
-    * [compile](#compile)
-    * [pack](#pack)
-    * [install](#install)
-    * [launch](#launch)
+  * [config](#config)
+  * [init](#init)
+  * [list](#list)
+  * [unpack](#unpack)
+  * [convert](#convert)
+  * [compile](#compile)
+  * [pack](#pack)
+  * [install](#install)
+  * [launch](#launch)
 * [Errors](#errors)
 * [FAQs](#faqs)
 * [Contributing](#contributing)
@@ -64,16 +64,19 @@ of nasher for your OS and place a pointer to the location of the executable
 file in your [`PATH` environment variable](https://superuser.com/a/284351).
 
 In addition, you will need the following tools:
-* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 1.7.3
-* [nwnt](https://github.com/WilliamDraco/NWNT) >= 1.3.3
+
+* [neverwinter.nim](https://github.com/niv/neverwinter.nim/releases) >= 2.3.2
+* [nwnt](https://github.com/WilliamDraco/NWNT) >= 1.4.0
 * [git](https://git-scm.com/downloads)
 
-Starting with 1.0.0, nasher's default script compiler is neverwinter.nim's 
-`nwn_script_comp`.  If you'd like to use the legacy script compiler nwnsc, 
+Starting with 1.0.0, nasher's default script compiler is neverwinter.nim's
+`nwn_script_comp`.  If you'd like to use the legacy script compiler nwnsc,
 you'll need:
+
 * [nwnsc](https://github.com/nwneetools/nwnsc/releases) >= 1.1.3
 
 #### Tips
+
 * Keep the binaries for nasher, neverwinter.nim, and nwnsc in the same
   location.
 * Do not keep binaries in your nasher project folder.
@@ -86,34 +89,38 @@ you'll need:
 *Note: this method is harder to set up, but makes it easier to update.*
 
 First, install the following:
+
 * [nim](https://nim-lang.org) and it package manager `nimble`. The easy way to
   install is to use [choosenim](https://github.com/dom96/choosenim).
 * [git](https://git-scm.com/downloads)
 
 Optionally, install nwnsc if you'd like to use the legacy script compiler:
+
 * [nwnsc](https://github.com/nwneetools/nwnsc) >= 1.1.3
 
 *Note: when building nasher, nimble will download and install neverwinter.nim
 automatically. You do not need to install it yourself.*
 
 Now you can have nimble download and install nasher:
+
 ```console
-$ # Install the latest tagged version (recommended)
-$ nimble install nasher
+# Install the latest tagged version (recommended)
+nimble install nasher
 
-$ # Install the latest version from the master branch
-$ nimble install nasher@#head
+# Install the latest version from the master branch
+nimble install nasher@#head
 
-$ # Install a specific tagged version
-$ nimble install nasher@#0.17.4
+# Install a specific tagged version
+nimble install nasher@#0.17.4
 ```
 
 Alternatively, you can clone the repo and build it yourself (handy if you want
 to make changes and contribute to development):
+
 ```console
-$ git clone https://github.com/squattingmonk/nasher.git
-$ cd nasher
-$ nimble install
+git clone https://github.com/squattingmonk/nasher.git
+cd nasher
+nimble install
 ```
 
 ### Docker
@@ -125,17 +132,20 @@ Docker commands are run with the same nomenclature as native nasher commands.
 If you want to use docker, any time you see a native nasher command in this
 document, you can replace it with the docker command. So the following are
 equivalent:
+
 ```console
-$ nasher <command>
-$ docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
+nasher <command>
+docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
 ```
 
 You can also create an alias in your `.bashrc` and just use `nasher <command>`:
+
 ```console
 alias nasher='docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest '
 ```
 
 #### Tips
+
 * Create batch/script files to run your most common nasher commands since the
 docker commands can be rather verbose. An excellent example of this is in [The
 Frozen North](https://github.com/b5635/the-frozen-north) GitHub repository.
@@ -143,50 +153,57 @@ Frozen North](https://github.com/b5635/the-frozen-north) GitHub repository.
 ## Getting Started
 
 ### First-Time Setup
-nasher will detect neverwinter.nim tools and your chosen script compiler if 
-they are in your `PATH` enviromental variable. You can also use nasher's 
+
+nasher will detect neverwinter.nim tools and your chosen script compiler if
+they are in your `PATH` enviromental variable. You can also use nasher's
 `config` command to set the proper locations if the tools are not on your
 `PATH` variable:
+
 ```console
-$ # Set the path to the script compiler
-$ # neverwinter.nim script compiler
-$ nasher config nssCompiler "%USERPROFILE%/bin/nwn_script_comp.exe"      # Windows
-$ nasher config nssCompiler "~/.local/bin/nwn_script_comp"               # Posix
-$ # or nwnsc (this must be set if you want to use nwnsc with nasher >=0.22.0)
-$ nasher config nssCompiler "%USERPROFILE%/bin/nwnsc.exe"                # Windows
-$ nasher config nssCompiler "~/.local/bin/nwnsc"                         # Posix
+# Set the path to the script compiler
+# neverwinter.nim script compiler
+nasher config nssCompiler "%USERPROFILE%/bin/nwn_script_comp.exe"      # Windows
+nasher config nssCompiler "~/.local/bin/nwn_script_comp"               # Posix
+# or nwnsc (this must be set if you want to use nwnsc with nasher >=0.22.0)
+nasher config nssCompiler "%USERPROFILE%/bin/nwnsc.exe"                # Windows
+nasher config nssCompiler "~/.local/bin/nwnsc"                         # Posix
 
-$ # Set the path to nwn_erf
-$ nasher config erfUtil "%USERPROFILE%/bin/nwn_erf.exe"                  # Windows
-$ nasher config erfUtil "~/.local/bin/nwn_erf"                           # Posix
+# Set the path to nwn_erf
+nasher config erfUtil "%USERPROFILE%/bin/nwn_erf.exe"                  # Windows
+nasher config erfUtil "~/.local/bin/nwn_erf"                           # Posix
 
-$ # Set the path to nwn_gff
-$ nasher config gffUtil "%USERPROFILE%/bin/nwn_gff.exe"                  # Windows
-$ nasher config gffUtil "~/.local/bin/nwn_gff"                           # Posix
+# Set the path to nwn_gff
+nasher config gffUtil "%USERPROFILE%/bin/nwn_gff.exe"                  # Windows
+nasher config gffUtil "~/.local/bin/nwn_gff"                           # Posix
 
-$ # Set the path to nwn_tlk
-$ nasher config tlkUtil "%USERPROFILE%/bin/nwn_tlk.exe"                  # Windows
-$ nasher config tlkUtil "~/.local/bin/nwn_tlk"                           # Posix
+# Set the path to nwn_tlk
+nasher config tlkUtil "%USERPROFILE%/bin/nwn_tlk.exe"                  # Windows
+nasher config tlkUtil "~/.local/bin/nwn_tlk"                           # Posix
 ```
+
 nasher will also detect NWN if it was installed by Steam, Beamdog, or GOG. If
 you are having issues getting nasher to recognize your NWN install, you can set
 the `NWN_ROOT` environment variable to the path. Similarly, the `NWN_HOME`
 environment variable should point to the local of your NWN user directory
 (i.e., where to install modules, haks, etc.). For example:
+
 ```bash
 # In your .bashrc
 export NWN_ROOT="$HOME/.local/share/Steam/steamapps/common/Neverwinter Nights"
 export NWN_HOME="$HOME/Documents/Neverwinter Nights"
 ```
+
 Further information on configuration can be found [below](#configuration).
 
 ### Basic Workflow
 
 1. Initialize your directory as a nasher project and follow the prompts:
+
    ```console
-   $ nasher init myproject
-   $ cd myproject
+   nasher init myproject
+   cd myproject
    ```
+
    When the prompt asks for your target's filename, make sure you put the
    filename of the module you want to use for the project (e.g.,
    `mymodule.mod`)
@@ -199,28 +216,32 @@ Further information on configuration can be found [below](#configuration).
 
 Repeat steps 3-7 until you are satisfied with your changes, then commit the
 files in git and push to your remote repo:
+
 ```console
-$ git commit -am "My commit message"
-$ git push origin master
+git commit -am "My commit message"
+git push origin master
 ```
 
 Now share the repo with your team. They can download the repo and build your
 module from the source files:
+
 ```console
-$ git clone https://github.com/myusername/myproject
-$ cd myproject
-$ nasher install
+git clone https://github.com/myusername/myproject
+cd myproject
+nasher install
 ```
 
 ### Getting Help
 
 You can get help for nasher or one of its commands using the `--help` flag:
+
 ```console
-$ nasher --help       # General help
-$ nasher <command> --help  # Command-specific help
+nasher --help       # General help
+nasher <command> --help  # Command-specific help
 ```
 
 If you're still stuck, you can get assistance in several locations:
+
 * Neverwinter Vault Discord Server ([invitation](https://discord.gg/pWVqMRX))
   ([workflow-and-tools
   channel](https://discord.com/channels/255017439371329537/511127010962046986))
@@ -650,106 +671,106 @@ by passing the key/value pair as an option to the command.
 
 #### Keys
 
-- `userName`: the default name to add to the author section of new packages
-    - default: git user.name
-- `userEmail`: the default email used for the author section
-    - default: git user.email
-- `nssCompiler`: the path to the script compiler
-    - default (Posix): `nwnsc`
-    - default (Windows): `nwnsc.exe`
-- `nssFlags`: the default flags to use on packages
-    - default: `` for `nwn_script_comp``, `-lowqey` for `nwnsc`
-    - note: since compilers can read the `NWN_ROOT` environment variable to find
+* `userName`: the default name to add to the author section of new packages
+  * default: git user.name
+* `userEmail`: the default email used for the author section
+  * default: git user.email
+* `nssCompiler`: the path to the script compiler
+  * default (Posix): `nwnsc`
+  * default (Windows): `nwnsc.exe`
+* `nssFlags`: the default flags to use on packages
+  * default: ``for `nwn_script_comp``, `-lowqey` for `nwnsc`
+  * note: since compilers can read the `NWN_ROOT` environment variable to find
       your NWN install, it is preferable to use that rather than passing the
       location through `nssFlags`. If `NWN_ROOT` is set (or if nasher can find
       your NWN install without it), nwnsc should work fine using the default
       values of `-lowqey`.
-- `nssChunks`: the maximum number of scripts to process with one call to nwnsc
-    - default: `500`
-    - note: set this to a lower number if you run into errors about command
+* `nssChunks`: the maximum number of scripts to process with one call to nwnsc
+  * default: `500`
+  * note: set this to a lower number if you run into errors about command
       lengths being too long.
-- `erfUtil`: the path to the erf pack/unpack utility
-    - default (Posix): `nwn_erf`
-    - default (Windows): `nwn_erf.exe`
-- `erfFlags`: additional flags to pass to the erf utility
-    - default: ""
-- `gffUtil`: the path to the gff conversion utility
-    - default (Posix): `nwn_gff`
-    - default (Windows): `nwn_gff.exe`
-- `gffFlags`: additional flags to pass to the gff utility
-    - default: ""
-- `gffFormat`: the format to use to store gff files
-    - default: `json`
-    - supported: `json, nwnt`
-- `tlkUtil`: the path to the tlk conversion utility
-    - default (Posix): `nwn_gff`
-    - default (Windows): `nwn_gff.exe`
-- `tlkFlags`: additional flags to pass to the tlk utility
-    - default: ""
-- `tlkFormat`: the format to use to store tlk files
-    - default: `json`
-    - supported: `json`
-- `installDir`: the NWN user directory where built files should be installed
-    - default (Linux): `~/.local/share/Neverwinter Nights`
-    - default (Windows and Mac): `~/Documents/Neverwinter Nights`
-    - note: It is recommended  you use the `NWN_HOME` environment variable
+* `erfUtil`: the path to the erf pack/unpack utility
+  * default (Posix): `nwn_erf`
+  * default (Windows): `nwn_erf.exe`
+* `erfFlags`: additional flags to pass to the erf utility
+  * default: ""
+* `gffUtil`: the path to the gff conversion utility
+  * default (Posix): `nwn_gff`
+  * default (Windows): `nwn_gff.exe`
+* `gffFlags`: additional flags to pass to the gff utility
+  * default: ""
+* `gffFormat`: the format to use to store gff files
+  * default: `json`
+  * supported: `json, nwnt`
+* `tlkUtil`: the path to the tlk conversion utility
+  * default (Posix): `nwn_gff`
+  * default (Windows): `nwn_gff.exe`
+* `tlkFlags`: additional flags to pass to the tlk utility
+  * default: ""
+* `tlkFormat`: the format to use to store tlk files
+  * default: `json`
+  * supported: `json`
+* `installDir`: the NWN user directory where built files should be installed
+  * default (Linux): `~/.local/share/Neverwinter Nights`
+  * default (Windows and Mac): `~/Documents/Neverwinter Nights`
+  * note: It is recommended  you use the `NWN_HOME` environment variable
       instead as this can be read by other programs. If `NWN_HOME` is not set,
       nasher will use the value from this flag to populate it.
-- `gameBin`: the path to the nwmain binary
-    - note: nasher should be able to find the binary without setting this.
+* `gameBin`: the path to the nwmain binary
+  * note: nasher should be able to find the binary without setting this.
       Setting the `NWN_ROOT` environment variable to the location of your NWN
       install makes this setting obsolete for most users.
-- `serverBin`: the path to the nwserver binary (if not using default Steam path)
-    - note: nasher should be able to find the binary without setting this.
+* `serverBin`: the path to the nwserver binary (if not using default Steam path)
+  * note: nasher should be able to find the binary without setting this.
       Setting the `NWN_ROOT` environment variable to the location of your NWN
       install makes this setting obsolete for most users.
-- `vcs`: the version control system to use when making new packages
-    - default: `git`
-    - supported: `none`, `git`
-- `removeUnusedAreas`: whether to prevent areas not present in the source files
+* `vcs`: the version control system to use when making new packages
+  * default: `git`
+  * supported: `none`, `git`
+* `removeUnusedAreas`: whether to prevent areas not present in the source files
   from being referenced in `module.ifo`.
-    - default: `true`
-    - note: you will want to disable this if you have some areas that are
+  * default: `true`
+  * note: you will want to disable this if you have some areas that are
       present in a hak or override and not the module itself.
-- `useModuleFolder`: whether to use a subdirectory of the `modules` folder to
+* `useModuleFolder`: whether to use a subdirectory of the `modules` folder to
   store unpacked module files. This feature is useful only for NWN:EE users.
-    - default: `true` during install; `true` during unpacking unless explicitly
+  * default: `true` during install; `true` during unpacking unless explicitly
       specifying a file to unpack
-- `truncateFloats`: the max number of decimal places to allow after floats in
+* `truncateFloats`: the max number of decimal places to allow after floats in
   gff files. Use this to prevent unneeded updates to files due to insignificant
   float value changes.
-  - default: `4`
-  - supported: `1` - `32`
-- `onMultipleSources`: an action to perform when multiple source files of the
+  * default: `4`
+  * supported: `1` - `32`
+* `onMultipleSources`: an action to perform when multiple source files of the
   same name are found for a target.
-  - default: `choose`
-  - supported: `choose` (choose manually), `default` (accept the first choice),
+  * default: `choose`
+  * supported: `choose` (choose manually), `default` (accept the first choice),
     `error` (abort with an error message)
-- `abortOnCompileError`: whether to automatically abort packing, installing, or
+* `abortOnCompileError`: whether to automatically abort packing, installing, or
    testing a target if `nwnsc` encounters errors.
-   - default: `false`
-   - supported: `true`, `false`
-- `packUnchanged`: whether to force packing a file if the source files have not
+  * default: `false`
+  * supported: `true`, `false`
+* `packUnchanged`: whether to force packing a file if the source files have not
   changed since the last pack.
-  - default: `false`
-  - supported:  `true`, `false`
-- `overwritePackedFile`: automatically answer the "Are you sure you wish to
+  * default: `false`
+  * supported:  `true`, `false`
+* `overwritePackedFile`: automatically answer the "Are you sure you wish to
   overwrite?" prompt when an existing file of the same name is found within
   the project dir (`pack` command only):
-  - default: `ask`
-  - supported: `ask` (always ask), `default` (overwrite only if the existing
+  * default: `ask`
+  * supported: `ask` (always ask), `default` (overwrite only if the existing
     file is older than the newest source file), `always` (always overwrite),
     `never` (never overwrite)
-- `overwriteInstalledFile`: automatically answer the "Are you sure you wish to
+* `overwriteInstalledFile`: automatically answer the "Are you sure you wish to
   overwrite?" prompt when an existing file of the same name is found within
   `installDir` (`install` command only):
-  - default: `ask`
-  - supported: `ask` (always ask), `default` (overwrite only if the existing
+  * default: `ask`
+  * supported: `ask` (always ask), `default` (overwrite only if the existing
     file is older than the newest source file), `always` (always overwrite),
     `never` (never overwrite)
-- `skipCompile`: semicolon-delimited list of glob patterns matching files to
+* `skipCompile`: semicolon-delimited list of glob patterns matching files to
   skip during compilation. Used to avoid errors when broken scripts are present.
-  - default: ""
+  * default: ""
 
 #### Examples
 
@@ -770,6 +791,7 @@ $ nasher config --list --local  # local
 ```
 
 #### Tips
+
 * The `--` operator causes all following arguments to be treated as positional
   arguments, even if they look like options. This is useful when setting config
   keys to values starting with `-`: `nasher config --nssFlags "-n /opt/nwn"`
@@ -779,10 +801,10 @@ $ nasher config --list --local  # local
   your commits, since other users may require different values than those that
   work on your machine
 * Some gotchas to watch out for when setting `--nssFlags`:
-    * Quote paths with spaces when passing to `-n`.
-    * Do not include other configurable nwnsc flags, such as `-b` and `-i`.
+  * Quote paths with spaces when passing to `-n`.
+  * Do not include other configurable nwnsc flags, such as `-b` and `-i`.
       Those flags can be passed to nwnsc per target through nasher.cfg.
-    * It's better to use the `NWN_ROOT` environment variable with the default
+  * It's better to use the `NWN_ROOT` environment variable with the default
       `-lowqey` value rather than the `-n /path/to/NWN/install` method. This
       ensures that nasher, nwnsc, and the neverwinter.nim tools are always
       using the same NWN install location.
@@ -806,14 +828,14 @@ directory.
 #### Examples
 
 ```console
-$ # Create a new nasher package in the current directory
-$ nasher init
+# Create a new nasher package in the current directory
+nasher init
 
-$ # Create a new nasher package in the directory foo
-$ nasher init foo
+# Create a new nasher package in the directory foo
+nasher init foo
 
-$ # Create a new nasher package from a module file
-$ nasher init foo --file:"~/Documents/Neverwinter Nights/modules/foobar.mod"
+# Create a new nasher package from a module file
+nasher init foo --file:"~/Documents/Neverwinter Nights/modules/foobar.mod"
 ```
 
 ### list
@@ -873,14 +895,14 @@ answer is to keep the existing source file.
 #### Examples
 
 ```console
-$ # Unpack the default target's installed file
-$ nasher unpack
+# Unpack the default target's installed file
+nasher unpack
 
-$ # Unpack the target foo's installed file
-$ nasher unpack foo
+# Unpack the target foo's installed file
+nasher unpack foo
 
-$ # Unpack the file myModule.mod using the myNWNServer target
-$ nasher unpack myNWNServer --file:myModule.mod
+# Unpack the file myModule.mod using the myNWNServer target
+nasher unpack myNWNServer --file:myModule.mod
 ```
 
 ### convert
@@ -910,14 +932,14 @@ separately unless you want to convert files without compiling and packing.
 #### Examples
 
 ```console
-$ # Convert the first target in nasher.cfg
-$ nasher convert
+# Convert the first target in nasher.cfg
+nasher convert
 
-$ # Convert the "demo" target
-$ nasher convert demo
+# Convert the "demo" target
+nasher convert demo
 
-$ # Convert the "demo" and "testing" targets
-$ nasher convert demo test
+# Convert the "demo" and "testing" targets
+nasher convert demo test
 ```
 
 ### compile
@@ -958,17 +980,17 @@ separately unless you want to compile scripts files without packing.
 #### Examples
 
 ```console
-$ # Compile the first target in nasher.cfg
-$ nasher compile
+# Compile the first target in nasher.cfg
+nasher compile
 
-$ # Compile the "demo" target
-$ nasher compile demo
+# Compile the "demo" target
+nasher compile demo
 
-$ # Compile a single file used by the default target (by full path)
-$ nasher compile --file:src/nss/myfile.nss
+# Compile a single file used by the default target (by full path)
+nasher compile --file:src/nss/myfile.nss
 
-$ # Compile a single file used by a particular target (by filename)
-$ nasher compile demo --file:myfile.nss
+# Compile a single file used by a particular target (by filename)
+nasher compile demo --file:myfile.nss
 ```
 
 ### pack
@@ -1011,15 +1033,15 @@ run it separately unless you want to pack files without installing.
 #### Examples
 
 ```console
-$ # Pack the first target in nasher.cfg
-$ nasher pack
+# Pack the first target in nasher.cfg
+nasher pack
 
-$ # Clear the cache and convert, compile and pack the "demo" target
-$ nasher pack demo --clean
+# Clear the cache and convert, compile and pack the "demo" target
+nasher pack demo --clean
 
-$ # Pack the "module" target into "modules/mymodule.mod", setting its name to
-$ # "My Module" and its minimum support game version to 1.69
-$ nasher pack module --file:"modules/mymodule.mod" --modName:"My Module" --modMinGameVersion:1.69
+# Pack the "module" target into "modules/mymodule.mod", setting its name to
+# "My Module" and its minimum support game version to 1.69
+nasher pack module --file:"modules/mymodule.mod" --modName:"My Module" --modMinGameVersion:1.69
 ```
 
 ### install
@@ -1060,18 +1082,19 @@ the module (`.mod`) file.
 | `--overwriteInstalledFile`      | how to handle an existing installed file in `installDir`           |
 
 #### Examples
+
 ```console
-$ # Install the first target in nasher.cfg
-$ nasher install
+# Install the first target in nasher.cfg
+nasher install
 
-$ # Install the "demo" target to /opt/nwn without re-packing
-$ nasher install demo --installDir:"/opt/nwn" --noPack
+# Install the "demo" target to /opt/nwn without re-packing
+nasher install demo --installDir:"/opt/nwn" --noPack
 
-$ # Special case for Docker usage. When issuing the install and launch commands,
-$ # docker requires access to the NWN documents folder, so we attach two volumes:
-$ # - the first volume assigns the nasher project folder (source files)
-$ # - the second volume assigns the NWN user directory
-$ docker run --rm -it -v ${pwd}:/nasher -v "~/Documents/Neverwinter Nights":/nasher/install nwntools/nasher:latest install <target> --yes
+# Special case for Docker usage. When issuing the install and launch commands,
+# docker requires access to the NWN documents folder, so we attach two volumes:
+# - the first volume assigns the nasher project folder (source files)
+# - the second volume assigns the NWN user directory
+docker run --rm -it -v ${pwd}:/nasher -v "~/Documents/Neverwinter Nights":/nasher/install nwntools/nasher:latest install <target> --yes
 ```
 
 ### launch
@@ -1105,20 +1128,20 @@ command is only valid for module targets.
 #### Examples
 
 ```console
-$ # Install the first target in nasher.cfg and launch with nwserver
-$ nasher serve
+# Install the first target in nasher.cfg and launch with nwserver
+nasher serve
 
-$ # Install the "demo" and play in-game
-$ nasher play demo
+# Install the "demo" and play in-game
+nasher play demo
 
-$ # Install the "demo" target and play using the first character in the localvault
-$ nasher test demo
+# Install the "demo" target and play using the first character in the localvault
+nasher test demo
 ```
 
 ## Errors
 
 * **`"No source files found for target"`** \
-  Caused by improper sourcing (`include = `) in either the `[*.sources]` or
+  Caused by improper sourcing (`include =`) in either the `[*.sources]` or
   `[target]` section in your [`nasher.cfg`](#nashercfg).
 
 * **`"This is not a nasher repository. Please run init"`** \
@@ -1178,6 +1201,7 @@ $ nasher test demo
 ## Contributing
 
 Bug fixes and new features are greatly appreciated! Here's how to get started:
+
 1. Fork the repo: `gh repo fork squattingmonk/nasher && cd nasher`
 2. Create your feature branch: `git checkout -b feature/fooBar`
 3. Commit your changes: `git commit -am 'Add some fooBar'`
