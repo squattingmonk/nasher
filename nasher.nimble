@@ -10,12 +10,10 @@ bin           = @["nasher"]
 
 # Dependencies
 
-requires "nim >= 1.6.4"
-requires "neverwinter >= 1.7.3"
-requires "nwnt >= 1.3.3"
+requires "nim >= 2.4.0"
+requires "checksums"
+requires "neverwinter >= 2.3.2"
+requires "nwnt >= 1.4.0"
 requires "blarg >= 0.1.0"
-requires "regex >= 0.25.0"
+requires "regex >= 0.27.0"
 requires "glob#ab6087b"
-
-when NimMajor == 2:
-  requires "checksums"
