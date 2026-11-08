@@ -1,5 +1,14 @@
 # nasher changelog
 
+## 1.2.1: November 7, 2026
+
+Fixed nasher failing to recompile a script when its included source was removed
+([#127](https://github.com/squattingmonk/nasher/issues/127)).
+
+---
+
+Details: <https://github.com/squattingmonk/nasher/compare/1.2.0...1.2.1>
+
 ## 1.2.0: November 3, 2026
 
 ### Improved multi-line comment parsing [#126](https://github.com/squattingmonk/nasher/issues/126)
