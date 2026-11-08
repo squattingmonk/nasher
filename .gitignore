@@ -5,3 +5,6 @@ nasher.exe
 # Ignore tests
 /tests/test_*
 !/tests/test_*.nim
+nimble.develop
+nimble.paths
+nimbledeps

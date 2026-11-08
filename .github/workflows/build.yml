@@ -12,7 +12,8 @@ jobs:
           # - windows-latest
           # - macOS-latest
         nim-version:
-          - '2.4.0'
+          - '2.0.14'
+          - 'stable'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,9 +23,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nimble
-          key: ${{ runner.os }}-nimble-${{ hashFiles('nasher.nimble') }}
+          key: ${{ runner.os }}-nimble-${{ matrix.nim-version }}-${{ hashFiles('nasher.nimble') }}
           restore-keys: |
-            ${{ runner.os }}-nimble-
+            ${{ runner.os }}-nimble-${{ matrix.nim-version }}-
 
       - name: Set up Nim
         uses: jiro4989/setup-nim-action@v2

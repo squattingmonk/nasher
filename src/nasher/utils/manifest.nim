@@ -1,9 +1,5 @@
 import std/[json, os, times]
-
-when NimMajor == 2:
-  import checksums/sha1
-else:
-  import std/sha1
+import checksums/sha1
 
 import cli
 
