@@ -83,6 +83,10 @@ proc convert*(opts: Options, target: Target, updatedNss: var seq[string]): bool 
       info("Removing", name & ext)
       file.removeFile
 
+      # Let compile() know so scripts that include this one get re-compiled
+      if cmd != "convert" and ext == ".nss":
+        updatedNss.add(fileName)
+
   # Copy newer files
   for cacheFile, inFiles in outFiles.pairs:
     assert inFiles.len > 0
