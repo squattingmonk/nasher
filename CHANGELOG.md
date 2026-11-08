@@ -1,5 +1,23 @@
 # nasher changelog
 
+## 1.2.0: November 3, 2026
+
+### Improved multi-line comment parsing [#126](https://github.com/squattingmonk/nasher/issues/126)
+
+Previously, multi-line comments were not parsing correctly if they were on the
+same line as other text that was not a `main()` or `StartingConditional()`. This
+caused the `compile` command to attempt to compile some scripts that did not
+have a reachable executable function. This also applied to includes as well,
+even though the issue had not reported it.
+
+### Updated minimum dependency versions
+
+nasher now requires nim >= 2.0.14, neverwinter >= 2.3.0, and nwnt >= 1.4.0.
+
+---
+
+Details: <https://github.com/squattingmonk/nasher/compare/1.1.3...1.2.0>
+
 ## 1.1.3: August 6, 2026
 
 Fixes improper escaping of file names during conversion. This prevented
@@ -8,7 +26,7 @@ Chapter 3 module.
 
 ---
 
-Details: <https://github.com/squattingmonk/nasher/compare/1.1.3...newtag>
+Details: <https://github.com/squattingmonk/nasher/compare/1.1.2...1.1.3>
 
 ## 1.1.2: September 18, 2025
 
