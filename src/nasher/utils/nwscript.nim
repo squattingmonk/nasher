@@ -32,15 +32,17 @@ let
     slstart <- '//'
     """
 
-iterator codeLines(s: Stream): string =
+iterator codeLines(script: string): string =
   ## Yields each line of `s` that is not entirely inside a multi-line comment.
   ## If a line closes a multi-line comment, only the text after the `*/` is
   ## yielded. Single-line comments and comments opened and closed on the same
   ## line are left in place for the caller to skip.
   var
+    s = openFileStream(script)
     line: string
     comment = false
 
+  defer: s.close()
   while s.readLine(line):
     if comment:
       let closeLen = line.matchLen(pCommentClose)
@@ -57,12 +59,12 @@ iterator codeLines(s: Stream): string =
 proc executable*(script: string): bool =
   ## Returns whether `script` contains a main() or StartingConditional()
   ## function and is thus executable nwscript.
-  for line in openFileStream(script).codeLines:
+  for line in script.codeLines:
     if line.match(pExec):
       return true
 
 iterator included*(script: string): string =
   ## Yields all files inluded in the nwscript file `script`.
-  for line in openFileStream(script).codeLines:
+  for line in script.codeLines:
     if line =~ pInclude:
       yield matches[0].toLower
