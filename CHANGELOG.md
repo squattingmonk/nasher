@@ -1,5 +1,14 @@
 # nasher changelog
 
+## 1.2.2: November 12, 2026
+
+Fixed an issue that caused an `IOError` when compiling hundreds of scripts
+([#131](https://github.com/squattingmonk/nasher/issues/)).
+
+---
+
+Details: <https://github.com/squattingmonk/nasher/compare/1.2.1...1.2.2>
+
 ## 1.2.1: November 7, 2026
 
 Fixed nasher failing to recompile a script when its included source was removed
