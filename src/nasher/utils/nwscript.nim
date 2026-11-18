@@ -24,7 +24,7 @@ let
     """
 
   pInclude = peg"""
-    file <- skip* '#include' \s+ '"' {\ident+} '"' skip* (slstart / mlstart / !.)
+    file <- skip* '#include' \s+ '"' {[a-zA-Z0-9_]+} '"' skip* (slstart / mlstart / !.)
     skip <- \s / mlcomment
     mlcomment <- mlstart @ mlend
     mlstart <- '/*'
