@@ -1,0 +1,5 @@
+# Only send what nimble needs to build nasher to the Docker build context.
+*
+!nasher.nimble
+!config.nims
+!src

@@ -135,13 +135,13 @@ equivalent:
 
 ```console
 nasher <command>
-docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest <command>
+docker run --rm -it -v ${pwd}:/nasher squattingmonk/nasher:latest <command>
 ```
 
 You can also create an alias in your `.bashrc` and just use `nasher <command>`:
 
 ```console
-alias nasher='docker run --rm -it -v ${pwd}:/nasher nwntools/nasher:latest '
+alias nasher='docker run --rm -it -v ${pwd}:/nasher squattingmonk/nasher:latest '
 ```
 
 #### Tips
@@ -1094,7 +1094,7 @@ nasher install demo --installDir:"/opt/nwn" --noPack
 # docker requires access to the NWN documents folder, so we attach two volumes:
 # - the first volume assigns the nasher project folder (source files)
 # - the second volume assigns the NWN user directory
-docker run --rm -it -v ${pwd}:/nasher -v "~/Documents/Neverwinter Nights":/nasher/install nwntools/nasher:latest install <target> --yes
+docker run --rm -it -v ${pwd}:/nasher -v "~/Documents/Neverwinter Nights":/nasher/install squattingmonk/nasher:latest install <target> --yes
 ```
 
 ### launch
