@@ -51,3 +51,8 @@ suite "Issue #126: nwscript files with multi-line comments successfully parsed":
       checkIncludes("i2.nss", @["b"])
       checkIncludes("i3.nss", @["b"])
       checkIncludes("i4.nss", @["a", "b", "c", "e"])
+
+suite "Includes whose names begin with a digit successfully parsed":
+  test "Includes correctly identified":
+    withDir "tests/corpus/digit-includes":
+      check "d1.nss".included.toSeq == @["0inc", "70_inc_spells", "inc0"]
